@@ -113,7 +113,7 @@ class OpenAIModel:
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def generate(self, input_string, temperature = 0.0):
-        if self.model_name in ['gpt-4', 'gpt-3.5-turbo-0613', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-1106', 'gpt-4o-mini', 'gpt-4-0125-preview', 'gpt-4-1106-preview', 'gpt-4-turbo', 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo']:
+        if self.model_name in ['gpt-4', 'gpt-4o', 'gpt-3.5-turbo-0613', 'gpt-4o-2024-08-06', 'gpt-4o-2024-05-13', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-1106', 'gpt-4o-mini', 'gpt-4-0125-preview', 'gpt-4-1106-preview', 'gpt-4-turbo', 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo']:
             try:
                 return self.chat_generate(input_string, temperature)
             except openai.error.OpenAIAPIError as e:
@@ -146,7 +146,7 @@ class OpenAIModel:
         return [x['choices'][0]['text'].strip() for x in predictions]
 
     def batch_generate(self, messages_list, temperature = 0.0):
-        if self.model_name in ['gpt-4', 'gpt-3.5-turbo-0613', 'gpt-4o', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-1106', 'gpt-4o-mini', 'gpt-4-0125-preview', 'gpt-4-1106-preview', 'gpt-4-turbo', 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo']:
+        if self.model_name in ['gpt-4', 'gpt-4o', 'gpt-3.5-turbo-0613', 'gpt-4o', 'gpt-3.5-turbo', 'gpt-3.5-turbo-16k-0613', 'gpt-3.5-turbo-1106', 'gpt-4o-mini', 'gpt-4-0125-preview', 'gpt-4-1106-preview', 'gpt-4-turbo', 'meta-llama/Meta-Llama-3.1-405B-Instruct-Turbo']:
             return self.batch_chat_generate(messages_list, temperature)
         else:
             raise Exception("Model name not recognized")
