@@ -94,3 +94,37 @@ Please cite the paper if you use this framework during your research.
   url          = {https://arxiv.org/abs/2412.16953}
 }
 ```
+
+**Modification**
+Quick Start (local Sahabat + comparable 7–8B models)
+
+1) Install deps for HF backend:
+   pip install -r requirements.txt (transformers accelerate bitsandbytes safetensors requests) <- Already included
+
+2) Prepare env vars (latest Sahabat from HF):
+   export LLM_BACKEND=hf
+   export LLM_MODEL="Sahabat-AI/llama3-8b-cpt-sahabatai-v1-instruct"
+   # optional for tight VRAM: use 4-bit
+   # add --load_in_4bit to each script's CLI
+
+3) Data layout expected:
+   ./data/<DATASET_NAME>/<SPLIT>.jsonl
+   Each line: {"id": str|int, "premises"|"facts"|"context": ..., "hypothesis"|"query": ..., "label": ...}
+
+4) Run pipeline:
+   python translate_decompose.py --dataset_name ProofWriter --split dev --max_new_tokens 512 --load_in_4bit
+   python negate.py              --dataset_name ProofWriter --split dev --max_new_tokens 256 --load_in_4bit
+   python search_resolve.py      --dataset_name ProofWriter --split dev --max_new_tokens 1024 --load_in_4bit
+   python evaluate.py            --dataset_name ProofWriter --split dev
+
+5) Switch to Ollama backend:
+   # if you have a usable Ollama build of the model
+   export LLM_BACKEND=ollama
+   export LLM_MODEL="hf.co/Sahabat-AI/llama3-8b-cpt-sahabatai-v1-instruct"
+   ollama serve   # in another terminal
+   # then re-run the same 4 commands above (omit --load_in_4bit; quant is handled by Ollama)
+
+Notes:
+- If 8B still OOMs, try: smaller max_new_tokens; ensure CUDA 11.8+/PyTorch match; use offload_folder SSD (edit _init_hf_model in llm_backends.py).
+- The LLM outputs are forced to JSON via strict prompts; io_utils.extract_first_json is defensive in case of extra text.
+- This skeleton mirrors the Aristotle pipeline stages but stays backend-agnostic. You can plug any HF/Ollama/OpenAI model by env vars.
