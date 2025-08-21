@@ -96,6 +96,8 @@ Please cite the paper if you use this framework during your research.
 ```
 
 **Modification**
+----
+
 Quick Start (local Sahabat + comparable 7–8B models)
 
 1. Install deps for HF backend:
