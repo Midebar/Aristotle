@@ -11,7 +11,7 @@ from pathlib import Path
 LOCAL_MODEL_PATH = os.environ.get("LOCAL_MODEL_PATH", "/kaggle/input/sahabatai_model")
 DATA_JSON_PATH = os.environ.get("DATA_JSON_PATH", "/kaggle/input/aristotle-kaggle/data/ProofWriter/dev.json")
 PROMPTS_INPUT_PATH = os.environ.get("PROMPTS_PATH", "/kaggle/input/aristotle-kaggle/prompts")
-SCRIPT_ROOT = os.environ.get("SCRIPT_ROOT", "/kaggle/input/aristotle-kaggle")
+SCRIPT_ROOT = os.environ.get("SCRIPT_ROOT", "/kaggle/input/aristotle-kaggle/")
 WORK_ROOT = Path.cwd()
 WORK_DATA_ROOT = WORK_ROOT / "data"
 WORK_PROMPTS_ROOT = WORK_ROOT / "prompts"
@@ -19,10 +19,10 @@ RESULTS_ROOT = WORK_ROOT / "results"
 OUTPUT_DIR = Path(os.environ.get("OUT_DIR", str(RESULTS_ROOT)))
 
 # script names (original files) — assumed present in same working dir
-SCRIPT_TRANSLATE = SCRIPT_ROOT / "translate_decompose.py"
-SCRIPT_NEGATE = SCRIPT_ROOT / "negate.py"
-SCRIPT_SEARCH = SCRIPT_ROOT / "search_resolve.py"
-SCRIPT_EVAL = SCRIPT_ROOT / "evaluate.py"
+SCRIPT_TRANSLATE = SCRIPT_ROOT + "translate_decompose.py"
+SCRIPT_NEGATE = SCRIPT_ROOT + "negate.py"
+SCRIPT_SEARCH = SCRIPT_ROOT + "search_resolve.py"
+SCRIPT_EVAL = SCRIPT_ROOT + "evaluate.py"
 
 # OpenAI shim server port
 SHIM_HOST = "127.0.0.1"
