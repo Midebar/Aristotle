@@ -102,7 +102,7 @@ translate_cmd = [
     "--save_path", str(RESULTS_ROOT),
     "--api_key", "",  # empty, not used; base_url is used by OpenAIModel in utils.py
     "--model_name", "local-hf",  # model name passed through; shim ignores actual model name
-    "--stop_words", "------",
+    f"--stop_words={os.environ.get('STOP_WORDS', '------')}",  # use = form to avoid argparse treating '------' as an option token
     "--mode", "",
     "--max_new_tokens", "512",
     "--batch_num", "1",
@@ -131,7 +131,7 @@ search_cmd = [
     "--save_path", str(RESULTS_ROOT),
     "--api_key", "",
     "--model_name", "local-hf",
-    "--stop_words", "------",
+    f"--stop_words={os.environ.get('STOP_WORDS', '------')}",  # use = form to avoid argparse treating '------' as an option token
     "--mode", "",
     "--max_new_tokens", "256",
     "--base_url", SHIM_BASE_URL,

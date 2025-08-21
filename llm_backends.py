@@ -40,9 +40,9 @@ class HFBackend:
 
         # Tokenizer: try remote code then fallback
         try:
-            self.tokenizer = AutoTokenizer.from_pretrained(src, use_fast=False, trust_remote_code=True)
+            self.tokenizer = AutoTokenizer.from_pretrained(src)
         except Exception:
-            self.tokenizer = AutoTokenizer.from_pretrained(src, use_fast=False)
+            self.tokenizer = AutoTokenizer.from_pretrained(src)
 
         # Model: attempt bitsandbytes 4-bit then fallback
         try:
