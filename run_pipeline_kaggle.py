@@ -202,7 +202,7 @@ def main():
         ensure_dir(WORK_PROMPTS_ROOT)
         copy_prompts(Path(src_prompts), WORK_PROMPTS_ROOT, DATASET)
 
-        src_data_path = Path(DATA_JSON_PATH) if DATA_JSON_PATH else Path("/kaggle/input")
+        src_data_path = Path(DATA_JSON_PATH) if DATA_JSON_PATH else Path("/kaggle/working")
         ensure_dir(WORK_DATA_ROOT)
         try:
             prepared_json = prepare_dataset_input(src_data_path, WORK_DATA_ROOT, DATASET, SPLIT, DATA_SPLIT_PERCENTAGE)
