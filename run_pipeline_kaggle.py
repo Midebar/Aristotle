@@ -173,6 +173,7 @@ def main():
     OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
     DATASET = os.environ.get("DATASET_NAME", "ProofWriter")
     SPLIT = os.environ.get("SPLIT", "dev")
+    DATA_SPLIT_PERCENTAGE = int(os.environ.get("DATA_SPLIT_PERCENTAGE", "10"))
     KAGGLE_WORK_ROOT = Path(os.environ.get("WORK_ROOT", "/kaggle/working"))
 
     LOCAL_MODEL_PATH = os.environ.get("LOCAL_MODEL_PATH", "")
@@ -204,7 +205,7 @@ def main():
         src_data_path = Path(DATA_JSON_PATH) if DATA_JSON_PATH else Path("/kaggle/input")
         ensure_dir(WORK_DATA_ROOT)
         try:
-            prepared_json = prepare_dataset_input(src_data_path, WORK_DATA_ROOT, DATASET, SPLIT, int(args.split_percent))
+            prepared_json = prepare_dataset_input(src_data_path, WORK_DATA_ROOT, DATASET, SPLIT, DATA_SPLIT_PERCENTAGE)
         except Exception as e:
             print("Error preparing dataset for Kaggle adapter:", e)
             # try fallback copying
