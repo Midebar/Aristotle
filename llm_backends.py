@@ -1,108 +1,156 @@
 # llm_backends.py
-from pathlib import Path
-import os
+from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import BitsAndBytesConfig
 import torch
-
-def _ensure_pad_token(tokenizer, model):
-    try:
-        if getattr(tokenizer, "pad_token", None) is None:
-            if getattr(tokenizer, "eos_token", None) is not None:
-                tokenizer.pad_token = tokenizer.eos_token
-        if getattr(model.config, "pad_token_id", None) is None or isinstance(model.config.pad_token_id, bool):
-            model.config.pad_token_id = tokenizer.pad_token_id
-    except Exception:
-        pass
+import os
+import warnings
+from collections.abc import Mapping
 
 class HFBackend:
     def __init__(self, local_model_path: str = None, hf_model_id: str = None, quantize_4bit: bool = True):
-        self.local_model_path = local_model_path
-        self.hf_model_id = hf_model_id
-        self.model = None
-        self.tokenizer = None
-        self.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
-        self.quantize_4bit = quantize_4bit
-        self._load()
+        """
+        local_model_path: local path to the model (preferred)
+        hf_model_id: remote model id (unused when local_model_path provided)
+        quantize_4bit: attempt 4-bit (requires bitsandbytes + compatible hardware)
+        """
+        self.model_source = local_model_path or hf_model_id
+        if not self.model_source:
+            raise ValueError("Either local_model_path or hf_model_id must be provided.")
 
-    def _resolve_source(self):
-        if self.local_model_path and Path(self.local_model_path).exists():
-            return str(Path(self.local_model_path))
-        if self.hf_model_id:
-            return self.hf_model_id
-        raise RuntimeError("No model path or HF id provided for HFBackend")
-
-    def _load(self):
-        src = self._resolve_source()
+        # ---- Tokenizer load (robust) ----
+        tokenizer = None
+        last_exc = None
         try:
-            from transformers import AutoTokenizer, AutoModelForCausalLM
-            from transformers import BitsAndBytesConfig
+            # Preferred: load tokenizer from the local folder, avoid use_fast=True
+            tokenizer = AutoTokenizer.from_pretrained(self.model_source)
         except Exception as e:
-            raise RuntimeError("Install transformers/bitsandbytes/safetensors first") from e
+            last_exc = e
+            warnings.warn(f"AutoTokenizer load failed: {e}. Tried default AutoTokenizer.")
 
-        # Tokenizer: try remote code then fallback
-        try:
-            self.tokenizer = AutoTokenizer.from_pretrained(src)
-        except Exception:
-            self.tokenizer = AutoTokenizer.from_pretrained(src)
+        if tokenizer is None:
+            # give a clear error if nothing worked
+            raise RuntimeError(f"Failed to load tokenizer for {self.model_source}. Last error: {last_exc}")
 
-        # Model: attempt bitsandbytes 4-bit then fallback
-        try:
-            if self.quantize_4bit:
+        # Safety check: ensure tokenizer is sensible
+        if isinstance(tokenizer, bool) or not callable(getattr(tokenizer, "__call__", None)):
+            raise RuntimeError(f"Loaded tokenizer is not callable (type={type(tokenizer)}). Aborting.")
+
+        # ensure pad token exists (use eos_token if needed)
+        if getattr(tokenizer, "pad_token", None) is None:
+            if getattr(tokenizer, "eos_token", None) is not None:
+                tokenizer.pad_token = tokenizer.eos_token
+            elif getattr(tokenizer, "eos_token_id", None) is not None:
                 try:
-                    quant_config = BitsAndBytesConfig(load_in_4bit=True)
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        src,
-                        device_map="auto",
-                        quantization_config=quant_config,
-                        trust_remote_code=True,
-                    )
+                    tokenizer.pad_token_id = tokenizer.eos_token_id
                 except Exception:
-                    self.model = AutoModelForCausalLM.from_pretrained(
-                        src,
-                        device_map="auto",
-                        load_in_4bit=True,
-                        trust_remote_code=True,
-                    )
-            else:
-                self.model = AutoModelForCausalLM.from_pretrained(src, device_map="auto", trust_remote_code=True)
-        except Exception as e:
+                    tokenizer.pad_token_id = 0
+
+        self.tokenizer = tokenizer
+
+        # ---- Model load (attempt quantized if requested) ----
+        model = None
+        if quantize_4bit:
             try:
-                # final fallback to CPU non-quantized
-                self.model = AutoModelForCausalLM.from_pretrained(src, trust_remote_code=True, device_map=None)
-                self.model.to(self.device)
-            except Exception as e2:
-                raise RuntimeError(f"Model load failed for {src}: {e2}") from e2
+                quant_config = BitsAndBytesConfig(
+                    load_in_4bit=True,
+                    bnb_4bit_quant_type="nf4" if hasattr(BitsAndBytesConfig, "bnb_4bit_quant_type") else "fp4",
+                    bnb_4bit_use_double_quant=False,
+                    bnb_4bit_compute_dtype="float16",
+                )
+                model = AutoModelForCausalLM.from_pretrained(
+                    self.model_source,
+                    device_map="auto",
+                    trust_remote_code=True,
+                    quantization_config=quant_config
+                )
+            except Exception as e:
+                warnings.warn(f"4-bit quantized load failed: {e}. Falling back to non-quantized load.")
+                model = None
 
-        _ensure_pad_token(self.tokenizer, self.model)
+        if model is None:
+            # final fallback: non-quantized load
+            model = AutoModelForCausalLM.from_pretrained(
+                self.model_source,
+                device_map="auto",
+                trust_remote_code=True
+            )
 
-        # if generate is not callable, bind default HF generate
+        # record device
         try:
-            if not callable(getattr(self.model, "generate", None)):
-                from transformers.generation import GenerationMixin
-                self.model.generate = GenerationMixin.generate.__get__(self.model, type(self.model))
+            self.device = next(model.parameters()).device
+        except StopIteration:
+            # model has no parameters (unlikely) -> cpu fallback
+            self.device = torch.device("cpu")
+        self.model = model
+
+        # ensure pad/eos token ids are present in model config (helpful for generate)
+        if getattr(self.model.config, "pad_token_id", None) is None and getattr(self.model.config, "eos_token_id", None) is not None:
+            self.model.config.pad_token_id = self.model.config.eos_token_id
+
+    def generate(self, prompt: str, max_new_tokens: int = 128, temperature: float = 0.0, top_p: float = 1.0, do_sample: bool = False) -> str:
+        """
+        Generate text from the local HF model.
+        Returns: single string (decoded).
+        """
+        # safety: ensure tokenizer callable
+        if self.tokenizer is None or not callable(getattr(self.tokenizer, "__call__", None)):
+            raise RuntimeError("Tokenizer is not ready or not callable.")
+
+        # Tokenize
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
+
+        # BatchEncoding (or others) might have .to(device) which moves contained tensors.
+        # If so, use it (this is efficient). Otherwise move each tensor manually.
+        try:
+            if hasattr(inputs, "to") and callable(getattr(inputs, "to")):
+                # BatchEncoding.to will move tensors inside it and return BatchEncoding
+                inputs = inputs.to(self.device)
         except Exception:
+            # ignore; fallback to manual move below
             pass
 
-    def generate(self, prompt: str, max_new_tokens: int = 256, temperature: float = 0.0, top_p: float = 1.0, do_sample: bool = False):
-        if self.model is None or self.tokenizer is None:
-            raise RuntimeError("Model/tokenizer not loaded")
-        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
-        device = next(self.model.parameters()).device
-        inputs = {k: v.to(device) for k, v in inputs.items()}
+        # Convert Mapping-like objects (BatchEncoding) into plain dict of tensors
+        if isinstance(inputs, Mapping):
+            inputs_dict = {k: v for k, v in inputs.items()}
+        elif hasattr(inputs, "items"):
+            # duck-typed fallback
+            inputs_dict = {k: v for k, v in inputs.items()}
+        else:
+            # Unexpected type, raise helpful error
+            raise RuntimeError(f"Tokenizer returned unsupported type for inputs: {type(inputs)}. Expected Mapping or BatchEncoding.")
 
-        try:
-            out = self.model.generate(
-                **inputs,
-                max_new_tokens=max_new_tokens,
-                do_sample=do_sample,
-                temperature=temperature,
-                top_p=top_p,
-                pad_token_id=self.tokenizer.pad_token_id,
-                eos_token_id=self.tokenizer.eos_token_id,
-            )
-            return self.tokenizer.decode(out[0], skip_special_tokens=True)
-        except Exception:
-            # fallback pipeline
-            from transformers import pipeline
-            gen = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer, device_map="auto")
-            res = gen(prompt, max_new_tokens=max_new_tokens, do_sample=do_sample, temperature=temperature, top_p=top_p)
-            return res[0]["generated_text"]
+        # Move tensors to device if they are not already on it
+        for k, v in list(inputs_dict.items()):
+            if isinstance(v, torch.Tensor):
+                inputs_dict[k] = v.to(self.device)
+
+        # Prepare generate kwargs
+        gen_kwargs = dict(
+            input_ids = inputs_dict.get("input_ids"),
+            attention_mask = inputs_dict.get("attention_mask"),
+            max_new_tokens = int(max_new_tokens),
+            do_sample = bool(do_sample),
+            temperature = float(temperature),
+            top_p = float(top_p),
+            pad_token_id = getattr(self.tokenizer, "pad_token_id", getattr(self.model.config, "pad_token_id", None)),
+            eos_token_id = getattr(self.tokenizer, "eos_token_id", getattr(self.model.config, "eos_token_id", None)),
+        )
+
+        # Remove None values
+        gen_kwargs = {k: v for k, v in gen_kwargs.items() if v is not None}
+
+        # Call generate
+        outputs = self.model.generate(**gen_kwargs)
+
+        # outputs may be tensor or tuple/list; extract first generated ids
+        if isinstance(outputs, torch.Tensor):
+            out_ids = outputs[0]
+        elif isinstance(outputs, (list, tuple)):
+            out_ids = outputs[0]
+        else:
+            # Unknown return type
+            raise RuntimeError(f"model.generate returned unexpected type: {type(outputs)}")
+
+        # Decode
+        decoded = self.tokenizer.decode(out_ids, skip_special_tokens=True)
+        return decoded

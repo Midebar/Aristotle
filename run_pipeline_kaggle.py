@@ -2,9 +2,8 @@
 run_pipeline_kaggle_adapter.py
 
 Usage:
-  python run_pipeline_kaggle_adapter.py            # runs full pipeline based on .env (or Kaggle env -- declare it on ipynb)
-  python run_pipeline_kaggle_adapter.py --kaggle   # (copy inputs to /kaggle/working)
-  python run_pipeline_kaggle_adapter.py --split-percent 10  # use only 10% of dataset
+  python run_pipeline_kaggle_adapter.py            # runs full pipeline based on .env (or Kaggle env)
+  python run_pipeline_kaggle_adapter.py --kaggle   # enable Kaggle adapter (copy inputs to /kaggle/working)
 
 This script expects a .env file in the same directory or environment variables set.
 When running on Kaggle, set environment variables (or let the adapter infer them):
@@ -52,7 +51,7 @@ def check_ollama(url: str) -> bool:
 
 def check_hf_model_env() -> bool:
     try:
-        import transformers 
+        import transformers
         return True
     except Exception:
         return False
@@ -139,6 +138,7 @@ def build_base_kwargs(env):
         "--data_path", env["DATA_PATH"],
         "--dataset_name", env["DATASET_NAME"],
         "--split", env["SPLIT"],
+        "--split_percent", env.get("DATA_SPLIT_PERCENTAGE", "10"),
         "--save_path", env["RESULTS_PATH"],
         "--api_key", env.get("OPENAI_API_KEY", ""),
         "--model_name", env["MODEL_NAME"],
@@ -158,7 +158,6 @@ def main():
     parser.add_argument("--skip-search", action="store_true")
     parser.add_argument("--skip-eval", action="store_true")
     parser.add_argument("--kaggle", action="store_true", help="Enable Kaggle adapter (copy inputs to /kaggle/working)")
-    parser.add_argument("--split-percent", "-n", type=int, default=100, help="Use only n%% of the dataset (integer 1-100).")
     args = parser.parse_args()
 
     env_path = ROOT / args.env
@@ -168,7 +167,7 @@ def main():
     if running_on_kaggle:
         print("Kaggle runtime detected or --kaggle provided.")
 
-    # environments
+    # environment / defaults
     BACKEND = os.environ.get("LLM_BACKEND", "ollama")
     MODEL = os.environ.get("LLM_MODEL", "")
     OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")

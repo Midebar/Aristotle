@@ -1,3 +1,4 @@
+# search_resolve.py
 import json
 import os
 from tqdm import tqdm
@@ -587,7 +588,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='./data')
     parser.add_argument('--dataset_name', type=str)
-    parser.add_argument('--split', type=str)
+    parser.add_argument('--split', type=str, default='dev')
+    parser.add_argument('--split-percent', type=int, default=100)
     parser.add_argument('--save_path', type=str, default='./results')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
     parser.add_argument('--api_key', type=str)
