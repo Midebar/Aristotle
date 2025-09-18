@@ -1,3 +1,4 @@
+# translate_decompose.py
 import json
 import os
 from tqdm import tqdm
@@ -15,6 +16,7 @@ class GPT3_Reasoning_Graph_Baseline:
         self.data_path = args.data_path
         self.dataset_name = args.dataset_name
         self.split = args.split
+        self.split_percent = args.split_percent
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.mode = args.mode
@@ -66,9 +68,10 @@ class GPT3_Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_raw_dataset(self, split):
+    def load_raw_dataset(self, split, split_percent):
         with open(os.path.join(self.data_path, self.dataset_name, f'{split}.json')) as f:
             raw_dataset = json.load(f)
+            raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * split_percent / 100))]
         return raw_dataset
         
     def index_context(self, context):
@@ -390,10 +393,14 @@ class GPT3_Reasoning_Graph_Baseline:
         print("Translating...")
         prompts_a = self.construct_prompt_a(example, in_context_examples_trans)
         responses_a = self.openai_api.generate(prompts_a)
-        responses_a = responses_a[0]
-        print("Translation response: ", responses_a)
+        # responses_a might be (text, finish_reason) or a string; normalize to string
+        if isinstance(responses_a, (list, tuple)):
+            responses_a_text = responses_a[0]
+        else:
+            responses_a_text = responses_a
+        print("Translation response: ", responses_a_text)
         
-        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a)
+        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a_text)
         print("Translated Facts1: ", translated_facts)
         translated_facts = self.clean_irrelevant_lines(translated_facts)
         print(f"Translated Facts2: {translated_facts}")
@@ -409,15 +416,18 @@ class GPT3_Reasoning_Graph_Baseline:
         print("Decomposing rules...")
         if and_or:
             responses_and_or_process = self.openai_api.generate(self.construct_prompt_b(and_or, icl_and_or_decomposer))
-            responses_and_or = self.post_process_decompose(responses_and_or_process[0])
+            responses_and_or_text = responses_and_or_process[0] if isinstance(responses_and_or_process, (list,tuple)) else responses_and_or_process
+            responses_and_or = self.post_process_decompose(responses_and_or_text)
             responses_and_or = self.clean_irrelevant_lines(responses_and_or)
         if either_or:
             responses_either_or_process = self.openai_api.generate(self.construct_prompt_b(either_or, icl_either_or_decomposer))
-            responses_either_or = self.post_process_decompose(responses_either_or_process[0])
+            responses_either_or_text = responses_either_or_process[0] if isinstance(responses_either_or_process, (list,tuple)) else responses_either_or_process
+            responses_either_or = self.post_process_decompose(responses_either_or_text)
             responses_either_or = self.clean_irrelevant_lines(responses_either_or)
         if biconditional:
             responses_biconditional_process = self.openai_api.generate(self.construct_prompt_b(biconditional, icl_biconditional_decomposer))
-            responses_biconditional = self.post_process_decompose(responses_biconditional_process[0])
+            responses_biconditional_text = responses_biconditional_process[0] if isinstance(responses_biconditional_process, (list,tuple)) else responses_biconditional_process
+            responses_biconditional = self.post_process_decompose(responses_biconditional_text)
             responses_biconditional = self.clean_irrelevant_lines(responses_biconditional)
         
         responses_b = '\n'.join(filter(None, [responses_and_or, responses_either_or, responses_biconditional]))
@@ -462,7 +472,7 @@ class GPT3_Reasoning_Graph_Baseline:
         return output, None
         
     def reasoning_graph_generation(self):
-        raw_dataset = self.load_raw_dataset(self.split)
+        raw_dataset = self.load_raw_dataset(self.split, self.split_percent)
         print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
 
         in_context_examples_trans = self.load_in_context_examples_trans()
@@ -522,6 +532,7 @@ def parse_args():
     parser.add_argument('--data_path', type=str, default='./data')
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--split', type=str, default='dev')
+    parser.add_argument('--split_percent', type=int, default=100)
     parser.add_argument('--save_path', type=str, default='./results')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
     parser.add_argument('--api_key', type=str)
