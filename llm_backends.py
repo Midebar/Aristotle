@@ -1,120 +1,108 @@
 # llm_backends.py
+from pathlib import Path
 import os
-import json
-import requests
-from typing import List, Dict, Optional
+import torch
 
-OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434")
-
-# ---- Ollama HTTP chat wrapper ----
-def _call_ollama_chat(model: str, messages: List[Dict], max_tokens: int = 512, temperature: float = 0.0):
-    payload = {
-        "model": model,
-        "messages": messages,
-        "max_tokens": max_tokens,
-        "temperature": temperature,
-        "stream": False,
-    }
-    r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=600)
-    r.raise_for_status()
-    resp = r.json()
+def _ensure_pad_token(tokenizer, model):
     try:
-        return resp["choices"][0]["message"]["content"]
+        if getattr(tokenizer, "pad_token", None) is None:
+            if getattr(tokenizer, "eos_token", None) is not None:
+                tokenizer.pad_token = tokenizer.eos_token
+        if getattr(model.config, "pad_token_id", None) is None or isinstance(model.config.pad_token_id, bool):
+            model.config.pad_token_id = tokenizer.pad_token_id
     except Exception:
-        return json.dumps(resp, indent=2)
+        pass
 
-# ---- OpenAI fallback ----
-try:
-    import openai  # type: ignore
-    OPENAI_AVAILABLE = True
-except Exception:
-    OPENAI_AVAILABLE = False
+class HFBackend:
+    def __init__(self, local_model_path: str = None, hf_model_id: str = None, quantize_4bit: bool = True):
+        self.local_model_path = local_model_path
+        self.hf_model_id = hf_model_id
+        self.model = None
+        self.tokenizer = None
+        self.device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+        self.quantize_4bit = quantize_4bit
+        self._load()
 
-def _call_openai_chat(model: str, messages: List[Dict], max_tokens: int = 512, temperature: float = 0.0):
-    if not OPENAI_AVAILABLE:
-        raise RuntimeError("openai package not installed/configured")
-    resp = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        temperature=temperature
-    )
-    return resp["choices"][0]["message"]["content"]
+    def _resolve_source(self):
+        if self.local_model_path and Path(self.local_model_path).exists():
+            return str(Path(self.local_model_path))
+        if self.hf_model_id:
+            return self.hf_model_id
+        raise RuntimeError("No model path or HF id provided for HFBackend")
 
-# ---- HF Transformers + bitsandbytes backend (lazy init) ----
-_HF_STATE = {"model": None, "tokenizer": None, "device": None, "model_id": None}
+    def _load(self):
+        src = self._resolve_source()
+        try:
+            from transformers import AutoTokenizer, AutoModelForCausalLM
+            from transformers import BitsAndBytesConfig
+        except Exception as e:
+            raise RuntimeError("Install transformers/bitsandbytes/safetensors first") from e
 
-def _init_hf_model(hf_model_id: str, load_in_4bit: bool = False, device_map: str = "auto", offload_folder: Optional[str] = None):
-    if _HF_STATE["model"] is not None and _HF_STATE["model_id"] == hf_model_id:
-        print("HF model already loaded:", hf_model_id)
-        return
-    from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig  # type: ignore
-    import torch  # type: ignore
+        # Tokenizer: try remote code then fallback
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(src)
+        except Exception:
+            self.tokenizer = AutoTokenizer.from_pretrained(src)
 
-    bnb_config = None
-    if load_in_4bit:
-        bnb_config = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_compute_dtype=torch.float16)
+        # Model: attempt bitsandbytes 4-bit then fallback
+        try:
+            if self.quantize_4bit:
+                try:
+                    quant_config = BitsAndBytesConfig(load_in_4bit=True)
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        src,
+                        device_map="auto",
+                        quantization_config=quant_config,
+                        trust_remote_code=True,
+                    )
+                except Exception:
+                    self.model = AutoModelForCausalLM.from_pretrained(
+                        src,
+                        device_map="auto",
+                        load_in_4bit=True,
+                        trust_remote_code=True,
+                    )
+            else:
+                self.model = AutoModelForCausalLM.from_pretrained(src, device_map="auto", trust_remote_code=True)
+        except Exception as e:
+            try:
+                # final fallback to CPU non-quantized
+                self.model = AutoModelForCausalLM.from_pretrained(src, trust_remote_code=True, device_map=None)
+                self.model.to(self.device)
+            except Exception as e2:
+                raise RuntimeError(f"Model load failed for {src}: {e2}") from e2
 
-    tokenizer = AutoTokenizer.from_pretrained(hf_model_id)
-    model = AutoModelForCausalLM.from_pretrained(
-        hf_model_id,
-        device_map=device_map,
-        torch_dtype=torch.float16,
-        quantization_config=bnb_config,
-        trust_remote_code=True,
-        low_cpu_mem_usage=True,
-        offload_folder=offload_folder,
-    )
-    _HF_STATE["model"] = model
-    _HF_STATE["tokenizer"] = tokenizer
-    _HF_STATE["device"] = next(model.parameters()).device
-    _HF_STATE["model_id"] = hf_model_id
+        _ensure_pad_token(self.tokenizer, self.model)
 
-def _call_hf_chat(hf_model_id: str, messages: List[Dict], max_tokens: int = 512, temperature: float = 0.0,
-                  load_in_4bit: bool = False, offload_folder: Optional[str] = None, device_map: str = "auto"):
-    if _HF_STATE["model"] is None or _HF_STATE["model_id"] != hf_model_id:
-        _init_hf_model(hf_model_id, load_in_4bit=load_in_4bit, device_map=device_map, offload_folder=offload_folder)
+        # if generate is not callable, bind default HF generate
+        try:
+            if not callable(getattr(self.model, "generate", None)):
+                from transformers.generation import GenerationMixin
+                self.model.generate = GenerationMixin.generate.__get__(self.model, type(self.model))
+        except Exception:
+            pass
 
-    model = _HF_STATE["model"]
-    tokenizer = _HF_STATE["tokenizer"]
-    device = _HF_STATE["device"]
+    def generate(self, prompt: str, max_new_tokens: int = 256, temperature: float = 0.0, top_p: float = 1.0, do_sample: bool = False):
+        if self.model is None or self.tokenizer is None:
+            raise RuntimeError("Model/tokenizer not loaded")
+        inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
+        device = next(self.model.parameters()).device
+        inputs = {k: v.to(device) for k, v in inputs.items()}
 
-    # Build a concatenated chat-style prompt from messages
-    prompt_parts = []
-    for m in messages:
-        role = m.get("role", "user")
-        prompt_parts.append(f"[{role}]: {m.get('content','')}")
-    prompt = "\n".join(prompt_parts) + "\n[assistant]:"
-
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
-    gen = model.generate(
-        **inputs,
-        max_new_tokens=max_tokens,
-        do_sample=(temperature > 0.0),
-        temperature=temperature,
-        eos_token_id=tokenizer.eos_token_id,
-    )
-    out = tokenizer.decode(gen[0], skip_special_tokens=True)
-    idx = out.find("[assistant]:")
-    return out[idx + len("[assistant]:"):].strip() if idx != -1 else out[len(prompt):].strip()
-
-# ---- public wrapper ----
-def call_chat(model: str, messages: List[Dict], backend: str = "ollama", max_tokens: int = 512, temperature: float = 0.0, **kwargs) -> str:
-    """
-    model: HF model id (for backend='hf'), or Ollama model name (backend='ollama'),
-           or OpenAI model id (backend='openai').
-    backend: 'ollama' | 'hf' | 'openai'
-    kwargs: load_in_4bit (bool), offload_folder (str), device_map (str)
-    """
-    backend = backend.lower()
-    if backend == "ollama":
-        return _call_ollama_chat(model, messages, max_tokens=max_tokens, temperature=temperature)
-    elif backend == "hf":
-        return _call_hf_chat(model, messages, max_tokens=max_tokens, temperature=temperature,
-                             load_in_4bit=kwargs.get("load_in_4bit", False),
-                             offload_folder=kwargs.get("offload_folder", None),
-                             device_map=kwargs.get("device_map", "auto"))
-    elif backend == "openai":
-        return _call_openai_chat(model, messages, max_tokens=max_tokens, temperature=temperature)
-    else:
-        raise ValueError(f"Unknown backend: {backend}")
+        try:
+            out = self.model.generate(
+                **inputs,
+                max_new_tokens=max_new_tokens,
+                do_sample=do_sample,
+                temperature=temperature,
+                top_p=top_p,
+                pad_token_id=self.tokenizer.pad_token_id,
+                eos_token_id=self.tokenizer.eos_token_id,
+            )
+            return self.tokenizer.decode(out[0], skip_special_tokens=True)
+        except Exception:
+            # fallback pipeline
+            from transformers import pipeline
+            gen = pipeline("text-generation", model=self.model, tokenizer=self.tokenizer, device_map="auto")
+            res = gen(prompt, max_new_tokens=max_new_tokens, do_sample=do_sample, temperature=temperature, top_p=top_p)
+            return res[0]["generated_text"]
