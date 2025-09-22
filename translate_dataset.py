@@ -20,10 +20,10 @@ Parameters:
 Usage examples:
 
 # translate full 100% dev split using .env settings:
-python translate_dataset.py --dataset_name ProofWriter --split dev --output_dir ./translated --sample-pct 100
+python translate_dataset.py --dataset_name ProntoQA --split dev --output_dir ./translated --sample-pct 100
 
 # translate only 10%:
-python translate_dataset.py --dataset_name ProofWriter --split dev --output_dir ./translated --sample-pct 10
+python translate_dataset.py --dataset_name ProntoQA --split dev --output_dir ./translated --sample-pct 10
 
 # translate only 1 row of data: set --sample-pct 0
 
@@ -132,27 +132,49 @@ def default_translation_prompt(example: Dict[str, Any]) -> str:
     """
     Build a strict translation prompt instructing the model to output **only**
     a single JSON object which is the translated example.
+
+    IMPORTANT: This prompt is intentionally very explicit about NOT translating
+    the JSON key names. The output MUST contain the exact keys:
+      id, context, question, options, answer, explanation
+    (and any other non-textual keys must remain unchanged).
     """
     # pretty-print the JSON to give model full context
     example_json = json.dumps(example, indent=2, ensure_ascii=False)
 
     prompt = f"""
-        You are a professional translator. Translate the following dataset example into Indonesian (Bahasa Indonesia).
-        IMPORTANT RULES (follow exactly):
-        1) Output ONLY one valid JSON object that is the translated example. Do NOT output any explanation, commentary, or extra text.
-        2) Do NOT repeat or echo the original example. Do not include the original English text anywhere in your output.
-        3) Preserve the JSON keys exactly (do not rename keys). Translate only natural language values (context, question, options, explanation, etc.).
-        4) Keep letter labels like "A", "B", "C" unchanged; translate the option texts only.
-        5) Start the response with the first character being "{" and end with the corresponding final "}" — nothing before or after it.
-        6) Do not use markdown, backticks, or code fences.
+        You are a professional translator. Translate only the *values* (natural-language text)
+        inside the JSON example below into Indonesian (Bahasa Indonesia).  DO NOT change, rename,
+        or translate any JSON key names. The output must use the exact key names listed below.
+
+        REQUIREMENTS (follow exactly):
+        1) Output ONLY one valid JSON object (nothing else) that is the translated example.
+        2) DO NOT translate or rename any key names. The output JSON MUST contain the exact keys:
+        id, context, question, options, answer, explanation
+        (if any extra keys exist in the input, keep them with their original key names).
+        3) Preserve the data types and structure: strings remain strings, lists remain lists, booleans remain booleans.
+        4) Do NOT modify the value of the "id" field. Keep the same id string as in the input.
+        5) For multiple-choice options keep the letter labels (A), (B), (C), etc. unchanged — translate only the option text after the label.
+        6) Start the response with '{' and end with '}' — nothing before or after (no markdown, no comments).
         7) If you cannot produce valid JSON, return exactly the single token: ERROR
 
-        Example to translate (do not repeat this in your response):
+        Below is the example to translate (do NOT repeat the original text in the output; only return the translated JSON object):
+
         {example_json}
 
-        Produce the translated JSON now and nothing else.
+        Desired output format example (this is an illustration of keys only — DO NOT copy these values; translate the actual values from the input):
+        {{
+        "id": "ProntoQA_1",
+        "context": "Contoh konteks (terjemahan bahasa Indonesia)...",
+        "question": "Contoh pertanyaan (terjemahan bahasa Indonesia)?",
+        "options": ["A) Pilihan pertama", "B) Pilihan kedua"],
+        "answer": "B",
+        "explanation": ["Langkah 1 ...", "Langkah 2 ..."]
+        }}
+
+        Now produce the translated JSON object (with the exact keys as specified) and nothing else.
         """
     return prompt.strip()
+
 
 
 def load_prompt_template(prompts_root: Path, dataset_name: str) -> Optional[str]:
