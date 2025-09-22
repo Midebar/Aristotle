@@ -1,117 +1,25 @@
 [
   {
     "id": "ProntoQA_328",
-    "konteks": "Wumpus besar. Wumpus numpus. Setiap numpus logam. Numpus yumpus. Setiap yumpus cerah. Setiap yumpus jompus. Jompus tidak pahit. Jompus zumpus. Setiap zumpus transparan. Zumpus rompus. Setiap rompus bumi. Rompus impus. Setiap impus baik. Setiap impus dumpus. Dumpus tidak panas. Dumpus vumpus. Setiap tumpus tidak transparan. Wren wumpus.",
-    "pertanyaan": "Apakah pernyataan berikut benar atau salah? Wren transparan?",
-    "opsi": [
+    "context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses tidak pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus adalah bumi. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses tidak panas. Dumpuses adalah vumpuses. Setiap tumpus tidak transparan. Wren adalah wumpus.",
+    "question": "Apakah pernyataan berikut benar atau salah? Wren transparan?",
+    "options": [
       "A) Benar",
       "B) Salah"
     ],
-    "jawaban": "A",
-    "penjelasan": [
-      "Wren wumpus.",
-      "Wumpus numpus.",
-      "Wren numpus.",
-      "Numpus yumpus.",
-      "Wren yumpus.",
-      "Setiap yumpus jompus.",
-      "Wren jompus.",
-      "Jompus zumpus.",
-      "Wren zumpus.",
+    "answer": "B",
+    "explanation": [
+      "Wren adalah wumpus.",
+      "Wumpuses adalah numpuses.",
+      "Wren adalah numpus.",
+      "Numpuses adalah yumpuses.",
+      "Wren adalah yumpus.",
+      "Setiap yumpus adalah jompus.",
+      "Wren adalah jompus.",
+      "Jompuses adalah zumpuses.",
+      "Wren adalah zumpus.",
       "Setiap zumpus transparan.",
       "Wren transparan."
-    ]
-  },
-  {
-    "id": "ProntoQA_58",
-    "context": "Tumpuses itu baik. Setiap tumpus adalah impus. Impus tidak membosankan. Impus adalah jompus. Jompus tidak besar. Jompus adalah zumpus. Setiap zumpus bahagia. Zumpus adalah wumpus. Setiap wumpus manis. Wumpus adalah yumpus. Yumpus adalah jeruk. Setiap yumpus adalah numpus. Numpus transparan. Setiap numpus adalah vumpus. Vumpus manis. Setiap vumpus adalah rompus. Fae adalah zumpus.",
-    "pertanyaan": "Apakah pernyataan berikut benar atau salah? Fae tidak manis.",
-    "opsi": [
-      "A) Benar",
-      "B) Salah"
-    ],
-    "jawaban": "B",
-    "penjelasan": [
-      "Fae adalah zumpus.",
-      "Zumpus adalah wumpus.",
-      "Fae adalah wumpus.",
-      "Wumpus adalah yumpus.",
-      "Fae adalah yumpus.",
-      "Setiap yumpus adalah numpus.",
-      "Fae adalah numpus.",
-      "Setiap numpus adalah vumpus.",
-      "Fae adalah vumpus.",
-      "Vumpus manis.",
-      "Fae manis."
-    ]
-  },
-  {
-    "id": "ProntoQA_13",
-    "konteks": "Setiap yumpus transparan. Setiap yumpus adalah dumpus. Vumpuses tidak membosankan. Dumpuses adalah floral. Setiap dumpus adalah zumpus. Setiap zumpus panas. Setiap zumpus adalah impus. Setiap impus besar. Setiap impus adalah rompus. Rompuses pedas. Setiap rompus adalah numpus. Numpuses ramah. Setiap numpus adalah jompus. Jompuses membosankan. Setiap jompus adalah wumpus. Wumpuses tidak logam. Setiap wumpus adalah tumpus. Max adalah zumpus.",
-    "pertanyaan": "Apakah pernyataan berikut benar atau salah? Max membosankan.",
-    "opsi": [
-      "A) Benar",
-      "B) Salah"
-    ],
-    "jawaban": "B",
-    "penjelasan": [
-      "Max adalah zumpus.",
-      "Setiap zumpus adalah impus.",
-      "Max adalah impus.",
-      "Setiap impus adalah rompus.",
-      "Max adalah rompus.",
-      "Setiap rompus adalah numpus.",
-      "Max adalah numpus.",
-      "Setiap numpus adalah jompus.",
-      "Max adalah jompus.",
-      "Jompuses membosankan.",
-      "Max membosankan."
-    ]
-  },
-  {
-    "id": "ProntoQA_380",
-    "konteks": "Setiap dumpus besar. Wumpus bahagia. Setiap dumpus adalah impus. Impus transparan. Impus jompus. Setiap jompus buah. Setiap jompus zumpus. Zumpus oranye. Setiap zumpus vumpus. Vumpus cerah. Setiap vumpus tumpus. Setiap tumpus tidak manis. Tumpus rompus. Setiap rompus logam. Rompus yumpus. Yumpus tidak bahagia. Yumpus numpus. Polly zumpus.",
-    "pertanyaan": "Apakah pernyataan ini benar atau salah? Polly tidak bahagia.",
-    "opsi": [
-      "A) Benar",
-      "B) Salah"
-    ],
-    "jawaban": "B",
-    "penjelasan": [
-      "Polly zumpus.",
-      "Setiap zumpus vumpus.",
-      "Polly vumpus.",
-      "Setiap vumpus tumpus.",
-      "Polly tumpus.",
-      "Tumpus rompus.",
-      "Polly rompus.",
-      "Rompus yumpus.",
-      "Polly yumpus.",
-      "Yumpus tidak bahagia.",
-      "Polly tidak bahagia."
-    ]
-  },
-  {
-    "id": "ProntoQA_141",
-    "konteks": "Setiap jompus transparan. Setiap jompus adalah wumpus. Wumpus adalah merah. Wumpus adalah yumpus. Zumpus cerah. Yumpus pemalu. Setiap yumpus adalah tumpus. Tumpus baik. Setiap tumpus adalah numpus. Numpus tidak cerah. Numpus adalah impus. Setiap impus manis. Impus adalah dumpus. Setiap dumpus bumi. Setiap dumpus adalah vumpus. Vumpus panas. Vumpus adalah rompus. Alex adalah jompus.",
-    "pertanyaan": "Apakah pernyataan ini benar atau salah? Alex cerah.",
-    "opsi": [
-      "A) Benar",
-      "B) Salah"
-    ],
-    "jawaban": "B",
-    "penjelasan": [
-      "Alex adalah jompus.",
-      "Setiap jompus adalah wumpus.",
-      "Alex adalah wumpus.",
-      "Wumpus adalah yumpus.",
-      "Alex adalah yumpus.",
-      "Setiap yumpus adalah tumpus.",
-      "Alex adalah tumpus.",
-      "Setiap tumpus adalah numpus.",
-      "Alex adalah numpus.",
-      "Numpus tidak cerah.",
-      "Alex tidak cerah."
     ]
   }
 ]

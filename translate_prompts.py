@@ -12,13 +12,13 @@ python translate_prompts.py --dataset_name ProntoQA --prompts_root ./prompts --o
 # Translate a single file:
 python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --output_dir ./prompts_translated
 """
+
 import os
 import sys
 import argparse
-import json
 import re
 from pathlib import Path
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 from tqdm import tqdm
 
@@ -82,6 +82,7 @@ def default_prompt_template(prompt_text: str) -> str:
     Requests the output to be placed between START_MARKER and END_MARKER.
     """
     # NOTE: keep START_MARKER and END_MARKER exact. We will extract between them.
+    # This prompt explicitly forbids translating anything inside [[...]].
     prompt = f"""
         You are a professional translator translating prompt templates for dataset-processing pipelines.
         Translate the following prompt text into Bahasa Indonesia (Bahasa Indonesia).
@@ -93,9 +94,11 @@ def default_prompt_template(prompt_text: str) -> str:
         <translated prompt text here>
         {END_MARKER}
         - Do NOT include the original prompt, commentary, numbering, or any extra text outside the markers.
-        - Preserve ALL placeholders exactly, including tokens that look like [[PLACEHOLDER]], variable markers like $x, $y, $var, and patterns like {{var}} or <tag>.
+        - Preserve ALL placeholders exactly as they appear, including tokens that look like [[PLACEHOLDER]].
+        **Do not translate or change the inner text of bracketed placeholders**. For example, if the original contains [[PREMISES]] you must output [[PREMISES]] unchanged.
+        - Preserve variable markers like $x, $y, $var, and patterns like {{var}} or <tag> exactly.
         - Preserve LaTeX and math delimiters (\\(...\\), \\[...\\], $...$), code fences (``` ... ```), and any markup/markdown structure. Do NOT translate the contents inside code fences or backticks.
-        - Preserve pipeline tokens like [[PREMISES]] exactly (we may later optionally translate their inner words).
+        - Preserve pipeline tokens like [[PREMISES]], [[CONJECTURES]] exactly.
         - Keep file structure, headings, punctuation and line breaks as in the original; translate only the human-readable instruction text.
         - Output only the translated prompt text between the markers.
 
@@ -126,84 +129,23 @@ def extract_translation(raw_text: str, start_marker: str = START_MARKER, end_mar
     # give up: return raw_text
     return raw_text.strip()
 
-def load_placeholder_map(prompts_root: Path, dataset_name: Optional[str]) -> Dict[str, str]:
+def validate_placeholders(original_text: str, translated_text: str) -> bool:
     """
-    Load dataset-specific placeholder mapping from prompts/{dataset_name}/placeholders_map.json if present.
-    Otherwise return a small built-in default mapping (upper-case keys).
-    Mapping keys should be the inside of [[...]] (case-insensitive).
-    Example JSON:
-      { "PREMISES": "PREMIS", "CONJECTURE": "KONJEKTUR" }
+    Ensure placeholders and important tokens are preserved exactly:
+      - For each [[TOKEN]] in original, require that exact '[[TOKEN]]' occurs in translated_text.
+      - Ensure $ variables and LaTeX delimiters are preserved if present.
+      - Ensure code fences/backticks are preserved.
+    Returns True if validation passes, False otherwise.
     """
-    default_map = {
-        "PREMISES": "PREMIS",
-        "CONJECTURE": "KONJEKTUR",
-        "CONTEXT": "KONTEKS",
-        "FACTS": "FAKTA",
-        "RULES": "ATURAN",
-        "EXAMPLE": "CONTOH",
-        "FINAL FORM": "BENTUK_AKHIR",
-        "FINAL_FORM": "BENTUK_AKHIR",
-        "PREMISE": "PREMIS",
-        "CONJECTURES": "KONJEKTUR",
-        "SELECTED-CLAUSE": "KLAUSA_TERPILIH",
-        "OPTIONS": "OPSI",
-    }
-    if not dataset_name:
-        return default_map
-    candidate = prompts_root / dataset_name / "placeholders_map.json"
-    if candidate.exists():
-        try:
-            text = candidate.read_text(encoding="utf-8")
-            loaded = json.loads(text)
-            # normalize keys to uppercase
-            return {k.upper(): v for k, v in loaded.items()}
-        except Exception:
-            # ignore and return default
-            return default_map
-    return default_map
-
-def translate_bracketed_placeholders(translated_text: str, placeholder_map: Dict[str,str]) -> str:
-    """
-    Replace the INSIDE of [[...]] according to placeholder_map (case-insensitive).
-    Example: [[PREMISES]] -> [[PREMIS]] if mapping has PREMISES->PREMIS.
-
-    This function only replaces inner token, keeping double brackets.
-    """
-    def repl(m: re.Match):
-        inner = m.group(1)  # original inner text
-        key = inner.strip().upper()
-        if key in placeholder_map:
-            return f"[[{placeholder_map[key]}]]"
-        # no mapping -> keep original exactly as-is
-        return m.group(0)
-    return re.sub(r'\[\[\s*([^\]]+?)\s*\]\]', repl, translated_text)
-
-def validate_placeholders(original_text: str, translated_text: str, placeholder_map: Dict[str,str]) -> bool:
-    """
-    Basic checks to ensure placeholders/patterns are preserved or intentionally translated:
-      - For each [[TOKEN]] in original: either [[TOKEN]] exists in translated OR [[mapped_value]] exists (if mapping).
-      - If original had $ tokens, ensure translated has at least one $ or alternative LaTeX delimiters.
-      - Ensure code fences and backticks are preserved if present.
-    """
-    # bracket placeholders
+    # bracket placeholders: require exact preservation
     orig_ph = re.findall(r'\[\[\s*([^\]]+?)\s*\]\]', original_text)
     for ph in set(orig_ph):
-        ph_u = ph.strip().upper()
         raw_form = f"[[{ph.strip()}]]"
-        mapped_good = False
-        # Allowed: exact preserved
-        if raw_form in translated_text:
-            continue
-        # Allowed: mapped value present
-        if ph_u in placeholder_map:
-            mapped = placeholder_map[ph_u]
-            if f"[[{mapped}]]" in translated_text:
-                continue
-        # Not preserved
-        # Unknown: maybe model translated the inner word differently; consider it a failure
-        return False
+        if raw_form not in translated_text:
+            # not preserved exactly -> fail
+            return False
 
-    # $ variables presence check (if original had $ tokens, require at least some $ in translated)
+    # $ variables presence check (if original had $ tokens, require presence in translated)
     if "$" in original_text:
         if "$" not in translated_text and ("\\(" not in translated_text and "\\[" not in translated_text):
             return False
@@ -212,7 +154,7 @@ def validate_placeholders(original_text: str, translated_text: str, placeholder_
     if "```" in original_text and "```" not in translated_text:
         return False
     if "`" in original_text and "`" not in translated_text:
-        # if original used single backtick occurrences, be forgiving: only fail if none at all
+        # be forgiving only if original had single backticks, but require at least one backtick in translated
         return False
 
     return True
@@ -277,7 +219,6 @@ def main():
 
     dst_base = Path(args.output_dir) / (args.dataset_name or "single_file")
     failed = []
-    placeholder_map = load_placeholder_map(Path(args.prompts_root), args.dataset_name)
 
     for p in tqdm(files, desc="Translating prompts"):
         try:
@@ -311,11 +252,8 @@ def main():
             # try raw out (it might already only contain translation)
             translated_extracted = raw_out.strip()
 
-        # Now, translate bracketed placeholders according to the map (this is intentional)
-        translated_after_placeholders = translate_bracketed_placeholders(translated_extracted, placeholder_map)
-
         # Validate preservation of placeholders / tokens
-        ok = validate_placeholders(text, translated_after_placeholders, placeholder_map)
+        ok = validate_placeholders(text, translated_extracted)
         if not ok:
             print(f"[translate_prompts] Placeholder validation FAILED for {p}; saving original as fallback.")
             # Save original file as fallback (but still write to dst so pipeline can keep running)
@@ -328,7 +266,7 @@ def main():
 
         # write translated file
         try:
-            written = write_translated_file(dst_base, p, translated_after_placeholders, overwrite=args.overwrite)
+            written = write_translated_file(dst_base, p, translated_extracted, overwrite=args.overwrite)
         except Exception as e:
             print(f"[translate_prompts] Failed to write translated file for {p}: {e}")
             failed.append(p)
