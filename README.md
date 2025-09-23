@@ -94,3 +94,100 @@ Please cite the paper if you use this framework during your research.
   url          = {https://arxiv.org/abs/2412.16953}
 }
 ```
+
+
+**CUSTOM RUN**
+
+Runpod Specific Run on Jupyter Notebook:
+Dont use A100 PCIe, Kernel keeps restarting when loading HFbackend on SahabatAI-llama3-8b-v1-instruct
+4-bit quantization makes batch_size >1 error, while non 4-bit quantization makes it OOM GPU on some cases (Tested on A100 80GB SXM)
+
+Connect with SSH or Web terminal on the machine
+Check os version: cat /etc/os-release
+Update first:
+apt update
+apt install git-lfs
+
+***TRANSLATION***
+!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
+
+
+!git lfs install
+!git clone https://huggingface.co/aisingapore/Llama-SEA-LION-v3.5-8B-R LLM_MODELS/Llama-SEA-LION-v3.5-8B-R
+
+
+import os
+from pathlib import Path
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+######### Also useful to reduce thread contention:
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
+snapshot_path = "/workspace/LLM_MODELS/Llama-SEA-LION-v3.5-8B-R" ############## <--- Change this based on platform and models
+
+os.environ["LOCAL_MODEL_PATH"] = snapshot_path
+######### set LLM_MODEL to the same path so OpenAIModel or translate script picks it up if it uses LLM_MODEL env
+os.environ["LLM_MODEL"] = snapshot_path
+
+######## enable 4-bit for quant (and bitsandbytes is set up)
+os.environ["LLM_LOAD_IN_4BIT"] = "1"  # or "0" to disable quantization
+
+print("LOCAL_MODEL_PATH =", os.environ["LOCAL_MODEL_PATH"])
+print("LLM_MODEL =", os.environ["LLM_MODEL"])
+
+
+######### Quick test generation using existing HFBackend
+
+from llm_backends import HFBackend
+import os, traceback
+
+local_path = os.environ.get("LOCAL_MODEL_PATH")
+print("Using local_path:", local_path)
+
+try:
+    ######### create backend that points to the local model path (this uses the existing class)
+    backend = HFBackend(local_model_path=local_path, hf_model_id=None, quantize_4bit=(os.environ.get("LLM_LOAD_IN_4BIT","0")=="1"))
+    print("HFBackend initialized OK")
+    print("Tokenizer pad_token_id:", getattr(backend.tokenizer, "pad_token_id", None))
+    print("Model device:", getattr(backend, "device", None))
+    ######### test small generation
+    prompt = "Translate to formal logic: If it rains, the ground will be wet."
+    out = backend.generate(prompt, max_new_tokens=200, temperature=0.0, top_p=1.0, do_sample=False)
+    print("=== GENERATION ===")
+    print(out[:2000])
+except Exception as e:
+    print("HFBackend init / generate failed:")
+    traceback.print_exc()
+
+print("Finished generating/testing")
+
+
+!python translate_dataset.py --dataset_name ProntoQA --split dev --sample-pct 10 --batch_size 1
+print("\nFisnished translating dataset\n")
+
+
+!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite
+print("\nFisnished translating prompts\n")
+
+Then download the translated dataset and prompts
+Delete the pod after, disk usage is EXPENSIVE
+
+***TRANSLATION_DECOMPOSE DATASET***
+!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
+
+
+!git lfs install
+!git clone https://huggingface.co/Sahabat-AI/llama3-8b-cpt-sahabatai-v1-instruct LLM_MODELS/llama3-8b-cpt-sahabatai-v1-instruct
+
+***SCORING***
+We can check for other LLM performance, especially on instruction following ini this case on Indonesia dataset in: https://leaderboard.sea-lion.ai/
+Qwen3-8b seems good for general purpose LLM
+
+***TRANSLATION***
+Komodo on paper is good for translation, but there's no instruct version, even then It compared to Llama2, gpt3.5, Qwen1.5
+NusaMT is built on Komodo-base and on paper excel on Bali and Minang
+Based on leaderboard above, use SEALIONv3-8b
+Tried to use SahabatAIv1-8b, it took 50 mins, while SEALION took 15 mins to translate 10% of ProntoQA dataset
+
+**CUSTOM RUN END**
