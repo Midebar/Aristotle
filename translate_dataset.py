@@ -20,10 +20,10 @@ Parameters:
 Usage examples:
 
 # translate full 100% dev split using .env settings:
-python translate_dataset.py --dataset_name ProntoQA --split dev --output_dir ./translated --sample-pct 100
+python translate_dataset.py --dataset_name ProntoQA --split dev --sample-pct 100
 
 # translate only 10%:
-python translate_dataset.py --dataset_name ProntoQA --split dev --output_dir ./translated --sample-pct 10
+python translate_dataset.py --dataset_name ProntoQA --split dev --sample-pct 10
 
 # translate only 1 row of data: set --sample-pct 0
 
@@ -161,7 +161,7 @@ def default_translation_prompt(example: Dict[str, Any]) -> str:
 
         {example_json}
 
-        Desired output format example (this is an illustration of keys only — DO NOT copy these values; translate the actual values from the input):
+        Desired output format example (this is an illustration of keys only — DO NOT COPY OR PUT THESE VALUES IN THE OUTPUT!; translate the actual values from the input):
         {{
         "id": "ProntoQA_1",
         "context": "Contoh konteks (terjemahan bahasa Indonesia)...",
