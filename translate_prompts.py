@@ -105,14 +105,15 @@ def default_prompt_template(prompt_text: str) -> str:
     # Instruction explicitly tells model to preserve backticked masks exactly.
     prompt = f"""
         You are a professional translator translating prompt templates for dataset-processing pipelines.
-        Translate the following prompt text into Bahasa Indonesia.
+        Translate the following prompt text (natural-language text) into Bahasa Indonesia.
 
-        IMPORTANT (FOLLOW EXACTLY):
+        CRITICAL REQUIREMENTS:
         - Produce ONLY the translated prompt text and NOTHING else.
         - Place the translated prompt EXACTLY between the two marker lines below (markers MUST appear):
         {START_MARKER}
         <translated prompt text here>
         {END_MARKER}
+        - Do NOT translate boolean values like True, False, yes, no, etc. Leave them as-is.
         - We HAVE MASKED placeholder tokens as inline code/backticks (for example `__PH_0__`). You MUST preserve those backticked tokens exactly (do NOT translate, alter, or remove the backticks or the masks).
         - Do NOT output the original double-square placeholders like [[...]] unless they already appear in your input (we prefer the backticked masks).
         - Preserve code fences (```...```), inline backticks `...`, LaTeX delimiters \\(...\\), \\[...\\], and variable tokens like $x, {{var}}, <tag>.

@@ -1,33 +1,34 @@
-Task Description: Anda diberikan deskripsi masalah dan sebuah pertanyaan. Tugas Anda adalah:
-1) parse konteks ke aturan logika berdasarkan predikat yang didefinisikan
-2) tulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan ke dalam bentuk logika juga.
-3) parse pernyataan konjektur ke bentuk logika
-4) berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan: fakta, aturan, kemudian konjektur.
+Deskripsi Tugas: Anda diberikan deskripsi masalah dan pertanyaan. Tugasnya adalah:
+1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
+2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+3) parsing konjektur menjadi bentuk logika
+4) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 ------
-Contoh:
+Berikut adalah contohnya:
 Konteks:
-Setiap jompus adalah buah. Setiap jompus adalah wumpus. Setiap wumpus tidak transparan. Wumpus adalah tumpus. Tumpus adalah berarti. Tumpus adalah vumpus. Setiap vumpus dingin. Setiap vumpus adalah yumpus. Yumpus adalah oranye. Yumpus adalah numpus. Numpus adalah membosankan. Setiap numpus adalah dumpus. Setiap dumpus tidak pemalu. Impus adalah pemalu. Setiap rompus cair. Rompuses adalah zumpus. Alex adalah tumpus.
+Setiap jompus adalah buah-buahan. Setiap jompus adalah wumpus. Setiap wumpus tidak transparan. Wumpuses adalah tumpuses. Tumpuses adalah jahat. Tumpuses adalah vumpuses. Setiap vumpus adalah dingin. Setiap vumpus adalah yumpus. Yumpuses adalah oranye. Yumpuses adalah numpuses. Numpuses adalah kusam. Setiap numpus adalah dumpus. Setiap dumpus tidak pemalu. Impuses adalah pemalu. Dumpuses adalah rompuses. Setiap rompus adalah cair. Rompuses adalah zumpuses. Alex adalah tumpus.
 Konjektur:
 Alex tidak pemalu.
 ###
 
 Fakta:
-Alex adalah tumpus :::: Tumpus(Alex, True)
+Alex adalah tumpus ::: Tumpuses(Alex, True)
 
 Aturan:
 Jompus($x, True) >>> Fruity($x, True)
 Jompus($x, True) >>> Wumpus($x, True)
 Wumpus($x, True) >>> Transparent($x, False)
-Wumpus($x, True) >>> Tumpus($x, True)
-Tumpus($x, True) >>> Mean($x, True)
-Tumpus($x, True) >>> Vumpus($x, True)
-Vumpus($x, True) >>> Cold($x, True)
-Vumpus($x, True) >>> Yumpus($x, True)
+Wumpuses($x, True) >>> Tumpuses($x, True)
+Tumpuses($x, True) >>> Mean($x, True)
+Tumpuses($x, True) >>> Vumpuses($x, True)
+Vumpuses($x, True) >>> Cold($x, True)
+Vumpuses($x, True) >>> Yumpus($x, True)
 Yumpus($x, True) >>> Orange($x, True)
 Yumpus($x, True) >>> Numpus($x, True)
 Numpus($x, True) >>> Dull($x, True)
-Numpus($x, True) >>> Dumpus($x, Konjungsi)
-Impus($x, True) >>> Shy($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Shy($x, False)
+Impuses($x, True) >>> Shy($x, True) 
 Dumpus($x, True) >>> Rompus($x, True)
 Rompus($x, True) >>> Liquid($x, True)
 Rompus($x, True) >>> Zumpus($x, True)
@@ -35,16 +36,16 @@ Rompus($x, True) >>> Zumpus($x, True)
 Konjektur:
 Shy(Alex, False)
 ------
-Contoh:
+Berikut adalah contohnya:
 Konteks:
-Jompus tidak pemalu. Jompus adalah yumpus. Setiap yumpus agresif. Setiap yumpus adalah dumpus. Dumpus tidak kayu. Dumpus adalah wumpus. Wumpus merah. Setiap wumpus adalah impus. Setiap impus tidak transparan. Impus adalah tumpus. Numpus asam. Tumpus bukan asam. Tumpus adalah vumpus. Vumpus bumi. Setiap vumpus adalah zumpus. Zumpus kecil. Zumpus adalah rompuses. Max adalah yumpus.
+Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus agresif. Setiap yumpus adalah dumpus. Dumpuses tidak kayu. Dumpuses adalah wumpuses. Wumpuses merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tanah. Setiap vumpus adalah zumpus. Zumpuses kecil. Zumpuses adalah rompuses. Max adalah yumpus.
 
 Konjektur:
 Max asam.
 ###
 
 Fakta:
-Max adalah yumpus :::: Yumpus(Max, True)
+Max adalah yumpus ::: Yumpus(Max, True)
 
 Aturan:
 Jompus($x, True) >>> Shy($x, False)
@@ -69,6 +70,7 @@ Konjektur:
 Sour(Max, True)
 
 -----
+Di bawah ini adalah yang perlu Anda terjemahkan:
 Konteks:
 [[PREMISES]]
 
