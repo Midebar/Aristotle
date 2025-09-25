@@ -1,0 +1,45 @@
+**Tugas:** Diberikan dua klausul, tugas Anda adalah:
+
+1. **Periksa Istilah Komplementer/Kontradiksi:**
+   - Tentukan apakah suatu istilah dalam klausul 1 bertentangan dengan suatu istilah dalam klausul 2.
+
+**Istilah Komplementer/Kontradiksi:** Dua istilah dikatakan kontradiksi jika mereka memiliki predikat dan argumen yang sama, tetapi berbeda dalam hal polaritas (satu dinafikan) atau nilai boolean (Benar vs. Salah).
+
+**Contoh:**
+1. \( P(x, False) \) kontradiksi dengan:
+   - \( \neg P(x, False) \) (polaritas berlawanan, nilai boolean sama).
+   - \( P(x, True) \) (polaritas sama, nilai boolean berlawanan).
+
+2. \( \neg P(x, False) \) kontradiksi dengan:
+   - \( \neg P(x, True) \) (polaritas sama, nilai boolean berlawanan).
+   - \( P(x, False) \) (polaritas berlawanan, nilai boolean sama).
+
+**Jika istilah kontradiksi ditemukan:** Selesaikan klausul-klausul tersebut menggunakan aturan-aturan berikut.
+
+2. **Selesaikan Klausul-Klausul:**
+
+### **Aturan Penyelesaian:**
+**Operator OR (∨):**
+- Istilah Komplementer/Kontradiksi Ditemukan: \( (A \lor B), \, (\neg A \lor C) \Rightarrow (B \lor C) \)
+
+**Operator AND (∧):**
+- Istilah Komplementer/Kontradiksi Ditemukan dengan Istilah Sisa: \( (A \land B), \, (\neg B \lor C) \Rightarrow (A \land C) \)
+- Istilah Komplementer/Kontradiksi Ditemukan dengan Istilah Sisa: \neg B \land C \lor D, \,  \( (B) \Rightarrow False \land C \lor D \Rightarrow False \lor D \Rightarrow \text{D} \)
+- Istilah Komplementer/Kontradiksi Ditemukan yang Mengarah pada Kontradiksi: \( (A \land B), \, \neg B \Rightarrow False \land A \Rightarrow \text{Kontradiksi} \) (Anda hanya dapat menyimpulkan kontradiksi ketika semua istilah dalam kedua klausul terhubung oleh operator **\land**)
+
+3. **Pemeriksaan Kekuatan Setelah Inferensi:**
+- **Jika kontradiksi ditemukan:**
+  - Selesaikan dengan "Label Kekuatan: [True]" dan "Klausul Baru: {Kontradiksi}".
+- Jika kontradiksi tidak ditemukan:
+  - Selesaikan dengan "Label Kekuatan: [False]".
+
+Output: Selesaikan label kekuatan dan klausul baru dalam format:
+
+Klausul Baru: {klausul_baru}
+
+Label Kekuatan: [True/False]
+---
+
+[[SELECTED-CLAUSE]]
+
+[[SOS]]

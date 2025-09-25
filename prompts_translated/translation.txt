@@ -1,0 +1,76 @@
+Task Description: Anda diberikan deskripsi masalah dan sebuah pertanyaan. Tugas Anda adalah:
+1) parse konteks ke aturan logika berdasarkan predikat yang didefinisikan
+2) tulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan ke dalam bentuk logika juga.
+3) parse pernyataan konjektur ke bentuk logika
+4) berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan: fakta, aturan, kemudian konjektur.
+------
+Contoh:
+Konteks:
+Setiap jompus adalah buah. Setiap jompus adalah wumpus. Setiap wumpus tidak transparan. Wumpus adalah tumpus. Tumpus adalah berarti. Tumpus adalah vumpus. Setiap vumpus dingin. Setiap vumpus adalah yumpus. Yumpus adalah oranye. Yumpus adalah numpus. Numpus adalah membosankan. Setiap numpus adalah dumpus. Setiap dumpus tidak pemalu. Impus adalah pemalu. Setiap rompus cair. Rompuses adalah zumpus. Alex adalah tumpus.
+Konjektur:
+Alex tidak pemalu.
+###
+
+Fakta:
+Alex adalah tumpus :::: Tumpus(Alex, True)
+
+Aturan:
+Jompus($x, True) >>> Fruity($x, True)
+Jompus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Transparent($x, False)
+Wumpus($x, True) >>> Tumpus($x, True)
+Tumpus($x, True) >>> Mean($x, True)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Cold($x, True)
+Vumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Orange($x, True)
+Yumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Dull($x, True)
+Numpus($x, True) >>> Dumpus($x, Konjungsi)
+Impus($x, True) >>> Shy($x, True)
+Dumpus($x, True) >>> Rompus($x, True)
+Rompus($x, True) >>> Liquid($x, True)
+Rompus($x, True) >>> Zumpus($x, True)
+
+Konjektur:
+Shy(Alex, False)
+------
+Contoh:
+Konteks:
+Jompus tidak pemalu. Jompus adalah yumpus. Setiap yumpus agresif. Setiap yumpus adalah dumpus. Dumpus tidak kayu. Dumpus adalah wumpus. Wumpus merah. Setiap wumpus adalah impus. Setiap impus tidak transparan. Impus adalah tumpus. Numpus asam. Tumpus bukan asam. Tumpus adalah vumpus. Vumpus bumi. Setiap vumpus adalah zumpus. Zumpus kecil. Zumpus adalah rompuses. Max adalah yumpus.
+
+Konjektur:
+Max asam.
+###
+
+Fakta:
+Max adalah yumpus :::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Shy($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Aggressive($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Wooden($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Red($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> Opaque($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Sour($x, True)
+Tumpus($x, True) >>> Sour($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Earthy($x, True)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Small($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+Sour(Max, True)
+
+-----
+Konteks:
+[[PREMISES]]
+
+Konjektur:
+[[CONJECTURE]]
