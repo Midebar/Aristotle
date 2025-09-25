@@ -234,4 +234,6 @@ print("LLM_MODEL =", os.environ["LLM_MODEL"])
 **SLIDES**
 https://www.canva.com/design/DAGz9hZxkcc/bNa0ltg67QC_wT82jb0fuw/edit?utm_content=DAGz9hZxkcc&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
+Jumpuses, plurals, ttanslation problem in Bahasa. Different objects?
+
 **CUSTOM RUN END**
