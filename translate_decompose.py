@@ -21,49 +21,50 @@ class GPT3_Reasoning_Graph_Baseline:
         self.save_path = args.save_path
         self.mode = args.mode
         self.batch_num = args.batch_num
+        self.prompts_folder = args.prompts_folder
         self.file_lock = threading.Lock()
         if args.base_url:
             self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
         else:
             self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens)
             
-    def load_in_context_examples_trans(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'translation.txt')
+    def load_in_context_examples_trans(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'translation.txt')
         print("Loading translation file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
             
         return in_context_examples
     
-    def load_in_context_and_or_decomposer(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'and_or_decomposer.txt')
+    def load_in_context_and_or_decomposer(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'and_or_decomposer.txt')
         print("Loading decomposer file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_in_context_either_or_decomposer(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'either_or_decomposer.txt')
+    def load_in_context_either_or_decomposer(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'either_or_decomposer.txt')
         print("Loading decomposer file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_in_context_biconditional_decomposer(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'logical_biconditional_decomposer.txt')
+    def load_in_context_biconditional_decomposer(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'logical_biconditional_decomposer.txt')
         print("Loading decomposer file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_in_context_examples_search_init(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'search_init.txt')
+    def load_in_context_examples_search_init(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'search_init.txt')
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_in_context_examples_search_router(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'search_router.txt')
+    def load_in_context_examples_search_router(self, prompts_folder='./prompts'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, 'search_router.txt')
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
@@ -475,16 +476,16 @@ class GPT3_Reasoning_Graph_Baseline:
         raw_dataset = self.load_raw_dataset(self.split, self.split_percent)
         print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
 
-        in_context_examples_trans = self.load_in_context_examples_trans()
+        in_context_examples_trans = self.load_in_context_examples_trans(self.prompts_folder)
         
         if self.dataset_name == "ProntoQA":
-            icl_and_or_decomposer = self.load_in_context_and_or_decomposer()
+            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder)
             icl_either_or_decomposer = None
             icl_biconditional_decomposer = None
         else:
-            icl_and_or_decomposer = self.load_in_context_and_or_decomposer()
-            icl_either_or_decomposer = self.load_in_context_either_or_decomposer()
-            icl_biconditional_decomposer = self.load_in_context_biconditional_decomposer()
+            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder)
+            icl_either_or_decomposer = self.load_in_context_either_or_decomposer(self.prompts_folder)
+            icl_biconditional_decomposer = self.load_in_context_biconditional_decomposer(self.prompts_folder)
 
         print("Number of batch: ", self.batch_num)
         counter = 0
@@ -542,6 +543,7 @@ def parse_args():
     parser.add_argument('--max_new_tokens', type=int)
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
+    parser.add_argument('--prompts_folder', type=str, default='./prompts')
     args = parser.parse_args()
     return args
 

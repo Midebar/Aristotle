@@ -2,11 +2,7 @@
 run_pipeline.py
 
 Usage:
-  python run_pipeline.py            # runs full pipeline based on .env
-  python run_pipeline.py --pilot    # runs pipeline in pilot mode (PILOT_ONLY override)
-  python run_pipeline.py --skip-negate
-  python run_pipeline.py --skip-search
-  python run_pipeline.py --skip-eval
+  python run_pipeline.py
 
 This script expects a .env file in the same directory or environment variables set.
 """
@@ -78,8 +74,8 @@ def main():
     OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
     DATASET = os.environ.get("DATASET_NAME", "ProofWriter")
     SPLIT = os.environ.get("SPLIT", "dev")
-    DATA_PATH = os.environ.get("DATA_PATH", "./data")
-    PROMPTS_PATH = os.environ.get("PROMPTS_PATH", "./prompts")
+    DATA_PATH = os.environ.get("DATA_PATH", "./data_translated")
+    PROMPTS_PATH = os.environ.get("PROMPTS_PATH", "./prompts_translated")
     RESULTS_PATH = os.environ.get("RESULTS_PATH", "./results")
     BATCH_NUM = os.environ.get("BATCH_NUM", "1")
     MAX_NEW_TOKENS = os.environ.get("MAX_NEW_TOKENS", "512")

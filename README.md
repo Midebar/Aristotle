@@ -200,4 +200,7 @@ Based on leaderboard above, use SEALIONv3-9b(Gemma)
 With SEALIONv3.5-8b-R, too much reasoning
 Tried to use SahabatAIv1-8b, it took 50 mins, while SEALION took 15 mins to translate 10% of ProntoQA dataset
 
+**SLIDES**
+https://www.canva.com/design/DAGz9hZxkcc/bNa0ltg67QC_wT82jb0fuw/edit?utm_content=DAGz9hZxkcc&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
+
 **CUSTOM RUN END**
