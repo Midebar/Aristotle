@@ -485,7 +485,7 @@ class GPT3_Reasoning_Graph_Baseline:
                         selected_clause = None
                     
                     if sufficiency_label == "True":
-                        if new_clause.lower() == "contradiction" or "false":
+                        if new_clause.lower() == "contradiction" or "false" or "kontradiksi":
                             if negated_label.lower() == "true":
                                 final_answer = "True"
                             elif negated_label.lower() == "false":

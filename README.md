@@ -164,11 +164,11 @@ print("Finished generating/testing")
 
 
 !python translate_dataset.py --dataset_name ProntoQA --split dev --sample-pct 10 --batch_size 1
-print("\nFisnished translating dataset\n")
+print("\nFinished translating dataset\n")
 
 
-!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite
-print("\nFisnished translating prompts\n")
+!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite --max_new_tokens 2048
+print("\nFinished translating prompts\n")
 
 Then download the translated dataset and prompts
 Delete the pod after, disk usage is EXPENSIVE
