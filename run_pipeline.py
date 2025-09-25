@@ -109,6 +109,7 @@ def main():
     base_kwargs = [
         "--data_path", DATA_PATH,
         "--dataset_name", DATASET,
+        "--prompts_folder", PROMPTS_PATH,
         "--split", SPLIT,
         "--save_path", RESULTS_PATH,
         "--api_key", os.environ.get("OPENAI_API_KEY", ""),
