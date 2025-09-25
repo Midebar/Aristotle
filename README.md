@@ -113,7 +113,7 @@ apt install git-lfs
 
 
 !git lfs install
-!git clone https://huggingface.co/aisingapore/Llama-SEA-LION-v3.5-8B-R LLM_MODELS/Llama-SEA-LION-v3.5-8B-R
+!git clone https://huggingface.co/aisingapore/Gemma-SEA-LION-v3-9B-IT LLM_MODELS/Gemma-SEA-LION-v3-9B-IT
 
 
 import os
@@ -124,7 +124,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
-snapshot_path = "/workspace/LLM_MODELS/Llama-SEA-LION-v3.5-8B-R" ############## <--- Change this based on platform and models
+snapshot_path = "/workspace/LLM_MODELS/Gemma-SEA-LION-v3-9B-IT" ############## <--- Change this based on platform and models
 
 os.environ["LOCAL_MODEL_PATH"] = snapshot_path
 ######### set LLM_MODEL to the same path so OpenAIModel or translate script picks it up if it uses LLM_MODEL env
@@ -167,8 +167,17 @@ print("Finished generating/testing")
 print("\nFinished translating dataset\n")
 
 
-!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite --max_new_tokens 2048
+!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite --max_new_tokens 5000
 print("\nFinished translating prompts\n")
+
+!python translate_prompts.py --file ./prompts/ProntoQA/translation.txt --overwrite --max_new_tokens 5000
+print("\nFinished translating prompts\n")
+
+#########Need a lot of new tokens, because it get cut with 5k
+!python translate_prompts.py --file ./prompts/ProntoQA/logic_resolver.txt --overwrite --max_new_tokens 10000
+print("\nFinished translating prompts\n")
+
+
 
 Then download the translated dataset and prompts
 Delete the pod after, disk usage is EXPENSIVE
@@ -187,7 +196,8 @@ Qwen3-8b seems good for general purpose LLM
 ***TRANSLATION***
 Komodo on paper is good for translation, but there's no instruct version, even then It compared to Llama2, gpt3.5, Qwen1.5
 NusaMT is built on Komodo-base and on paper excel on Bali and Minang
-Based on leaderboard above, use SEALIONv3-8b
+Based on leaderboard above, use SEALIONv3-9b(Gemma)
+With SEALIONv3.5-8b-R, too much reasoning
 Tried to use SahabatAIv1-8b, it took 50 mins, while SEALION took 15 mins to translate 10% of ProntoQA dataset
 
 **CUSTOM RUN END**
