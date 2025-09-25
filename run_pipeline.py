@@ -76,7 +76,7 @@ def main():
     SPLIT = os.environ.get("SPLIT", "dev")
     DATA_PATH = os.environ.get("DATA_PATH", "./data_translated")
     PROMPTS_PATH = os.environ.get("PROMPTS_PATH", "./prompts_translated")
-    RESULTS_PATH = os.environ.get("RESULTS_PATH", "./results")
+    RESULTS_PATH = os.environ.get("RESULTS_PATH", "./results_translated")
     BATCH_NUM = os.environ.get("BATCH_NUM", "1")
     MAX_NEW_TOKENS = os.environ.get("MAX_NEW_TOKENS", "512")
     SEARCH_ROUND = os.environ.get("SEARCH_ROUND", "10")

@@ -200,6 +200,37 @@ Based on leaderboard above, use SEALIONv3-9b(Gemma)
 With SEALIONv3.5-8b-R, too much reasoning
 Tried to use SahabatAIv1-8b, it took 50 mins, while SEALION took 15 mins to translate 10% of ProntoQA dataset
 
+***PIPELINES***
+
+!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
+
+
+!git lfs install
+!git clone https://huggingface.co/Qwen/Qwen3-8B LLM_MODELS/Qwen3-8B
+
+import os
+from pathlib import Path
+
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+######### Also useful to reduce thread contention:
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+
+snapshot_path = "/workspace/LLM_MODELS/Qwen3-8B" ############## <--- Change this based on platform and models
+
+os.environ["LOCAL_MODEL_PATH"] = snapshot_path
+######### set LLM_MODEL to the same path so OpenAIModel or translate script picks it up if it uses LLM_MODEL env
+os.environ["LLM_MODEL"] = snapshot_path
+
+######## enable 4-bit for quant (and bitsandbytes is set up)
+os.environ["LLM_LOAD_IN_4BIT"] = "1"  # or "0" to disable quantization
+
+print("LOCAL_MODEL_PATH =", os.environ["LOCAL_MODEL_PATH"])
+print("LLM_MODEL =", os.environ["LLM_MODEL"])
+
+!python run_pipeline.py --dataset_name ProntoQA
+
+
 **SLIDES**
 https://www.canva.com/design/DAGz9hZxkcc/bNa0ltg67QC_wT82jb0fuw/edit?utm_content=DAGz9hZxkcc&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
