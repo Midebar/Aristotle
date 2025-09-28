@@ -2,7 +2,7 @@
 import json
 import os
 from tqdm import tqdm
-from utils import OpenAIModel
+from utils import ModelWrapper
 import argparse
 import re
 import sys
@@ -24,9 +24,9 @@ class GPT3_Reasoning_Graph_Baseline:
         self.file_lock = threading.Lock()
         self.batch_num = args.batch_num
         if args.base_url:
-            self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
+            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
         else:
-            self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens)
+            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
     
     def load_in_context_examples_complement(self):
         file_path = os.path.join('./prompts', self.dataset_name, 'complement_search.txt')
@@ -485,7 +485,7 @@ class GPT3_Reasoning_Graph_Baseline:
                         selected_clause = None
                     
                     if sufficiency_label == "True":
-                        if new_clause.lower() == "contradiction" or "false" or "kontradiksi":
+                        if new_clause.lower() == "kontradiksi" or "false":
                             if negated_label.lower() == "true":
                                 final_answer = "True"
                             elif negated_label.lower() == "false":

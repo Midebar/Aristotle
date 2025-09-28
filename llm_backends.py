@@ -1,8 +1,6 @@
-# llm_backends.py
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import BitsAndBytesConfig
 import torch
-import os
 import warnings
 from collections.abc import Mapping
 
@@ -17,18 +15,16 @@ class HFBackend:
         if not self.model_source:
             raise ValueError("Either local_model_path or hf_model_id must be provided.")
 
-        # ---- Tokenizer load (robust) ----
         tokenizer = None
         last_exc = None
         try:
-            # Preferred: load tokenizer from the local folder, avoid use_fast=True
+            # Dont call use_fast in params, keeps erroring
             tokenizer = AutoTokenizer.from_pretrained(self.model_source)
         except Exception as e:
             last_exc = e
             warnings.warn(f"AutoTokenizer load failed: {e}. Tried default AutoTokenizer.")
 
         if tokenizer is None:
-            # give a clear error if nothing worked
             raise RuntimeError(f"Failed to load tokenizer for {self.model_source}. Last error: {last_exc}")
 
         # Safety check: ensure tokenizer is sensible
@@ -47,7 +43,7 @@ class HFBackend:
 
         self.tokenizer = tokenizer
 
-        # ---- Model load (attempt quantized if requested) ----
+        # ---- Model load (attempt quantized) ----
         model = None
         if quantize_4bit:
             try:
@@ -68,22 +64,20 @@ class HFBackend:
                 model = None
 
         if model is None:
-            # final fallback: non-quantized load
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_source,
                 device_map="auto",
                 trust_remote_code=True
             )
 
-        # record device
         try:
             self.device = next(model.parameters()).device
         except StopIteration:
-            # model has no parameters (unlikely) -> cpu fallback
+            # model has no parameters -> cpu fallback
             self.device = torch.device("cpu")
         self.model = model
 
-        # ensure pad/eos token ids are present in model config (helpful for generate)
+        # ensure pad/eos token ids are present in model config (keeps erroring when no pad token)
         if getattr(self.model.config, "pad_token_id", None) is None and getattr(self.model.config, "eos_token_id", None) is not None:
             self.model.config.pad_token_id = self.model.config.eos_token_id
 
@@ -92,7 +86,6 @@ class HFBackend:
         Generate text from the local HF model.
         Returns: single string (decoded).
         """
-        # safety: ensure tokenizer callable
         if self.tokenizer is None or not callable(getattr(self.tokenizer, "__call__", None)):
             raise RuntimeError("Tokenizer is not ready or not callable.")
 
@@ -100,13 +93,11 @@ class HFBackend:
         inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
 
         # BatchEncoding (or others) might have .to(device) which moves contained tensors.
-        # If so, use it (this is efficient). Otherwise move each tensor manually.
         try:
             if hasattr(inputs, "to") and callable(getattr(inputs, "to")):
-                # BatchEncoding.to will move tensors inside it and return BatchEncoding
+                # BatchEncoding.to move tensors inside it and return BatchEncoding
                 inputs = inputs.to(self.device)
         except Exception:
-            # ignore; fallback to manual move below
             pass
 
         # Convert Mapping-like objects (BatchEncoding) into plain dict of tensors
@@ -116,15 +107,12 @@ class HFBackend:
             # duck-typed fallback
             inputs_dict = {k: v for k, v in inputs.items()}
         else:
-            # Unexpected type, raise helpful error
             raise RuntimeError(f"Tokenizer returned unsupported type for inputs: {type(inputs)}. Expected Mapping or BatchEncoding.")
 
-        # Move tensors to device if they are not already on it
         for k, v in list(inputs_dict.items()):
             if isinstance(v, torch.Tensor):
                 inputs_dict[k] = v.to(self.device)
 
-        # Prepare generate kwargs
         gen_kwargs = dict(
             input_ids = inputs_dict.get("input_ids"),
             attention_mask = inputs_dict.get("attention_mask"),
@@ -139,7 +127,6 @@ class HFBackend:
         # Remove None values
         gen_kwargs = {k: v for k, v in gen_kwargs.items() if v is not None}
 
-        # Call generate
         outputs = self.model.generate(**gen_kwargs)
 
         # outputs may be tensor or tuple/list; extract first generated ids
@@ -148,7 +135,6 @@ class HFBackend:
         elif isinstance(outputs, (list, tuple)):
             out_ids = outputs[0]
         else:
-            # Unknown return type
             raise RuntimeError(f"model.generate returned unexpected type: {type(outputs)}")
 
         # Decode
