@@ -1,11 +1,10 @@
 """
 translate_dataset.py
 
-Translate a dataset (JSON) into Bahasa Indonesia using LLM backend calls (via utils.OpenAIModel).
+Translate a dataset (JSON) into Bahasa Indonesia using LLM backend calls (via utils.ModelWrapper).
 
-This version DOES NOT use masking. Instead it:
- - explicitly instructs the model not to translate option values (True/False/Unknown/Yes/No/None)
- - validates the returned JSON and restores original `options` if the model changed them.
+Usage example:
+  python translate_dataset.py --dataset_name <dataset> --split <split> --output_dir <output_folder> --model_name <model>
 """
 
 import os
@@ -19,16 +18,16 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
-# Try to import the OpenAIModel wrapper from utils.py
+# Try to import the ModelWrapper wrapper from utils.py
 try:
-    from utils import OpenAIModel
+    from utils import ModelWrapper
 except Exception as e:
-    print("Error importing OpenAIModel from utils.py:", e)
+    print("Error importing ModelWrapper from utils.py:", e)
     raise
 
-# optional dotenv loader
+#dotenv loader
 try:
-    from dotenv import load_dotenv  # type: ignore
+    from dotenv import load_dotenv
     DOTENV_AVAILABLE = True
 except Exception:
     DOTENV_AVAILABLE = False
@@ -98,8 +97,6 @@ def sample_examples(examples: List[Dict[str, Any]], pct: int, seed: int = 42) ->
 # tokens considered option-values we want to preserve (case-sensitive)
 OPTION_TOKENS = ["True", "False", "Unknown", "Yes", "No", "None"]
 
-_OPTION_RE = re.compile(r'\b(' + '|'.join(re.escape(t) for t in OPTION_TOKENS) + r')\b')
-
 def default_translation_prompt(example: Dict[str, Any]) -> str:
     """
     Prompt instructs the model strongly to NOT translate option values.
@@ -128,12 +125,6 @@ def default_translation_prompt(example: Dict[str, Any]) -> str:
         Now produce the translated JSON object (and nothing else).
     """
     return prompt.strip()
-
-def load_prompt_template(prompts_root: Path, dataset_name: str) -> Optional[str]:
-    candidate = prompts_root / dataset_name / "translation_bahasa.txt"
-    if candidate.exists():
-        return candidate.read_text(encoding="utf-8")
-    return None
 
 def apply_template(template: str, example: Dict[str, Any]) -> str:
     example_json = json.dumps(example, indent=2, ensure_ascii=False)
@@ -196,7 +187,6 @@ def write_translated_output(output_path: Path, original_tree: Any, examples_tran
 
 def options_need_restoration(original_options: List[Any], parsed_options: List[Any]) -> bool:
     """
-    Decide whether to restore original options.
     - If lengths differ -> restore.
     - If any original option contains an OPTION_TOKEN but the corresponding parsed option
       does not contain the same token -> restore.
@@ -222,18 +212,17 @@ def options_need_restoration(original_options: List[Any], parsed_options: List[A
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--env", type=str, default=".env")
     parser.add_argument("--data_json_path", type=str, default="", help="Optional single JSON file input")
     parser.add_argument("--data_path", type=str, default="./data", help="Data root or dataset folder")
     parser.add_argument("--dataset_name", type=str, required=True)
     parser.add_argument("--split", type=str, default="dev")
     parser.add_argument("--output_dir", type=str, default="./data_translated")
-    parser.add_argument("--sample-pct", type=int, default=100, help="Percent of examples to translate (1-100)")
-    parser.add_argument("--model_name", type=str, help="model name passed to OpenAIModel wrapper")
+    parser.add_argument("--sample-pct", type=int, default=100, help="Percent of examples to translate (0-100)")
+    parser.add_argument("--model_name", type=str, help="model name passed to ModelWrapper wrapper")
     parser.add_argument("--max_new_tokens", type=int, default=512)
     parser.add_argument("--temperature", type=float, default=0.0)
     parser.add_argument("--batch_size", type=int, default=1)
-    parser.add_argument("--prompts_root", type=str, default="./prompts", help="folder where dataset-specific prompt templates live")
-    parser.add_argument("--env", type=str, default=".env", help="Path to .env file")
     args = parser.parse_args()
 
     env_path = ROOT / args.env
@@ -252,26 +241,18 @@ def main():
     examples_to_translate = sample_examples(examples, sample_pct)
     print(f"[translate_dataset] Translating {len(examples_to_translate)} examples ({sample_pct}%)")
 
-    prompts_root = Path(args.prompts_root)
-    template = load_prompt_template(prompts_root, args.dataset_name)
-    if template:
-        print(f"[translate_dataset] Using prompt template: {prompts_root / args.dataset_name / 'translation_bahasa.txt'}")
-    else:
-        print("[translate_dataset] Using default translation prompt template (built-in).")
+    print("[translate_dataset] Using default translation prompt template (built-in).")
 
     api_key = os.environ.get("OPENAI_API_KEY", "")
     stop_words = os.environ.get("STOP_WORDS", "------")
     model_name_env = os.environ.get("LLM_MODEL", "")
     print(model_name_env)
-    openai_model = OpenAIModel(API_KEY=api_key, model_name=model_name_env, stop_words=stop_words, max_new_tokens=args.max_new_tokens, base_url=os.getenv("BASE_URL", None))
+    openai_model = ModelWrapper(API_KEY=api_key, model_name=model_name_env, stop_words=stop_words, max_new_tokens=args.max_new_tokens, base_url=os.getenv("BASE_URL", None))
 
     prompts = []
-    # we will keep original examples for option restoration
+    # keep original examples for option restoration
     for ex in examples_to_translate:
-        if template:
-            prompts.append(apply_template(template, ex))
-        else:
-            prompts.append(default_translation_prompt(ex))
+        prompts.append(default_translation_prompt(ex))
 
     translated_examples = []
     failed_count = 0

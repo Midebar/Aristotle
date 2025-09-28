@@ -124,10 +124,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
-snapshot_path = "/workspace/LLM_MODELS/Gemma-SEA-LION-v3-9B-IT" ############## <--- Change this based on platform and models
+snapshot_path = "workspace/LLM_MODELS/Gemma-SEA-LION-v3-9B-IT" ############## <--- Change this based on platform and models
 
 os.environ["LOCAL_MODEL_PATH"] = snapshot_path
-######### set LLM_MODEL to the same path so OpenAIModel or translate script picks it up if it uses LLM_MODEL env
+######### set LLM_MODEL to the same path
 os.environ["LLM_MODEL"] = snapshot_path
 
 ######## enable 4-bit for quant (and bitsandbytes is set up)
@@ -193,12 +193,13 @@ Delete the pod after, disk usage is EXPENSIVE
 We can check for other LLM performance, especially on instruction following ini this case on Indonesia dataset in: https://leaderboard.sea-lion.ai/
 Qwen3-8b seems good for general purpose LLM
 
-***TRANSLATION***
+***TRANSLATION NOTES***
 Komodo on paper is good for translation, but there's no instruct version, even then It compared to Llama2, gpt3.5, Qwen1.5
 NusaMT is built on Komodo-base and on paper excel on Bali and Minang
 Based on leaderboard above, use SEALIONv3-9b(Gemma)
 With SEALIONv3.5-8b-R, too much reasoning
 Tried to use SahabatAIv1-8b, it took 50 mins, while SEALION took 15 mins to translate 10% of ProntoQA dataset
+Manually translate the prompts instead, since prompting to transalte prompts is very hard
 
 ***PIPELINES***
 
@@ -216,10 +217,10 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["MKL_NUM_THREADS"] = "1"
 
-snapshot_path = "/workspace/LLM_MODELS/Qwen3-8B" ############## <--- Change this based on platform and models
+snapshot_path = "workspace/LLM_MODELS/Qwen3-8B" ############## <--- Change this based on platform and models
 
 os.environ["LOCAL_MODEL_PATH"] = snapshot_path
-######### set LLM_MODEL to the same path so OpenAIModel or translate script picks it up if it uses LLM_MODEL env
+######### set LLM_MODEL to the same path
 os.environ["LLM_MODEL"] = snapshot_path
 
 ######## enable 4-bit for quant (and bitsandbytes is set up)
@@ -228,7 +229,19 @@ os.environ["LLM_LOAD_IN_4BIT"] = "1"  # or "0" to disable quantization
 print("LOCAL_MODEL_PATH =", os.environ["LOCAL_MODEL_PATH"])
 print("LLM_MODEL =", os.environ["LLM_MODEL"])
 
-!python run_pipeline.py --dataset_name ProntoQA
+!python run_pipeline.py --dataset_name ProntoQA --sample_pct 0
+
+######## if one single max_new_token should not be universally applied
+
+!python translate_decompose.py --data_path manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --max_new_tokens 4096
+
+!python negate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
+
+!python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation False --max_new_tokens 4096
+
+!python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation True --max_new_tokens 4096
+
+!python evaluate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
 
 
 **SLIDES**

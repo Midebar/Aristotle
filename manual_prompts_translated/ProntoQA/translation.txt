@@ -1,0 +1,78 @@
+Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
+1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
+2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+3) parsing konjektur menjadi bentuk logika
+4) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+------
+Berikut adalah contohnya:
+Konteks:
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat tidak pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus berwujud cair. Rompuses adalah zumpuses. Alex adalah tumpus.
+Konjektur:
+Alex bersifat tidak pemalu.
+###
+
+Fakta:
+Alex adalah tumpus ::: Tumpuses(Alex, True)
+
+Aturan:
+Jompus($x, True) >>> Eksentris($x, True)
+Jompus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Transparan($x, False)
+Wumpuses($x, True) >>> Tumpuses($x, True)
+Tumpuses($x, True) >>> Nakal($x, True)
+Tumpuses($x, True) >>> Vumpuses($x, True)
+Vumpuses($x, True) >>> Dingin($x, True)
+Vumpuses($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Oranye($x, True)
+Yumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Membosankan($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Pemalu($x, False)
+Impuses($x, True) >>> Pemalu($x, True) 
+Dumpus($x, True) >>> Rompus($x, True)
+Rompus($x, True) >>> Cair($x, True)
+Rompus($x, True) >>> Zumpus($x, True)
+
+Konjektur:
+Pemalu(Alex, False)
+------
+Berikut adalah contohnya:
+Konteks:
+Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses tidak terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Konjektur:
+Max asam.
+###
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Pemalu($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Agresif($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Kayu($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Merah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> TembusPandang($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Asam($x, True)
+Tumpus($x, True) >>> Asam($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Tanah($x, True)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Kecil($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+Asam(Max, True)
+
+-----
+Di bawah ini adalah yang perlu Anda terjemahkan:
+Konteks:
+[[PREMISES]]
+
+Konjektur:
+[[CONJECTURE]]

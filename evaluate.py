@@ -47,8 +47,9 @@ def evaluate_instance(id_, instance1, instance2, ground_truth):
 
 def evaluate_files(dataset_name, model_name):
     """Evaluates all matching instances from two JSON files."""
-    file1_path = f'./results/{dataset_name}/{dataset_name}_{model_name}_search_negation_True.json'
-    file2_path = f'./results/{dataset_name}/{dataset_name}_{model_name}_search_negation_False.json'
+    results_dir = args.save_path or './results/'
+    file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
+    file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
     
     file1 = load_json_file(file1_path)
     file2 = load_json_file(file2_path)
@@ -102,6 +103,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--model_name', type=str)
+    parser.add_argument('--save_path', type=str)
     args = parser.parse_args()
     return args
     

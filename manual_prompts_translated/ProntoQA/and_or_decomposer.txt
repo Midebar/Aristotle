@@ -1,0 +1,72 @@
+Tugas deskripsi:
+Diberikan premis dan konjektur dalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
+—--
+Aturan:
+
+Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
+- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)", bukan "- \(\forall x \left(\neg Jompus(x, True) \lor Pemalu(x, False)\right)\)".
+
+Skolemisasi: Hilangkan kuantor eksistensial dengan memperkenalkan konstanta Skolem atau fungsi.
+
+**Catatan Penting:** Prompt ini dirancang hanya untuk memandu model bahasa dalam proses pemecahan. Jangan mencoba menyelesaikan konjektur, dan pastikan konjektur tetap seperti yang dinyatakan tanpa negasi.
+—--
+Contoh di bawah ini:
+Konteks:
+Fakta:
+1. Yumpus(Max, True)
+Aturan:
+1. Jompus($x, True) >>> Pemalu($x, False)
+2. Jompus($x, Fakta) >>> Yumpus($x, True)
+3. Yumpus($x, True) >>> Agresif($x, True)
+4. Yumpus($x, True) >>> Dumpus($x, True)
+5. Dumpus($x, True) >>> Kayu($x, False)
+6. Dumpus($x, True) >>> Wumpus($x, True)
+7. Wumpus($x, True) >>> Merah($x, True)
+8. Wumpus($x, True) >>> Impus($x, True)
+9. Impus($x, True) >>> TembusPandang($x, x, True)
+10. Impus($x, True) >>> Tumpus($x, True)
+11. Numpus($x, True) >>> Asam($x, True)
+12. Tumpus($x, True) >>> Asam($x, False)
+13. Tumpus($x, True) >>> Vumpus($x, True)
+14. Vumpus($x, True) >>> Tanah($x, True)
+15. Vumpus($x, True) >>> Zumpus($x, True)
+16. Zumpus($x, True) >>> Kecil($x, True)
+17. Zumpus($x, True) >>> Rompus($x, True)
+
+Dugaan:
+Asam(Max, True)
+
+Pemecahan:
+
+Bentuk Akhir:
+Fakta:
+1. - Yumpus(Max, True)
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)
+2. - \(\forall x \left(Jompus(x, False) \lor Yumpus(x, True)\right)\)
+3. - \(\forall x \left(Yumpus(x, False) \lor Agresif(x, True)\right)\)
+4. - \(\forall x \left(Yumpus(x, False) \lor Dumpus(x, True)\right)\)
+5. - \(\forall x \left(Dumpus(x, False) \lor Kayu(x, False)\right)\)
+6. - \(\forall x \left(Dumpus(x, False) \lor Wumpus(x, True)\right)\)
+7. - \(\forall x \left(Wumpus(x, False) \lor Merah(x, True)\right)\)
+8. - \(\forall x \left(Wumpus(x, False) \lor Impus(x, True)\right)\)
+9. - \(\forall x \left(Impus(x, False) \lor TembusPandang(x, True)\right)\)
+10. - \(\forall x \left(Impus(x, False) \lor Tumpus(x, True)\right)\)
+11. - \(\forall x \left(Numpus(x, False) \lor Asam(x, True)\right)\)
+12. - \(\forall x \left(Tumpus(x, False) \lor Asam(x, False)\right)\)
+13. - \(\forall x \left(Tumpus(x, False) \lor Vumpus(x, True)\right)\)
+14. - \(\forall x \left(Vumpus(x, False) \lor Tanah(x, True)\right)\)
+15. - \(\forall x \left(Vumpus(x, False) \lor Zumpus(x, True)\right)\)
+16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
+17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
+
+Dugaan:
+Asam(Max, True)
+—--
+Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi dan skolemisasi. 
+Silahkan akhiri pemecahan dalam "Bentuk Akhir" dan pastikan Anda mencakup setiap klausa tunggal dalam bentuk akhir Anda, bahkan jika tidak perlu dipecah.
+Silahkan patuhi instruksi dengan ketat dan jangan melakukan apa yang tidak diinstruksikan (misalnya, jangan negasi dugaan dan fakta).
+Perhatikan bahwa Anda perlu menegasi suatu istilah hanya ketika mengubah implikasi ke CNF. Jika klausa atau istilah tidak mengandung implikasi (misalnya, Fakta atau Konjektur), jangan negasinya.
+
+[[PREMISES]]
