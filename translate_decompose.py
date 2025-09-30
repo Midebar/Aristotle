@@ -2,10 +2,9 @@
 import json
 import os
 from tqdm import tqdm
-from utils import ModelWrapper
+from utils import ModelWrapper, sanitize_filename
 import argparse
 import re
-import sys
 import concurrent.futures
 import traceback
 import threading
@@ -22,6 +21,7 @@ class GPT3_Reasoning_Graph_Baseline:
         self.mode = args.mode
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
+        self.language = args.language
         self.file_lock = threading.Lock()
         if args.base_url:
             self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
@@ -293,48 +293,99 @@ class GPT3_Reasoning_Graph_Baseline:
         return either_or, biconditional, others
     
 
-    def extract_facts_rules_conjecture(self, content):
+    def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
         fact = ""
         rule = ""
         conjecture = ""
 
         fact_matches = list(re.finditer(r'Fakta(.*?)Aturan', content, re.DOTALL))
-        if fact_matches:
-            fact = fact_matches[-1].group(1).strip()
-
         rule_matches = list(re.finditer(r'Aturan(.*?)Konjektur', content, re.DOTALL))
-        if rule_matches:
-            rule = rule_matches[-1].group(1).strip()
+        conj_matches = list(re.finditer(r'Konjektur(.*?)', content, re.DOTALL))
 
-        parts = content.rsplit('Konjektur', 1)
-        conj = parts[-1].strip() if len(parts) > 1 else ""
-        conjecture = re.sub(r'^[\s:\-]*', '', conj)
+        # normalize/clean extracted block text
+        def _clean_lead(s: str) -> str:
+            return re.sub(r'^[\s:\-]*', '', s.strip())
+        
+        # count non-empty rule lines (treat each non-empty line as a rule)
+        def _rule_count_from_text(txt):
+            lines = [ln for ln in re.split(r'\r?\n', txt or "") if ln.strip()]
+            return len(lines), lines
 
-        return fact, rule, conjecture
+        # 1) Try to find the latest rule block that exactly matches context_sentence_count (search from last)
+        selected_rule_match = None
+        if isinstance(context_sentence_count, int) and context_sentence_count > 0:
+            for m in reversed(rule_matches):
+                rtxt = _clean_lead(m.group(1))
+                cnt, _ = _rule_count_from_text(rtxt)
+                if cnt == context_sentence_count:
+                    selected_rule_match = m
+                    print(f"Matched rule count {cnt} to context sentence count {context_sentence_count}")
+                    break
+
+        # 2) If not found, pick the latest rule block that has any rules
+        if selected_rule_match is None:
+            for m in reversed(rule_matches):
+                rtxt = _clean_lead(m.group(1))
+                cnt, _ = _rule_count_from_text(rtxt)
+                if cnt > 0:
+                    print(f"Fallback matched rule count {cnt}")
+                    selected_rule_match = m
+                    break
+                
+        rule = _clean_lead(selected_rule_match.group(1)) if selected_rule_match else ""
+        # Find the Fakta block immediately before the chosen Aturan
+        rule_start = selected_rule_match.start()
+        preceding_facts = [m for m in fact_matches if m.start() <= rule_start]
+        if preceding_facts:
+            fact = _clean_lead(preceding_facts[-1].group(1))
+        else:
+            fact = _clean_lead(fact_matches[-1].group(1)) if fact_matches else ""
+
+        # Find the Konjektur block immediately after the chosen Aturan
+        rule_end = selected_rule_match.end()
+        following_conjs = [m for m in conj_matches if m.start() >= rule_end]
+        if following_conjs:
+            conjecture = _clean_lead(following_conjs[0].group(1))
+        else:
+            conjecture = _clean_lead(conj_matches[-1].group(1)) if conj_matches else ""
+
+            return fact, rule, conjecture
 
     
     def post_process_decompose(self, content):
-        final_form_match = re.finditer(r'Bentuk Akhir', content)
-        final_form_positions = [m.start() for m in final_form_match]
+        if self.language == 'en':
+            words_to_find = ['Final Form', 'Final Answer']
+        elif self.language == 'id':
+            words_to_find = ['Bentuk Akhir', 'Output Akhir']
+        
+        # build a safe alternation from the list (escape special regex chars)
+        escaped = [re.escape(w) for w in words_to_find]
+        pattern = r'(?:' + '|'.join(escaped) + r')'
+        regex = re.compile(pattern, re.IGNORECASE)  # case-insensitive
+        
+        matches = list(regex.finditer(content))
+        if matches:
+            first = matches[0]
 
-        if final_form_positions:
-            first_final_form_pos = final_form_positions[0]
-            
-            try:
-                context = content[first_final_form_pos:].split("Bentuk Akhir:")[-1].strip()
+            rest = content[first.end():]
 
-                context_lines = context.split("\n")
-                filtered_context_lines = [line for line in context_lines if "(" in line]
-                context = "\n".join(filtered_context_lines)
-                
-            except IndexError as e:
-                problematic_content = content[first_final_form_pos:]
-                print("Problematic content: ", problematic_content)
-                context = ""
-        else:
-            context_lines = content.split("\n")
+            # if there's an optional colon (like "Bentuk Akhir:") consume it and get the following text
+            colon_match = re.match(r'\s*:\s*(.*)', rest, flags=re.DOTALL)
+            if colon_match:
+                context = colon_match.group(1)
+            else:
+                # no colon — use the rest (strip leading whitespace)
+                context = rest.lstrip()
+
+            context_lines = context.splitlines()
             filtered_context_lines = [line for line in context_lines if "(" in line]
-            context = "\n".join(filtered_context_lines)
+            context = "\n".join(filtered_context_lines).strip()
+
+        else:
+            #fall back to scanning whole content
+            context_lines = content.splitlines()
+            filtered_context_lines = [line for line in context_lines if "(" in line]
+            context = "\n".join(filtered_context_lines).strip()
 
         return context
     
@@ -352,13 +403,10 @@ class GPT3_Reasoning_Graph_Baseline:
                 
         return '\n'.join(cleaned_conjecture)
         
-        
     def save_output(self, outputs, file_suffix=None):
-        if "llama" in self.model_name:
-            model_name = 'llama'
-        else:
-            model_name = self.model_name
-        file_name = f'{self.dataset_name}_{model_name}_trans_decompose_no_negation.json'
+        model_name = self.model_name
+        model_name = sanitize_filename(model_name)
+        file_name = f'{model_name}_trans_decompose_no_negation.json'
         file_path = os.path.join(self.save_path, self.dataset_name, file_name)
         
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -394,6 +442,7 @@ class GPT3_Reasoning_Graph_Baseline:
             question = example['question'].split('?')[1]
         print("Translating...")
         prompts_a = self.construct_prompt_a(example, in_context_examples_trans)
+        print("Translation prompt_a: ", prompts_a)
         responses_a = self.openai_api.generate(prompts_a)
         # responses_a might be (text, finish_reason) or a string; normalize to string
         if isinstance(responses_a, (list, tuple)):
@@ -402,7 +451,15 @@ class GPT3_Reasoning_Graph_Baseline:
             responses_a_text = responses_a
         print("Translation response: ", responses_a_text)
         
-        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a_text)
+        #count sentences in the example context
+        context_text = example.get('context', '') or ''
+        # Split on sentence end punctuation followed by whitespace (keeps punctuation on the chunk).
+        raw_sentences = re.split(r'(?<=[.!?])\s+', context_text.strip())
+        # Filter out any empty results (in case of trailing whitespace)
+        sentences = [s for s in raw_sentences if s.strip()]
+        context_sentence_count = len(sentences)-1 # exclude facts at end of sentence
+
+        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a_text, context_sentence_count)
         print("Translated Facts1: ", translated_facts)
         translated_facts = self.clean_irrelevant_lines(translated_facts)
         print(f"Translated Facts2: {translated_facts}")
@@ -545,6 +602,7 @@ def parse_args():
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--language', type=str, default='en', help="Language for extract final answer options:(id, en)")
     args = parser.parse_args()
     return args
 
