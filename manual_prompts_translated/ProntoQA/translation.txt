@@ -1,8 +1,9 @@
 Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
 1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
-2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
-3) parsing konjektur menjadi bentuk logika
-4) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal (contoh: Wumpuses -> Wumpus)
+3) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+4) parsing konjektur menjadi bentuk logika
+5) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 ------
 Berikut adalah contohnya:
 Konteks:
@@ -12,23 +13,23 @@ Alex bersifat tidak pemalu.
 ###
 
 Fakta:
-Alex adalah tumpus ::: Tumpuses(Alex, True)
+Alex adalah tumpus ::: Tumpus(Alex, True)
 
 Aturan:
 Jompus($x, True) >>> Eksentris($x, True)
 Jompus($x, True) >>> Wumpus($x, True)
 Wumpus($x, True) >>> Transparan($x, False)
-Wumpuses($x, True) >>> Tumpuses($x, True)
-Tumpuses($x, True) >>> Nakal($x, True)
-Tumpuses($x, True) >>> Vumpuses($x, True)
-Vumpuses($x, True) >>> Dingin($x, True)
-Vumpuses($x, True) >>> Yumpus($x, True)
+Wumpus($x, True) >>> Tumpus($x, True)
+Tumpus($x, True) >>> Nakal($x, True)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Dingin($x, True)
+Vumpus($x, True) >>> Yumpus($x, True)
 Yumpus($x, True) >>> Oranye($x, True)
 Yumpus($x, True) >>> Numpus($x, True)
 Numpus($x, True) >>> Membosankan($x, True)
 Numpus($x, True) >>> Dumpus($x, True)
 Dumpus($x, True) >>> Pemalu($x, False)
-Impuses($x, True) >>> Pemalu($x, True) 
+Impus($x, True) >>> Pemalu($x, True) 
 Dumpus($x, True) >>> Rompus($x, True)
 Rompus($x, True) >>> Cair($x, True)
 Rompus($x, True) >>> Zumpus($x, True)

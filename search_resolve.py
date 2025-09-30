@@ -5,10 +5,10 @@ from tqdm import tqdm
 from utils import ModelWrapper
 import argparse
 import re
-import sys
 import concurrent.futures
 import threading
 import traceback
+from utils import sanitize_filename
 
 class GPT3_Reasoning_Graph_Baseline:
     def __init__(self, args):
@@ -20,6 +20,9 @@ class GPT3_Reasoning_Graph_Baseline:
         self.save_path = args.save_path
         self.negation = args.negation
         self.mode = args.mode
+        self.max_new_tokens = args.max_new_tokens
+        self.stop_words = args.stop_words
+        self.prompts_folder = args.prompts_folder
         self.search_round = args.search_round
         self.file_lock = threading.Lock()
         self.batch_num = args.batch_num
@@ -29,23 +32,25 @@ class GPT3_Reasoning_Graph_Baseline:
             self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
     
     def load_in_context_examples_complement(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'complement_search.txt')
+        file_path = os.path.join(self.prompts_folder, self.dataset_name, 'complement_search.txt')
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
     def load_in_context_examples_logic_resolver(self):
-        file_path = os.path.join('./prompts', self.dataset_name, 'logic_resolver.txt')
+        file_path = os.path.join(self.prompts_folder, self.dataset_name, 'logic_resolver.txt')
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
     
     def load_raw_dataset(self, split):
+        model_name = sanitize_filename(self.model_name)
+        results_dir = args.save_path or './results/'
         if self.negation == 'True':
-            file_path = f"./results/{self.dataset_name}/{self.dataset_name}_{self.model_name}_trans_decompose_negated_data.json"
+            file_path = f"{results_dir}/{self.dataset_name}/{model_name}_trans_decompose_negated_data.json"
         else:
-            file_path = f"./results/{self.dataset_name}/{self.dataset_name}_{self.model_name}_trans_decompose_no_negation.json"
+            file_path = f"{results_dir}/{self.dataset_name}/{model_name}_trans_decompose_no_negation.json"
         print(f"Loading raw dataset from {file_path}")
         with open(file_path) as f:
             raw_dataset = json.load(f)
@@ -537,11 +542,8 @@ class GPT3_Reasoning_Graph_Baseline:
                 return error
 
         def save_output(output, is_error=False):
-            if "llama" in self.model_name:
-                model_name = 'llama'
-            else:
-                model_name = self.model_name
-            file_name = f'{self.dataset_name}_{model_name}_search_negation_{self.negation}.json'
+            model_name = sanitize_filename(self.model_name)
+            file_name = f'{model_name}_search_negation_{self.negation}.json'
             file_path = os.path.join(self.save_path, self.dataset_name, file_name)
             print("Saving result with thread lock in path: ", file_path)
             
@@ -601,6 +603,7 @@ def parse_args():
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--search_round', type=int, default=10)
+    parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
     args = parser.parse_args()
     return args
 

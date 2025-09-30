@@ -3,12 +3,26 @@ import backoff
 import asyncio
 from typing import Any, Dict, List, Optional
 from retrying import retry
+import re
 
 # Try to import local llm_backends adapter
 try:
     from llm_backends import HFBackend
 except Exception:
     HFBackend = None
+
+def sanitize_filename(name: str) -> str:
+    # replace path separators (both normal and alt) with underscore
+    name = name.replace(os.path.sep, '_')
+    if os.path.altsep:
+        name = name.replace(os.path.altsep, '_')
+    # keep only common safe characters: letters, numbers, dot, dash, underscore
+    name = re.sub(r'[^A-Za-z0-9._-]+', '_', name)
+    # collapse multiple underscores and trim
+    name = re.sub(r'_+', '_', name).strip('_')
+    if not name:
+        name = 'model'
+    return name 
 
 def format_messages_to_prompt(messages: List[Dict[str, str]]) -> str:
     """

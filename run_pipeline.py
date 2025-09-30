@@ -11,6 +11,7 @@ import sys
 import subprocess
 import argparse
 from pathlib import Path
+import re
 
 # dependency: python-dotenv for reading .env files
 try:
@@ -55,11 +56,12 @@ def main():
     parser.add_argument("--dataset_name", type=str, default="ProntoQA")
     parser.add_argument("--split", type=str, default="dev")
     parser.add_argument("--save_path", type=str, default="./results_translated")
-    parser.add_argument("--sample_pct", type=int, default=10, help="Percent of examples to run (1-100)")
+    parser.add_argument("--sample_pct", type=int, default=10, help="Percent of examples to run (0-100)")
     parser.add_argument("--model_name", type=str, help="model name passed to model wrapper")
     parser.add_argument("--max_new_tokens", type=int, default=8192)
     parser.add_argument("--search_round", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--language", type=str, default="en", help="Language for pipeline options: (id, en)")
     args = parser.parse_args()
 
     env_path = ROOT / args.env
@@ -70,15 +72,13 @@ def main():
     DATASET = args.dataset_name if args.dataset_name else os.environ.get("DATASET_NAME")
     SPLIT = args.split if args.split else os.environ.get("SPLIT")
     DATA_PATH = args.data_path if args.data_path else os.environ.get("DATA_PATH")
-    if args.sample_pct is not None:
-        SAMPLE_PCT = str(args.sample_pct)
-    else:
-        SAMPLE_PCT = os.environ.get("SAMPLE_PCT", "10")
+    SAMPLE_PCT = str(args.sample_pct) if args.sample_pct is not None else int(os.environ.get("SAMPLE_PCT"))
     PROMPTS_PATH = args.prompts_path if args.prompts_path else os.environ.get("PROMPTS_PATH")
     RESULTS_PATH = args.save_path if args.save_path else os.environ.get("RESULTS_PATH")
-    BATCH_NUM = args.batch_size if args.batch_size else int(os.environ.get("BATCH_NUM"))
-    MAX_NEW_TOKENS = args.max_new_tokens if args.max_new_tokens else int(os.environ.get("MAX_NEW_TOKENS"))
+    BATCH_NUM = str(args.batch_size) if args.batch_size else int(os.environ.get("BATCH_NUM"))
+    MAX_NEW_TOKENS = str(args.max_new_tokens) if args.max_new_tokens else int(os.environ.get("MAX_NEW_TOKENS"))
     SEARCH_ROUND = args.search_round if args.search_round else int(os.environ.get("SEARCH_ROUND"))
+    LANGUAGE = args.language if args.language else os.environ.get("LANGUAGE", "en")
 
     print(f"Model={MODEL} Dataset={DATASET} Prompts={PROMPTS_PATH} Split={SPLIT} Results={RESULTS_PATH}, Sample%={SAMPLE_PCT}")
 
@@ -86,21 +86,23 @@ def main():
     base_kwargs = [
         "--data_path", DATA_PATH,
         "--dataset_name", DATASET,
-        "--sample_pct", SAMPLE_PCT,
         "--prompts_folder", PROMPTS_PATH,
         "--split", SPLIT,
         "--save_path", RESULTS_PATH,
         "--model_name", MODEL,
         # use = form for stop_words to avoid argparse treating '------' as an option token
         f"--stop_words={os.environ.get('STOP_WORDS', '------')}",
-        "--max_new_tokens", str(MAX_NEW_TOKENS),
-        "--batch_num", str(BATCH_NUM),
+        "--max_new_tokens", MAX_NEW_TOKENS,
+        "--batch_num", BATCH_NUM,
     ]
 
     # 1) translate_decompose.py
     print("\n==> Running translate_decompose")
     try:
-        cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs
+        cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs +[
+            "--sample_pct", SAMPLE_PCT,
+            "--language", LANGUAGE
+        ]
         run_cmd(cmd)
     except subprocess.CalledProcessError as e:
         print("translate_decompose failed:", e)

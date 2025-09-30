@@ -108,86 +108,8 @@ Update first:
 apt update
 apt install git-lfs
 
-***TRANSLATION***
-!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
-
-
-!git lfs install
-!git clone https://huggingface.co/aisingapore/Gemma-SEA-LION-v3-9B-IT LLM_MODELS/Gemma-SEA-LION-v3-9B-IT
-
-
-import os
-from pathlib import Path
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-######### Also useful to reduce thread contention:
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-
-snapshot_path = "workspace/LLM_MODELS/Gemma-SEA-LION-v3-9B-IT" ############## <--- Change this based on platform and models
-
-os.environ["LOCAL_MODEL_PATH"] = snapshot_path
-######### set LLM_MODEL to the same path
-os.environ["LLM_MODEL"] = snapshot_path
-
-######## enable 4-bit for quant (and bitsandbytes is set up)
-os.environ["LLM_LOAD_IN_4BIT"] = "1"  # or "0" to disable quantization
-
-print("LOCAL_MODEL_PATH =", os.environ["LOCAL_MODEL_PATH"])
-print("LLM_MODEL =", os.environ["LLM_MODEL"])
-
-
-######### Quick test generation using existing HFBackend
-
-from llm_backends import HFBackend
-import os, traceback
-
-local_path = os.environ.get("LOCAL_MODEL_PATH")
-print("Using local_path:", local_path)
-
-try:
-    ######### create backend that points to the local model path (this uses the existing class)
-    backend = HFBackend(local_model_path=local_path, hf_model_id=None, quantize_4bit=(os.environ.get("LLM_LOAD_IN_4BIT","0")=="1"))
-    print("HFBackend initialized OK")
-    print("Tokenizer pad_token_id:", getattr(backend.tokenizer, "pad_token_id", None))
-    print("Model device:", getattr(backend, "device", None))
-    ######### test small generation
-    prompt = "Translate to formal logic: If it rains, the ground will be wet."
-    out = backend.generate(prompt, max_new_tokens=200, temperature=0.0, top_p=1.0, do_sample=False)
-    print("=== GENERATION ===")
-    print(out[:2000])
-except Exception as e:
-    print("HFBackend init / generate failed:")
-    traceback.print_exc()
-
-print("Finished generating/testing")
-
-
-!python translate_dataset.py --dataset_name ProntoQA --split dev --sample-pct 10 --batch_size 1
-print("\nFinished translating dataset\n")
-
-
-!python translate_prompts.py --file ./prompts/ProntoQA/and_or_decomposer.txt --overwrite --max_new_tokens 5000
-print("\nFinished translating prompts\n")
-
-!python translate_prompts.py --file ./prompts/ProntoQA/translation.txt --overwrite --max_new_tokens 5000
-print("\nFinished translating prompts\n")
-
-#########Need a lot of new tokens, because it get cut with 5k
-!python translate_prompts.py --file ./prompts/ProntoQA/logic_resolver.txt --overwrite --max_new_tokens 10000
-print("\nFinished translating prompts\n")
-
-
-
 Then download the translated dataset and prompts
 Delete the pod after, disk usage is EXPENSIVE
-
-***TRANSLATION_DECOMPOSE DATASET***
-!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
-
-
-!git lfs install
-!git clone https://huggingface.co/Sahabat-AI/llama3-8b-cpt-sahabatai-v1-instruct LLM_MODELS/llama3-8b-cpt-sahabatai-v1-instruct
 
 ***SCORING***
 We can check for other LLM performance, especially on instruction following ini this case on Indonesia dataset in: https://leaderboard.sea-lion.ai/
@@ -203,45 +125,19 @@ Manually translate the prompts instead, since prompting to transalte prompts is 
 
 ***PIPELINES***
 
-!pip install transformers safetensors sentencepiece huggingface-hub accelerate bitsandbytes tqdm openai backoff retrying protobuf
-
-
-!git lfs install
-!git clone https://huggingface.co/Qwen/Qwen3-8B LLM_MODELS/Qwen3-8B
-
-import os
-from pathlib import Path
-
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-######### Also useful to reduce thread contention:
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-
-snapshot_path = "workspace/LLM_MODELS/Qwen3-8B" ############## <--- Change this based on platform and models
-
-os.environ["LOCAL_MODEL_PATH"] = snapshot_path
-######### set LLM_MODEL to the same path
-os.environ["LLM_MODEL"] = snapshot_path
-
-######## enable 4-bit for quant (and bitsandbytes is set up)
-os.environ["LLM_LOAD_IN_4BIT"] = "1"  # or "0" to disable quantization
-
-print("LOCAL_MODEL_PATH =", os.environ["LOCAL_MODEL_PATH"])
-print("LLM_MODEL =", os.environ["LLM_MODEL"])
-
-!python run_pipeline.py --dataset_name ProntoQA --sample_pct 0
+python run_pipeline.py --dataset_name ProntoQA --sample_pct 0
 
 ######## if one single max_new_token should not be universally applied
 
-!python translate_decompose.py --data_path manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --max_new_tokens 4096
+python translate_decompose.py --data_path manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --max_new_tokens 4096
 
-!python negate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
+python negate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
 
-!python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation False --max_new_tokens 4096
+python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation False --max_new_tokens 4096
 
-!python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation True --max_new_tokens 4096
+python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation True --max_new_tokens 4096
 
-!python evaluate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
+python evaluate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
 
 
 **SLIDES**
