@@ -1,0 +1,397 @@
+PS G:\Documents\Schools\University\UI\Sem_12\TA\Aristotle> & G:/Documents/Schools/University/UI/Sem_12/TA/Aristotle/venv/Scripts/Activate.ps1
+(venv) PS G:\Documents\Schools\University\UI\Sem_12\TA\Aristotle> python .\run_pipeline.py --dataset_name ProntoQA --sample_pct 0
+Model=qwen/qwen3-8b Dataset=ProntoQA Prompts=./manual_prompts_translated Split=dev Results=./results_translated, Sample%=0
+
+==> Running translate_decompose
+>>> G:\Documents\Schools\University\UI\Sem_12\TA\Aristotle\venv\Scripts\python.exe G:\Documents\Schools\University\UI\Sem_12\TA\Aristotle\translate_decompose.py --data_path ./manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder ./manual_prompts_translated --split dev --save_path ./results_translated --model_name qwen/qwen3-8b --stop_words=------ --max_new_tokens 4096 --batch_num 1 --language en
+SAMPLE PCT: 0
+Loaded 1 examples from dev split.
+Loading translation file:  ./manual_prompts_translated\ProntoQA\translation.txt
+Loading decomposer file:  ./manual_prompts_translated\ProntoQA\and_or_decomposer.txt
+Number of batch:  1
+Translating...
+Translation prompt_a:  Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
+1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
+2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.    
+3) jika fakta berbentuk plural, fakta tersebut juga harus diterjemahkan ke bentuk tunggal (contoh: Wumpuses -> Wumpus)
+4) parsing konjektur menjadi bentuk logika
+5) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+------
+Berikut adalah contohnya:
+Konteks:
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus 
+adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat tidak pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus berwujud cair. Rompuses adalah zumpuses. Alex adalah tumpus.
+Konjektur:
+Alex bersifat tidak pemalu.
+###
+
+Fakta:
+Alex adalah tumpus ::: Tumpus(Alex, True)
+
+Aturan:
+Jompus($x, True) >>> Eksentris($x, True)
+Jompus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Transparan($x, False)
+Wumpus($x, True) >>> Tumpus($x, True)
+Tumpus($x, True) >>> Nakal($x, True)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Dingin($x, True)
+Vumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Oranye($x, True)
+Yumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Membosankan($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Pemalu($x, False)
+Impus($x, True) >>> Pemalu($x, True)
+Dumpus($x, True) >>> Rompus($x, True)
+Rompus($x, True) >>> Cair($x, True)
+Rompus($x, True) >>> Zumpus($x, True)
+
+Konjektur:
+Pemalu(Alex, False)
+------
+Berikut adalah contohnya:
+Konteks:
+Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses tidak terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Konjektur:
+Max asam.
+###
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Pemalu($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Agresif($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Kayu($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Merah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> TembusPandang($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Asam($x, True)
+Tumpus($x, True) >>> Asam($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Tanah($x, True)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Kecil($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+Asam(Max, True)
+
+-----
+Di bawah ini adalah yang perlu Anda terjemahkan:
+Konteks:
+Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.
+
+Konjektur:
+Wren adalah transparan.
+Loading checkpoint shards: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 5/5 [00:08<00:00,  1.71s/it] 
+The following generation flags are not valid and may be ignored: ['temperature', 'top_k']. Set `TRANSFORMERS_VERBOSITY=info` for more details.███████████████████████████████████████████████████████████████████████| 5/5 [00:08<00:00,  1.44s/it]
+Translation response:  [SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyeles
+setiap detail kebutuhan pengguna.
+
+[USER] Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
+1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
+2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+3) jika fakta berbentuk jamak atau plural, fakta tersebut juga harus diterjemahkan ke bentuk tunggal/non-jamak (contoh: Wumpuses -> Wumpus)
+4) parsing konjektur menjadi bentuk logika
+5) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+------
+Berikut adalah contohnya:
+Konteks:
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses a
+adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat tidak pemalu. Ius berwujud cair. Rompuses adalah zumpuses. Alex adalah tumpus.
+Konjektur:
+Alex bersifat tidak pemalu.
+###
+
+Fakta:
+Alex adalah tumpus ::: Tumpus(Alex, True)
+
+Aturan:
+Jompus($x, True) >>> Eksentris($x, True)
+Jompus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Transparan($x, False)
+Wumpus($x, True) >>> Tumpus($x, True)
+Tumpus($x, True) >>> Nakal($x, True)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Dingin($x, True)
+Vumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Oranye($x, True)
+Yumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Membosankan($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Pemalu($x, False)
+Impus($x, True) >>> Pemalu($x, True)
+Dumpus($x, True) >>> Rompus($x, True)
+Rompus($x, True) >>> Cair($x, True)
+Rompus($x, True) >>> Zumpus($x, True)
+
+Konjektur:
+Pemalu(Alex, False)
+------
+Berikut adalah contohnya:
+Konteks:
+Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses tidak terbuat dari kayu. Dumpuses adalah wumpuses. Wumpusembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran keci
+
+Konjektur:
+Max asam.
+###
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Pemalu($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Agresif($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Kayu($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Merah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> TembusPandang($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Asam($x, True)
+Tumpus($x, True) >>> Asam($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Tanah($x, True)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Kecil($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+Asam(Max, True)
+
+-----
+Di bawah ini adalah yang perlu Anda terjemahkan:
+Konteks:
+Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan papuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vum
+
+Konjektur:
+Wren adalah transparan. Wren bukan pahit.
+###
+
+Berikut adalah jawaban Anda:
+Fakta:
+Wren adalah wumpus ::: Wumpus(Wren, True)
+
+Aturan:
+Wumpus($x, True) >>> Besar($x, True)
+Wumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Logam($x, True)
+Numpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Cerah($x, True)
+Yumpus($x, True) >>> Jompus($x, True)
+Jompus($x, True) >>> Pahit($x, False)
+Jompus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Transparan($x, True)
+Zumpus($x, True) >>> Rombus($x, True)
+Rombus($x, True) >>> Tanah($x, True)
+Rombus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> Baik($x, True)
+Impus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Panas($x, False)
+Dumpus($x, True) >>> Vumpus($x, True)
+Tumpus($x, True) >>> Transparan($x, False)
+Wumpus($x, True) >>> Transparan($x, False)
+
+Konjektur:
+Transparan(Wren, True)
+Pahit(Wren, False)
+Okay, let's tackle this problem step by step. First, I need to parse the given context and convert it into logical rules and facts as specified. Let me start by breaking down thhe required format.
+
+The context provided is:
+
+- Wumpuses are big.
+- Wumpuses are numpuses.
+- Every numpus is metal.
+- Numpuses are yumpuses.
+- Every yumpus is clear.
+- Every yumpus is jompus.
+- Jompuses are not bitter.
+- Jompuses are zumpuses.
+- Every zumpus is transparent.
+- Zumpuses are rompuses.
+- Every rompus is made of earth.
+- Rompuses are impuses.
+- Every impus is good.
+- Every impus is dumpus.
+- Dumpuses are not hot.
+- Dumpuses are vumpuses.
+- Every tumpus is not transparent.
+- Wren is a wumpus.
+
+First, I need to convert all these statements into logical facts and rules. Let's start with the facts. The only explicit fact given is that Wren is a wumpus. So that's straight
+
+Next, the rules. Each statement in the context needs to be converted into a logical rule. Let's go through each one:
+
+1. "Wumpuses are big." → This is a general statement. So, for any x, if x is a wumpus, then x is big. So, Wumpus(x, True) → Big(x, True).
+
+2. "Wumpuses are numpuses." → Similarly, this is a general statement. So, Wumpus(x, True) → Numpus(x, True).
+
+3. "Every numpus is metal." → Numpus(x, True) → Metal(x, True).
+
+4. "Numpuses are yumpuses." → Numpus(x, True) → Yumpus(x, True).
+
+5. "Every yumpus is clear." → Yumpus(x, True) → Clear(x, True).
+
+6. "Every yumpus is jompus." → Yumpus(x, True) → Jompus(x, True).
+
+7. "Jompuses are not bitter." → Jompus(x, True) → Bitter(x, False).
+
+8. "Jompuses are zumpuses." → Jompus(x, True) → Zumpus(x, True).
+
+9. "Every zumpus is transparent." → Zumpus(x, True) → Transparent(x, True).
+
+10. "Zumpuses are rompuses." → Zumpus(x, True) → Rombus(x, True). Wait, the original context says "Zumpuses are rompuses." But in the example given earlier, the user used "Rompur had "Rompuses" and "Rombus" as separate terms. Wait, but in the problem statement, the user wrote "Zumpuses are rompuses." So, the term here is "rompuses" (plural), but accorded to singular. So "Zumpuses are rompuses" becomes "Zumpus(x, True) → Rombus(x, True)"? Wait, but in the example given by the user, they had "Rompuses" and "Rombus" as separate roblem again.
+
+Wait, the original context says: "Zumpuses are rompuses." So the plural is "rompuses", but according to the instructions, if a fact is plural, it should be translated to singula
+True)"? Wait, but in the example given by the user, they had "Rompuses" and "Rombus" as separate terms. Wait, perhaps there's a mistake here. Let me check the original problem a
+
+Wait, the user's original context says: "Zumpuses are rompuses." So the plural is "rompuses", but according to the instructions, if a fact is plural, it should be translated to bus(x, True)"? Wait, but in the example given by the user, they had "Rompuses" and "Rombus" as separate terms. Wait, perhaps the user made a typo here. Let me check the original
+
+Wait, the user's original context says: "Zumpuses are rompuses." So the plural is "rompuses", but according to the instructions, if a fact is plural, it should be translated to bus(x, True)"? Wait, but in the example given by the user, they had "Rompuses" and "Rombus" as separate terms. Wait, perhaps the user made a mistake in the example. Let me check
+
+In the example provided by the user, the context was:
+
+"Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses tidak terbuat dari kayu. Dumpuses adalah wumpuses. Wumpusembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kec
+
+In the example, the user translated "Zumpuses adalah rompuses" as "Zumpus($x, True) >>> Rompus($x, True)"? Wait, in the example, the user had "Zumpuses adalah rompuses" translatmple, the user used "Rompuses" and "Rombus" as separate terms. Wait, perhaps there's a typo here. Let me check the example again.
+
+In the example, the user's context had "Zumpuses adalah rompuses" and the rule was written as "Zumpus($x, True) >>> Rompus($x, True)". Wait, but in the original problem, the usenstructions, if a fact is plural, it should be translated to singular. So "Zumpuses are rompuses" becomes "Zumpus(x, True) → Rombus(x, True)"? Wait, but in the example, the user
+a mistake in the example. Alternatively, maybe the user intended to use "Rompuses" as the singular. But regardless, according to the instructions, if the original term is plural "rompus" (singular). So in the original problem, "Zumpuses are rompuses" becomes "Zumpus(x, True) → Rombus(x, True)".
+
+Continuing with the original problem:
+
+10. "Zumpuses are rompuses." → Zumpus(x, True) → Rombus(x, True).
+
+11. "Every rompus is made of earth." → Rombus(x, True) → MadeOfEarth(x, True).
+
+12. "Rompuses are impuses." → Rombus(x, True) → Impus(x, True).
+
+13. "Every impus is good." → Impus(x, True) → Good(x, True).
+
+14. "Every impus is dumpus." → Impus(x, True) → Dumpus(x, True).
+
+15. "Dumpuses are not hot." → Dumpus(x, True) → Hot(x, False).
+
+16. "Dumpuses are vumpuses." → Dumpus(x, True) → Vumpus(x, True).
+
+17. "Every tumpus is not transparent." → Tumpus(x, True) → Transparent(x, False).
+
+Wait, but in the original context, the last statement is "Every tumpus is not transparent." But in the problem statement, the user wrote: "Dumpuses are vumpuses. Setiap tumpus bmpuses. Setiap tumpus bukan transparan." Wait, the user wrote "Setiap tumpus bukan transparan" which translates to "Every tumpus is not transparent." So that's a separate statem).
+
+But wait, in the original context, the user wrote: "Dumpuses are vumpuses. Setiap tumpus bukan transparan." So the last statement is "Setiap tumpus bukan transparan" which is "E
+
+So now, compiling all these into rules:
+
+1. Wumpus(x, True) → Big(x, True)
+2. Wumpus(x, True) → Numpus(x, True)
+3. Numpus(x, True) → Metal(x, True)
+4. Numpus(x, True) → Yumpus(x, True)
+5. Yumpus(x, True) → Clear(x, True)
+6. Yumpus(x, True) → Jompus(x, True)
+7. Jompus(x, True) → Bitter(x, False)
+8. Jompus(x, True) → Zumpus(x, True)
+9. Zumpus(x, True) → Transparent(x, True)
+10. Zumpus(x, True) → Rombus(x, True)
+11. Rombus(x, True) → MadeOfEarth(x, True)
+12. Rombus(x, True) → Impus(x, True)
+13. Impus(x, True) → Good(x, True)
+14. Impus(x, True) → Dumpus(x, True)
+15. Dumpus(x, True) → Hot(x, False)
+16. Dumpus(x, True) → Vumpus(x, True)
+17. Tumpus(x, True) → Transparent(x, False)
+
+Wait, but in the original context, the user wrote "Dumpuses are vumpuses." So that's Dumpus(x, True) → Vumpus(x, True). And "Setiap tumpus bukan transparan" is Tumpus(x, True) →
+
+Now, the user's konjektur is "Wren adalah transparan. Wren bukan pahit." So translating that into logical terms: Transparent(Wren, True) and Bitter(Wren, False).
+
+Now, let's check if all the rules are correctly translated. Also, note that in the original context, the user mentioned "Dumpuses are vumpuses" which is Dumpus(x, True) → Vumpus) → Transparent(x, False). But in the original context, there's no mention of "tumpus" in the rules except for the last statement. Wait, the user's original context says: "Dumpus bukan transparan" is a separate statement. So that's Tumpus(x, True) → Transparent(x, False). But in the original context, there's no mention of "tumpus" in the other rules. S
+
+Now, putting it all together, the rules are as above.
+
+Now, the facts are:
+
+- Wren is a wumpus: Wumpus(Wren, True)
+
+The konjektur is:
+
+- Wren is transparent: Transparent(Wren, True)
+- Wren is not bitter: Bitter(Wren, False)
+
+Now, let's verify if these konjektur can be derived from the rules.
+
+Starting with Wren is a wumpus (Wumpus(Wren, True)).
+
+From rule 1: Wumpus(Wren, True) → Big(Wren, True)
+From rule 2: Wumpus(Wren, True) → Numpus(Wren, True)
+From rule 3: Numpus(Wren, True) → Metal(Wren, True)
+From rule 4: Numpus(Wren, True) → Yumpus(Wren, True)
+From rule 5: Yumpus(Wren, True) → Clear(Wren, True)
+From rule 6: Yumpus(Wren, True) → Jompus(Wren, True)
+From rule 7: Jompus(Wren, True) → Bitter(Wren, False)
+From rule 8: Jompus(Wren, True) → Zumpus(Wren, True)
+From rule 9: Zumpus(Wren, True) → Transparent(Wren, True)
+From rule 10: Zumpus(Wren, True) → Rombus(Wren, True)
+From rule 11: Rombus(Wren, True) → MadeOfEarth(Wren, True)
+From rule 12: Rombus(Wren, True) → Impus(Wren, True)
+From rule 13: Impus(Wren, True) → Good(Wren, True)
+From rule 14: Impus(Wren, True) → Dumpus(Wren, True)
+From rule 15: Dumpus(Wren, True) → Hot(Wren, False)
+From rule 16: Dumpus(Wren, True) → Vumpus(Wren, True)
+From rule 17: Tumpus(x, True) → Transparent(x, False) (but since Wren is not mentioned as a tumpus, this rule doesn't apply here)
+
+So, the konjektur "Transparent(Wren, True)" comes from rule 9, and "Bitter(Wren, False)" comes from rule 7. Therefore, both are valid.
+
+Now, let's check if all the rules are correctly translated, especially the plural to singular. For example, "Rompuses" in the original context is translated to "Rombus" (singulalar), etc.
+
+Therefore, the final answer should include the facts, rules, and konjektur as specified.
+###
+
+Fakta:
+Wren adalah wumpus ::: Wumpus(Wren, True)
+
+Aturan:
+Wumpus($x, True) >>> Besar($x, True)
+Wumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Logam($x, True)
+Numpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Cerah($x, True)
+Yumpus($x, True) >>> Jompus($x, True)
+Jompus($x, True) >>> Pahit($x, False)
+Jompus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Transparan($x, True)
+Zumpus($x, True) >>> Rombus($x, True)
+Rombus($x, True) >>> TerbuatDariTanah($x, True)
+Rombus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> Baik($x, True)
+Impus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Panas($x, False)
+Dumpus($x, True) >>> Vumpus($x, True)
+Tumpus($x, True) >>> Transparan($x, False)
+
+Konjektur:
+Transparan(Wren, True)
+Pahit(Wren, False)
+###
+**Penjelasan:**
+- Fakta: Wren adalah wumpus (diterjemahkan langsung).
+- Aturan: Setiap pernyataan konteks diterjemahkan ke dalam aturan logika, dengan plural diubah menjadi tunggal (misal: "Rompuses" → "Rombus").
+**Penjelasan:**
+- Fakta: Wren adalah wumpus (diterjemahkan langsung).
+- Aturan: Setiap pernyataan konteks diterjemahkan ke dalam aturan logika, dengan plural diubah menjadi tunggal (misal: "Rompuses" → "Rombus").
+- Konjektur: Dari fakta bahwa Wren adalah wumpus, aturan logika menurunkan bahwa Wren bersifat transparan (melalui rantai: Wumpus → Numpus → Yumpus → Jompus → Zumpus → Transpara
+- Sem
+Translated Facts1:  Alex adalah tumpus ::: Tumpus(Alex, True)
+Translated Facts2: Alex adalah tumpus ::: Tumpus(Alex, True)
+AND/OR: ['Jompus($x, True) >>> Eksentris($x, True)', 'Jompus($x, True) >>> Wumpus($x, True)', 'Wumpus($x, True) >>> Transparan($x, False)', 'Wumpus($x, True) >>> Tumpus($x, Trueumpus($x, True)', 'Vumpus($x, True) >>> Dingin($x, True)', 'Vumpus($x, True) >>> Yumpus($x, True)', 'Yumpus($x, True) >>> Oranye($x, True)', 'Yumpus($x, True) >>> Numpus($x, Tru) >>> Dumpus($x, True)', 'Dumpus($x, True) >>> Pemalu($x, False)', 'Impus($x, True) >>> Pemalu($x, True) ', 'Dumpus($x, True) >>> Rompus($x, True)', 'Rompus($x, True) >>> Cair($
+ EITHER/OR: []
+ BICONDITIONAL: []
+Decomposing rules...

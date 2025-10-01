@@ -1,7 +1,7 @@
 import json
 import argparse
 import re
-import os
+from utils import sanitize_filename
 
 def negate_conjecture(conjecture):
     if isinstance(conjecture, str):
@@ -18,7 +18,9 @@ def negate_conjecture(conjecture):
     return updated_conjecture
 
 def main(args):
-    input_path = f'./results/{args.dataset_name}/{args.dataset_name}_{args.model}_trans_decompose_no_negation.json'
+    results_dir = args.save_path or './results/'
+    model_name = sanitize_filename(args.model)
+    input_path = f'{results_dir}/{args.dataset_name}/{model_name}_trans_decompose_no_negation.json'
     with open(input_path, 'r') as f:
         data = json.load(f)
     
@@ -26,7 +28,7 @@ def main(args):
         item['sos_list'] = negate_conjecture(item['sos_list'])
         item['negated_label'] = "True"
     
-    save_path = f'./results/{args.dataset_name}/{args.dataset_name}_{args.model}_trans_decompose_negated_data.json'
+    save_path = f'{results_dir}/{args.dataset_name}/{model_name}_trans_decompose_negated_data.json'
     with open(save_path, 'w') as f:
         json.dump(data, f, indent=4)
 
@@ -34,6 +36,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--model', type=str)
+    parser.add_argument('--save_path', type=str)
     args = parser.parse_args()
     return args
     

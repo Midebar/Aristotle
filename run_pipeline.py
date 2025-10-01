@@ -4,7 +4,6 @@ run_pipeline.py
 Usage:
   python run_pipeline.py
 
-This script expects a .env file in the same directory or environment variables set.
 """
 
 import os
@@ -12,6 +11,7 @@ import sys
 import subprocess
 import argparse
 from pathlib import Path
+import re
 
 # dependency: python-dotenv for reading .env files
 try:
@@ -44,142 +44,106 @@ def check_ollama(url: str) -> bool:
     except Exception:
         return False
 
-def check_hf_model(hf_model: str) -> bool:
-    # Lightweight check: attempt to import transformers and tokenizers without loading the model
-    try:
-        import transformers
-        return True
-    except Exception:
-        return False
-
 def run_cmd(cmd_list, env=None):
     print(">>>", " ".join(map(str, cmd_list)))
     subprocess.run(cmd_list, check=True, env=env)
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default=".env", help="Path to .env file")
-    parser.add_argument("--pilot", action="store_true", help="Run pilot only (overrides PILOT_ONLY)")
-    parser.add_argument("--skip-negate", action="store_true")
-    parser.add_argument("--skip-search", action="store_true")
-    parser.add_argument("--skip-eval", action="store_true")
+    parser.add_argument("--env", type=str, default=".env")
+    parser.add_argument("--data_path", type=str, default="./manual_data_translated")
+    parser.add_argument("--prompts_path", type=str, default="./manual_prompts_translated")
+    parser.add_argument("--dataset_name", type=str, default="ProntoQA")
+    parser.add_argument("--split", type=str, default="dev")
+    parser.add_argument("--save_path", type=str, default="./results_translated")
+    parser.add_argument("--sample_pct", type=int, default=10, help="Percent of examples to run (0-100)")
+    parser.add_argument("--model_name", type=str, help="model name passed to model wrapper")
+    parser.add_argument("--max_new_tokens", type=int, default=8192)
+    parser.add_argument("--search_round", type=int, default=10)
+    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--language", type=str, default="en", help="Language for pipeline options: (id, en)")
     args = parser.parse_args()
 
     env_path = ROOT / args.env
     load_env_file(env_path)
 
-    # pull configuration from environment
-    BACKEND = os.environ.get("LLM_BACKEND", "ollama")
-    MODEL = os.environ.get("LLM_MODEL", "")
-    OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
-    DATASET = os.environ.get("DATASET_NAME", "ProofWriter")
-    SPLIT = os.environ.get("SPLIT", "dev")
-    DATA_PATH = os.environ.get("DATA_PATH", "./data_translated")
-    PROMPTS_PATH = os.environ.get("PROMPTS_PATH", "./prompts_translated")
-    RESULTS_PATH = os.environ.get("RESULTS_PATH", "./results_translated")
-    BATCH_NUM = os.environ.get("BATCH_NUM", "1")
-    MAX_NEW_TOKENS = os.environ.get("MAX_NEW_TOKENS", "512")
-    SEARCH_ROUND = os.environ.get("SEARCH_ROUND", "10")
-    USE_MODEL_FOR_NEGATION = os.environ.get("USE_MODEL_FOR_NEGATION", "false").lower() in ("1","true","yes")
-    PILOT_ONLY_ENV = os.environ.get("PILOT_ONLY", "true").lower() in ("1","true","yes")
-    pilot_mode = args.pilot or PILOT_ONLY_ENV
+    # Configs
+    MODEL = args.model_name if args.model_name else os.environ.get("LLM_MODEL", "")
+    DATASET = args.dataset_name if args.dataset_name else os.environ.get("DATASET_NAME")
+    SPLIT = args.split if args.split else os.environ.get("SPLIT")
+    DATA_PATH = args.data_path if args.data_path else os.environ.get("DATA_PATH")
+    SAMPLE_PCT = str(args.sample_pct) if args.sample_pct is not None else int(os.environ.get("SAMPLE_PCT"))
+    PROMPTS_PATH = args.prompts_path if args.prompts_path else os.environ.get("PROMPTS_PATH")
+    RESULTS_PATH = args.save_path if args.save_path else os.environ.get("RESULTS_PATH")
+    BATCH_NUM = str(args.batch_size) if args.batch_size else int(os.environ.get("BATCH_NUM"))
+    MAX_NEW_TOKENS = str(args.max_new_tokens) if args.max_new_tokens else int(os.environ.get("MAX_NEW_TOKENS"))
+    SEARCH_ROUND = args.search_round if args.search_round else int(os.environ.get("SEARCH_ROUND"))
+    LANGUAGE = args.language if args.language else os.environ.get("LANGUAGE", "en")
 
-    print(f"Backend={BACKEND} Model={MODEL} Dataset={DATASET} Pilot={pilot_mode}")
+    print(f"Model={MODEL} Dataset={DATASET} Prompts={PROMPTS_PATH} Split={SPLIT} Results={RESULTS_PATH}, Sample%={SAMPLE_PCT}")
 
-    # Basic checks
-    if BACKEND == "ollama":
-        print("Checking Ollama availability at", OLLAMA_URL)
-        ok = check_ollama(OLLAMA_URL)
-        print("Ollama reachable?" , ok)
-        if not ok:
-            print("Warning: Unable to reach Ollama at", OLLAMA_URL)
-            print("If Ollama is running locally, set OLLAMA_URL correctly or start Ollama.")
-    elif BACKEND == "hf":
-        print("Checking HF dependencies")
-        if not check_hf_model(MODEL):
-            print("Warning: Transformers not available — install 'transformers accelerate bitsandbytes safetensors' to use HF backend.")
-    elif BACKEND == "openai":
-        if not os.environ.get("OPENAI_API_KEY"):
-            print("Warning: OPENAI_API_KEY not set in env.")
-    else:
-        print("Unknown backend:", BACKEND)
-        sys.exit(1)
-
-    # build base args robustly (use --key=value for options whose values might start with '-')
+    # build base args (use --key=value for options whose values might start with '-')
     base_kwargs = [
         "--data_path", DATA_PATH,
         "--dataset_name", DATASET,
         "--prompts_folder", PROMPTS_PATH,
         "--split", SPLIT,
         "--save_path", RESULTS_PATH,
-        "--api_key", os.environ.get("OPENAI_API_KEY", ""),
         "--model_name", MODEL,
         # use = form for stop_words to avoid argparse treating '------' as an option token
         f"--stop_words={os.environ.get('STOP_WORDS', '------')}",
-        "--mode", os.environ.get("MODE", ""),
-        "--max_new_tokens", str(MAX_NEW_TOKENS),
-        "--batch_num", str(BATCH_NUM),
+        "--max_new_tokens", MAX_NEW_TOKENS,
+        "--batch_num", BATCH_NUM,
     ]
-    # only include base_url if set (avoid passing empty string as separate token)
-    if os.environ.get("OLLAMA_URL", ""):
-        base_kwargs.append(f"--base_url={os.environ.get('OLLAMA_URL')}")
 
     # 1) translate_decompose.py
     print("\n==> Running translate_decompose")
     try:
-        cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs
+        cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs +[
+            "--sample_pct", SAMPLE_PCT,
+            "--language", LANGUAGE
+        ]
         run_cmd(cmd)
     except subprocess.CalledProcessError as e:
         print("translate_decompose failed:", e)
         sys.exit(2)
 
-    # 2) negate.py (optional)
-    if not args.skip_negate:
-        print("\n==> Running negate")
-        try:
-            negate_cmd = [sys.executable, str(ROOT / "negate.py"),
-                          "--dataset_name", DATASET,
-                          "--model", MODEL if MODEL else "model",
-                          "--model_name", MODEL,
-                          "--max_new_tokens", "256"]
-            if USE_MODEL_FOR_NEGATION:
-                negate_cmd.append("--use_model")
-            run_cmd(negate_cmd)
-        except subprocess.CalledProcessError as e:
-            print("negate.py failed:", e)
-            sys.exit(3)
-    else:
-        print("Skipping negate step (--skip-negate)")
+    # 2) negate.py
+    print("\n==> Running negate")
+    try:
+        negate_cmd = [sys.executable, str(ROOT / "negate.py"),
+                      "--dataset_name", DATASET,
+                      "--model", MODEL,
+                      "--save_path", RESULTS_PATH]
+        run_cmd(negate_cmd)
+    except subprocess.CalledProcessError as e:
+        print("negate.py failed:", e)
+        sys.exit(3)
 
     # 3) search_resolve.py for negation True and False
-    if not args.skip_search:
-        for neg in ("True","False"):
-            print(f"\n==> Running search_resolve (negation={neg})")
-            try:
-                search_cmd = [sys.executable, str(ROOT / "search_resolve.py")] + base_kwargs + [
-                    "--negation", neg,
-                    "--search_round", str(SEARCH_ROUND)
-                ]
-                run_cmd(search_cmd)
-            except subprocess.CalledProcessError as e:
-                print("search_resolve.py failed:", e)
-                sys.exit(4)
-    else:
-        print("Skipping search step (--skip-search)")
+    for neg in ("True","False"):
+        print(f"\n==> Running search_resolve (negation={neg})")
+        try:
+            search_cmd = [sys.executable, str(ROOT / "search_resolve.py")] + base_kwargs + [
+                "--negation", neg,
+                "--search_round", str(SEARCH_ROUND)
+            ]
+            run_cmd(search_cmd)
+        except subprocess.CalledProcessError as e:
+            print("search_resolve.py failed:", e)
+            sys.exit(4)
 
     # 4) evaluate.py
-    if not args.skip_eval:
-        print("\n==> Running evaluate")
-        try:
-            eval_cmd = [sys.executable, str(ROOT / "evaluate.py"),
-                        "--dataset_name", DATASET,
-                        "--model_name", MODEL]
-            run_cmd(eval_cmd)
-        except subprocess.CalledProcessError as e:
-            print("evaluate.py failed:", e)
-            sys.exit(5)
-    else:
-        print("Skipping evaluate (--skip-eval)")
+    print("\n==> Running evaluate")
+    try:
+        eval_cmd = [sys.executable, str(ROOT / "evaluate.py"),
+                    "--dataset_name", DATASET,
+                    "--model_name", MODEL,
+                    "--save_path", RESULTS_PATH]
+        run_cmd(eval_cmd)
+    except subprocess.CalledProcessError as e:
+        print("evaluate.py failed:", e)
+        sys.exit(5)
 
     print("\nPipeline finished successfully.")
 

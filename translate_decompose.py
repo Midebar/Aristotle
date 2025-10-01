@@ -2,10 +2,9 @@
 import json
 import os
 from tqdm import tqdm
-from utils import OpenAIModel
+from utils import ModelWrapper, sanitize_filename
 import argparse
 import re
-import sys
 import concurrent.futures
 import traceback
 import threading
@@ -16,17 +15,18 @@ class GPT3_Reasoning_Graph_Baseline:
         self.data_path = args.data_path
         self.dataset_name = args.dataset_name
         self.split = args.split
-        self.split_percent = args.split_percent
+        self.sample_pct = args.sample_pct
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.mode = args.mode
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
+        self.language = args.language
         self.file_lock = threading.Lock()
         if args.base_url:
-            self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
+            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
         else:
-            self.openai_api = OpenAIModel(args.api_key, args.model_name, args.stop_words, args.max_new_tokens)
+            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
             
     def load_in_context_examples_trans(self, prompts_folder='./prompts'):
         file_path = os.path.join(prompts_folder, self.dataset_name, 'translation.txt')
@@ -69,10 +69,11 @@ class GPT3_Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_raw_dataset(self, split, split_percent):
+    def load_raw_dataset(self, split, sample_pct):
+        print(f"SAMPLE PCT: {sample_pct}")
         with open(os.path.join(self.data_path, self.dataset_name, f'{split}.json')) as f:
             raw_dataset = json.load(f)
-            raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * split_percent / 100))]
+            raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
         
     def index_context(self, context):
@@ -154,7 +155,7 @@ class GPT3_Reasoning_Graph_Baseline:
         sufficiency_label_match = re.search(r"Sufficiency Label:\s*\[(.*?)\]", response_d)
         sufficiency_label = sufficiency_label_match.group(1).strip() if sufficiency_label_match else None
         
-        final_answer = "***Final Answer: N/A***"
+        final_answer = "***Bentuk Akhir: N/A***"
         if sufficiency_label and sufficiency_label.lower() == "true":
             final_answer_match = re.search(r'\*\*\*(.*?)\*\*\*', response_d)
             final_answer = final_answer_match.group(1).strip() if final_answer_match else "No final answer found"
@@ -212,18 +213,18 @@ class GPT3_Reasoning_Graph_Baseline:
         return "\n".join(indexed_list)
     
     def extract_facts_and_rules(self, content):
-        fact_pattern = r'Facts(.*?)Rules'
+        fact_pattern = r'Fakta(.*?)Aturan'
         fact_match = re.search(fact_pattern, content, re.DOTALL)
         facts = fact_match.group(1).strip() if fact_match else None
 
-        rules_pattern = r'Rules(.*?)Conjecture'
+        rules_pattern = r'Aturan(.*?)Konjektur'
         rules_match = re.search(rules_pattern, content, re.DOTALL)
         rules = rules_match.group(1).strip() if rules_match else None
 
         return facts, rules
 
     def extract_query(self, content):
-        query_matches = list(re.finditer(r'Conjecture', content))
+        query_matches = list(re.finditer(r'Konjektur', content))
         
         if not query_matches:
             return None
@@ -233,10 +234,10 @@ class GPT3_Reasoning_Graph_Baseline:
         last_query_content = content[last_query_pos:]
         
         patterns = [
-            r'Conjecture\s*```(?:plaintext)?\n?(.+?)\n?```',
-            r'Conjecture\s*(.+?)(?:\n|$)',
-            r'Conjecture.*?\n(.*?)(?:\n|$)',
-            r'Conjecture.*?\n.*?\n(.*?)(?:\n|$)'
+            r'Konjektur\s*```(?:plaintext)?\n?(.+?)\n?```',
+            r'Konjektur\s*(.+?)(?:\n|$)',
+            r'Konjektur.*?\n(.*?)(?:\n|$)',
+            r'Konjektur.*?\n.*?\n(.*?)(?:\n|$)'
         ]
         
         for pattern in patterns:
@@ -292,48 +293,99 @@ class GPT3_Reasoning_Graph_Baseline:
         return either_or, biconditional, others
     
 
-    def extract_facts_rules_conjecture(self, content):
+    def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
         fact = ""
         rule = ""
         conjecture = ""
 
-        fact_matches = list(re.finditer(r'Fact(.*?)Rule', content, re.DOTALL))
-        if fact_matches:
-            fact = fact_matches[-1].group(1).strip()
+        fact_matches = list(re.finditer(r'Fakta(.*?)Aturan', content, re.DOTALL))
+        rule_matches = list(re.finditer(r'Aturan(.*?)Konjektur', content, re.DOTALL))
+        conj_matches = list(re.finditer(r'Konjektur(.*?)', content, re.DOTALL))
 
-        rule_matches = list(re.finditer(r'Rule(.*?)Conjecture', content, re.DOTALL))
-        if rule_matches:
-            rule = rule_matches[-1].group(1).strip()
+        # normalize/clean extracted block text
+        def _clean_lead(s: str) -> str:
+            return re.sub(r'^[\s:\-]*', '', s.strip())
+        
+        # count non-empty rule lines (treat each non-empty line as a rule)
+        def _rule_count_from_text(txt):
+            lines = [ln for ln in re.split(r'\r?\n', txt or "") if ln.strip()]
+            return len(lines), lines
 
-        parts = content.rsplit('Conjecture', 1)
-        conj = parts[-1].strip() if len(parts) > 1 else ""
-        conjecture = re.sub(r'^[\s:\-]*', '', conj)
+        # 1) Try to find the latest rule block that exactly matches context_sentence_count (search from last)
+        selected_rule_match = None
+        if isinstance(context_sentence_count, int) and context_sentence_count > 0:
+            for m in reversed(rule_matches):
+                rtxt = _clean_lead(m.group(1))
+                cnt, _ = _rule_count_from_text(rtxt)
+                if cnt == context_sentence_count:
+                    selected_rule_match = m
+                    print(f"Matched rule count {cnt} to context sentence count {context_sentence_count}")
+                    break
 
-        return fact, rule, conjecture
+        # 2) If not found, pick the latest rule block that has any rules
+        if selected_rule_match is None:
+            for m in reversed(rule_matches):
+                rtxt = _clean_lead(m.group(1))
+                cnt, _ = _rule_count_from_text(rtxt)
+                if cnt > 0:
+                    print(f"Fallback matched rule count {cnt}")
+                    selected_rule_match = m
+                    break
+                
+        rule = _clean_lead(selected_rule_match.group(1)) if selected_rule_match else ""
+        # Find the Fakta block immediately before the chosen Aturan
+        rule_start = selected_rule_match.start()
+        preceding_facts = [m for m in fact_matches if m.start() <= rule_start]
+        if preceding_facts:
+            fact = _clean_lead(preceding_facts[-1].group(1))
+        else:
+            fact = _clean_lead(fact_matches[-1].group(1)) if fact_matches else ""
+
+        # Find the Konjektur block immediately after the chosen Aturan
+        rule_end = selected_rule_match.end()
+        following_conjs = [m for m in conj_matches if m.start() >= rule_end]
+        if following_conjs:
+            conjecture = _clean_lead(following_conjs[0].group(1))
+        else:
+            conjecture = _clean_lead(conj_matches[-1].group(1)) if conj_matches else ""
+
+            return fact, rule, conjecture
 
     
     def post_process_decompose(self, content):
-        final_form_match = re.finditer(r'Final Form', content)
-        final_form_positions = [m.start() for m in final_form_match]
+        if self.language == 'en':
+            words_to_find = ['Final Form', 'Final Answer']
+        elif self.language == 'id':
+            words_to_find = ['Bentuk Akhir', 'Output Akhir']
+        
+        # build a safe alternation from the list (escape special regex chars)
+        escaped = [re.escape(w) for w in words_to_find]
+        pattern = r'(?:' + '|'.join(escaped) + r')'
+        regex = re.compile(pattern, re.IGNORECASE)  # case-insensitive
+        
+        matches = list(regex.finditer(content))
+        if matches:
+            first = matches[0]
 
-        if final_form_positions:
-            first_final_form_pos = final_form_positions[0]
-            
-            try:
-                context = content[first_final_form_pos:].split("Final Form:")[-1].strip()
+            rest = content[first.end():]
 
-                context_lines = context.split("\n")
-                filtered_context_lines = [line for line in context_lines if "(" in line]
-                context = "\n".join(filtered_context_lines)
-                
-            except IndexError as e:
-                problematic_content = content[first_final_form_pos:]
-                print("Problematic content: ", problematic_content)
-                context = ""
-        else:
-            context_lines = content.split("\n")
+            # if there's an optional colon (like "Bentuk Akhir:") consume it and get the following text
+            colon_match = re.match(r'\s*:\s*(.*)', rest, flags=re.DOTALL)
+            if colon_match:
+                context = colon_match.group(1)
+            else:
+                # no colon — use the rest (strip leading whitespace)
+                context = rest.lstrip()
+
+            context_lines = context.splitlines()
             filtered_context_lines = [line for line in context_lines if "(" in line]
-            context = "\n".join(filtered_context_lines)
+            context = "\n".join(filtered_context_lines).strip()
+
+        else:
+            #fall back to scanning whole content
+            context_lines = content.splitlines()
+            filtered_context_lines = [line for line in context_lines if "(" in line]
+            context = "\n".join(filtered_context_lines).strip()
 
         return context
     
@@ -344,20 +396,17 @@ class GPT3_Reasoning_Graph_Baseline:
         cleaned_conjecture = []
         for item in splitted_conjecture:
             if "(" in item:
-                remove_list = ['Rules (others):', 'Rules (biconditional):', 'Rules (either_or):']
+                remove_list = ['Aturan (others):', 'Aturan (biconditional):', 'Aturan (either_or):']
                 if not any(remove_item in item for remove_item in remove_list):
                     splited_item = item.split(":::")[0]
                     cleaned_conjecture.append(splited_item)
                 
         return '\n'.join(cleaned_conjecture)
         
-        
     def save_output(self, outputs, file_suffix=None):
-        if "llama" in self.model_name:
-            model_name = 'llama'
-        else:
-            model_name = self.model_name
-        file_name = f'{self.dataset_name}_{model_name}_trans_decompose_no_negation.json'
+        model_name = self.model_name
+        model_name = sanitize_filename(model_name)
+        file_name = f'{model_name}_trans_decompose_no_negation.json'
         file_path = os.path.join(self.save_path, self.dataset_name, file_name)
         
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
@@ -393,6 +442,7 @@ class GPT3_Reasoning_Graph_Baseline:
             question = example['question'].split('?')[1]
         print("Translating...")
         prompts_a = self.construct_prompt_a(example, in_context_examples_trans)
+        print("Translation prompt_a: ", prompts_a)
         responses_a = self.openai_api.generate(prompts_a)
         # responses_a might be (text, finish_reason) or a string; normalize to string
         if isinstance(responses_a, (list, tuple)):
@@ -401,7 +451,15 @@ class GPT3_Reasoning_Graph_Baseline:
             responses_a_text = responses_a
         print("Translation response: ", responses_a_text)
         
-        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a_text)
+        #count sentences in the example context
+        context_text = example.get('context', '') or ''
+        # Split on sentence end punctuation followed by whitespace (keeps punctuation on the chunk).
+        raw_sentences = re.split(r'(?<=[.!?])\s+', context_text.strip())
+        # Filter out any empty results (in case of trailing whitespace)
+        sentences = [s for s in raw_sentences if s.strip()]
+        context_sentence_count = len(sentences)-1 # exclude facts at end of sentence
+
+        translated_facts, translated_rules, translated_conjecture = self.extract_facts_rules_conjecture(responses_a_text, context_sentence_count)
         print("Translated Facts1: ", translated_facts)
         translated_facts = self.clean_irrelevant_lines(translated_facts)
         print(f"Translated Facts2: {translated_facts}")
@@ -473,7 +531,7 @@ class GPT3_Reasoning_Graph_Baseline:
         return output, None
         
     def reasoning_graph_generation(self):
-        raw_dataset = self.load_raw_dataset(self.split, self.split_percent)
+        raw_dataset = self.load_raw_dataset(self.split, self.sample_pct)
         print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
 
         in_context_examples_trans = self.load_in_context_examples_trans(self.prompts_folder)
@@ -533,7 +591,7 @@ def parse_args():
     parser.add_argument('--data_path', type=str, default='./data')
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--split', type=str, default='dev')
-    parser.add_argument('--split_percent', type=int, default=100)
+    parser.add_argument('--sample_pct', type=int, default=100)
     parser.add_argument('--save_path', type=str, default='./results')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
     parser.add_argument('--api_key', type=str)
@@ -543,7 +601,8 @@ def parse_args():
     parser.add_argument('--max_new_tokens', type=int)
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
-    parser.add_argument('--prompts_folder', type=str, default='./prompts')
+    parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--language', type=str, default='en', help="Language for extract final answer options:(id, en)")
     args = parser.parse_args()
     return args
 
