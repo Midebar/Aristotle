@@ -2,8 +2,9 @@ Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tu
 1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
 2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal (contoh: Wumpuses -> Wumpus)
 3) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
-4) parsing konjektur menjadi bentuk logika
-5) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+4) parsing konjektur menjadi bentuk 
+5) berikan penanda ***Bentuk Akhir*** atau ***Final Form*** sebagai output akhir dari tugas Anda.
+6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 ------
 Berikut adalah contohnya:
 Konteks:
@@ -11,6 +12,7 @@ Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wump
 Konjektur:
 Alex bersifat tidak pemalu.
 ###
+***Bentuk Akhir***
 
 Fakta:
 Alex adalah tumpus ::: Tumpus(Alex, True)
@@ -44,6 +46,7 @@ Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif.
 Konjektur:
 Max asam.
 ###
+***Bentuk Akhir***
 
 Fakta:
 Max adalah yumpus ::: Yumpus(Max, True)

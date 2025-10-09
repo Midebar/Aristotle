@@ -294,64 +294,162 @@ class GPT3_Reasoning_Graph_Baseline:
     
 
     def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
-        fact = ""
-        rule = ""
-        conjecture = ""
+        """
+        Scan final-form blocks (***Bentuk Akhir*** / ***Final Form***) from the last to the first.
+        For each final-form block:
+        - extract Fakta / Aturan / Konjektur occurrences inside that block
+        - select the Aturan candidate (latest one whose rule-line count == context_sentence_count,
+            otherwise latest with any rules)
+        - find the Fakta immediately before that Aturan and the Konjektur immediately after
+        - validate the block:
+            * Fakta and Konjektur must look complete (not cut by generation)
+                — check parentheses balanced and predicate-like pattern present (contains True/False or endswith ')')
+            * Aturan rule count must equal context_sentence_count (if provided)
+        - if valid: return (fact, rule_text, conjecture)
+        If none of the final-form blocks validate, fallback to reasonable last-block selection.
+        Always returns three strings.
+        """
 
-        fact_matches = list(re.finditer(r'Fakta(.*?)Aturan', content, re.DOTALL))
-        rule_matches = list(re.finditer(r'Aturan(.*?)Konjektur', content, re.DOTALL))
-        conj_matches = list(re.finditer(r'Konjektur(.*?)', content, re.DOTALL))
-
-        # normalize/clean extracted block text
         def _clean_lead(s: str) -> str:
-            return re.sub(r'^[\s:\-]*', '', s.strip())
-        
-        # count non-empty rule lines (treat each non-empty line as a rule)
-        def _rule_count_from_text(txt):
+            return re.sub(r'^[\s:\-]*', '', (s or "").strip())
+
+        def _rule_count_and_lines(txt: str):
             lines = [ln for ln in re.split(r'\r?\n', txt or "") if ln.strip()]
             return len(lines), lines
 
-        # 1) Try to find the latest rule block that exactly matches context_sentence_count (search from last)
-        selected_rule_match = None
-        if isinstance(context_sentence_count, int) and context_sentence_count > 0:
-            for m in reversed(rule_matches):
-                rtxt = _clean_lead(m.group(1))
-                cnt, _ = _rule_count_from_text(rtxt)
-                if cnt == context_sentence_count:
-                    selected_rule_match = m
-                    print(f"Matched rule count {cnt} to context sentence count {context_sentence_count}")
-                    break
+        def _search_complete_predicate(s: str) -> bool:
+            """
+            Heuristic for "not cut by max tokens":
+            - parentheses balanced
+            - contains a predicate-like token with a ( ... True/False ) or ends with ')'
+            - otherwise considered incomplete
+            """
+            if not s or not s.strip():
+                return False
+            s = s.strip()
+            # balanced parentheses
+            if s.count('(') != s.count(')'):
+                return False
+            # strong signal: predicate(...) containing True/False (common in your outputs)
+            if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
+                return True
+            # or at least ends with a closing paren (likely complete)
+            if s.endswith(')'):
+                return True
+            # fallback: contains '(' and ')' somewhere and balanced (less strict)
+            if '(' in s and ')' in s:
+                return True
+            return False
 
-        # 2) If not found, pick the latest rule block that has any rules
-        if selected_rule_match is None:
-            for m in reversed(rule_matches):
-                rtxt = _clean_lead(m.group(1))
-                cnt, _ = _rule_count_from_text(rtxt)
-                if cnt > 0:
-                    print(f"Fallback matched rule count {cnt}")
-                    selected_rule_match = m
-                    break
-                
-        rule = _clean_lead(selected_rule_match.group(1)) if selected_rule_match else ""
-        # Find the Fakta block immediately before the chosen Aturan
-        rule_start = selected_rule_match.start()
-        preceding_facts = [m for m in fact_matches if m.start() <= rule_start]
-        if preceding_facts:
-            fact = _clean_lead(preceding_facts[-1].group(1))
-        else:
-            fact = _clean_lead(fact_matches[-1].group(1)) if fact_matches else ""
+        content = content or ""
 
-        # Find the Konjektur block immediately after the chosen Aturan
-        rule_end = selected_rule_match.end()
-        following_conjs = [m for m in conj_matches if m.start() >= rule_end]
-        if following_conjs:
-            conjecture = _clean_lead(following_conjs[0].group(1))
-        else:
-            conjecture = _clean_lead(conj_matches[-1].group(1)) if conj_matches else ""
+        # 1) Collect final-form blocks (choose last valid one by scanning backwards)
+        final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
+        final_blocks = re.findall(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
+        final_blocks_text = [b[0] for b in final_blocks]  # list in occurrence order
 
-            return fact, rule, conjecture
+        # If no explicit final-form anchors, treat the whole content as a single block
+        if not final_blocks_text:
+            final_blocks_text = [content]
 
-    
+        # scan from last to first
+        for block in reversed(final_blocks_text):
+            # find Fakta / Aturan / Konjektur occurrences inside this block
+            fact_iter = list(re.finditer(
+                r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
+                block, re.DOTALL | re.IGNORECASE))
+            rule_iter = list(re.finditer(
+                r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
+                block, re.DOTALL | re.IGNORECASE))
+            conj_iter = list(re.finditer(
+                r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
+                block, re.DOTALL | re.IGNORECASE))
+
+            # if no Aturan in this block, it's invalid — continue to previous block
+            if not rule_iter:
+                continue
+
+            # choose the rule match for this block:
+            selected_rule = None
+            if isinstance(context_sentence_count, int) and context_sentence_count > 0:
+                for m in reversed(rule_iter):
+                    rtxt = _clean_lead(m.group(1))
+                    cnt, _ = _rule_count_and_lines(rtxt)
+                    if cnt == context_sentence_count:
+                        selected_rule = m
+                        break
+
+            # fallback: latest rule block that has any rules (non-empty lines)
+            if selected_rule is None:
+                for m in reversed(rule_iter):
+                    rtxt = _clean_lead(m.group(1))
+                    cnt, _ = _rule_count_and_lines(rtxt)
+                    if cnt > 0:
+                        selected_rule = m
+                        break
+
+            # safety
+            if selected_rule is None:
+                selected_rule = rule_iter[-1]
+
+            # extract rule text and lines (normalize minimal noise)
+            rule_text = _clean_lead(selected_rule.group(1)) if selected_rule else ""
+            rule_count, rule_lines = _rule_count_and_lines(rule_text)
+
+            # find the Fakta immediately before this Aturan (by position within block)
+            rule_start = selected_rule.start() if selected_rule else 0
+            preceding_facts = [m for m in fact_iter if m.start() <= rule_start]
+            if preceding_facts:
+                fact_text = _clean_lead(preceding_facts[-1].group(1))
+            else:
+                fact_text = _clean_lead(fact_iter[-1].group(1)) if fact_iter else ""
+
+            # find the Konjektur immediately after the chosen Aturan (by position)
+            rule_end = selected_rule.end() if selected_rule else 0
+            following_conjs = [m for m in conj_iter if m.start() >= rule_end]
+            if following_conjs:
+                conj_text = _clean_lead(following_conjs[0].group(1))
+            else:
+                conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
+
+            # VALIDATION: Fakta and Konjektur must not be cut; Aturan count must equal context_sentence_count (if provided)
+            fact_ok = _search_complete_predicate(fact_text)
+            conj_ok = _search_complete_predicate(conj_text)
+            count_ok = True
+            if isinstance(context_sentence_count, int) and context_sentence_count >= 0:
+                count_ok = (rule_count == context_sentence_count)
+
+            # If valid, return this triple
+            if fact_ok and conj_ok and count_ok:
+                # normalize some arrow variants to a common form for downstream parsing
+                rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|–)\s*', ' >>> ', rule_text)
+                rule_text = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule_text)
+                return fact_text, rule_text, conj_text
+
+            # otherwise continue to the previous final block
+
+        # If no final-form block validated, fallback logic: return last block's best attempt
+        # Use the last block in original order (final_blocks_text[-1]) or content if none
+        fallback_block = final_blocks_text[-1] if final_blocks_text else content
+
+        # extract last Fakta/Aturan/Konjektur in fallback_block
+        fm = list(re.finditer(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
+                            fallback_block, re.DOTALL | re.IGNORECASE))
+        rm = list(re.finditer(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
+                            fallback_block, re.DOTALL | re.IGNORECASE))
+        cm = list(re.finditer(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
+                            fallback_block, re.DOTALL | re.IGNORECASE))
+
+        fact = _clean_lead(fm[-1].group(1)) if fm else ""
+        rule = _clean_lead(rm[-1].group(1)) if rm else ""
+        conjecture = _clean_lead(cm[-1].group(1)) if cm else ""
+
+        # normalize arrows in fallback rule
+        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|–)\s*', ' >>> ', rule)
+        rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
+
+        return fact, rule, conjecture
+
     def post_process_decompose(self, content):
         if self.language == 'en':
             words_to_find = ['Final Form', 'Final Answer']
@@ -451,7 +549,7 @@ class GPT3_Reasoning_Graph_Baseline:
             responses_a_text = responses_a
         print("Translation response: ", responses_a_text)
         
-        #count sentences in the example context
+        # count sentences
         context_text = example.get('context', '') or ''
         # Split on sentence end punctuation followed by whitespace (keeps punctuation on the chunk).
         raw_sentences = re.split(r'(?<=[.!?])\s+', context_text.strip())
