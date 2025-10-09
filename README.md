@@ -113,7 +113,8 @@ Delete the pod after, disk usage is EXPENSIVE
 
 ***SCORING***
 We can check for other LLM performance, especially on instruction following ini this case on Indonesia dataset in: https://leaderboard.sea-lion.ai/
-Qwen3-8b seems good for general purpose LLM
+Qwen3-8b seems good for general purpose LLM, but sucks at following instruction,
+Lets switch to Qwen2.5-7b-IT for general purpose following instructions models
 
 ***TRANSLATION NOTES***
 Komodo on paper is good for translation, but there's no instruct version, even then It compared to Llama2, gpt3.5, Qwen1.5

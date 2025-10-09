@@ -33,7 +33,7 @@ Aturan:
 16. Zumpus($x, True) >>> Kecil($x, True)
 17. Zumpus($x, True) >>> Rompus($x, True)
 
-Dugaan:
+Konjektur:
 Asam(Max, True)
 
 Pemecahan:
@@ -61,7 +61,7 @@ Aturan dalam CNF:
 16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
 17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
 
-Dugaan:
+Konjektur:
 Asam(Max, True)
 —--
 Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi dan skolemisasi.
