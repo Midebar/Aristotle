@@ -510,7 +510,21 @@ class GPT3_Reasoning_Graph_Baseline:
         out.append(konj_line)
         out.append("")
         return "\n".join(out)
-            
+
+    def clean_conjecture(self, conjecture):
+        if isinstance(conjecture, dict):
+            conjecture = "\n".join([f"{key}: {value}" for key, value in conjecture.items()])
+        splitted_conjecture = conjecture.replace('\\n', '\n').split('\n')
+        cleaned_conjecture = []
+        for item in splitted_conjecture:
+            if "(" in item:
+                remove_list = ['Rules (others):', 'Rules (biconditional):', 'Rules (either_or):']
+                if not any(remove_item in item for remove_item in remove_list):
+                    splited_item = item.split(":::")[0]
+                    cleaned_conjecture.append(splited_item)
+                
+        return '\n'.join(cleaned_conjecture)
+    
     def save_output(self, outputs, file_suffix=None):
         model_name = self.model_name
         model_name = sanitize_filename(model_name)
