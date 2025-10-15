@@ -21,7 +21,6 @@ class GPT3_Reasoning_Graph_Baseline:
         self.mode = args.mode
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
-        self.language = args.language
         self.file_lock = threading.Lock()
         if args.base_url:
             self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
@@ -296,18 +295,6 @@ class GPT3_Reasoning_Graph_Baseline:
     def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
         """
         Scan final-form blocks (***Bentuk Akhir*** / ***Final Form***) from the last to the first.
-        For each final-form block:
-        - extract Fakta / Aturan / Konjektur occurrences inside that block
-        - select the Aturan candidate (latest one whose rule-line count == context_sentence_count,
-            otherwise latest with any rules)
-        - find the Fakta immediately before that Aturan and the Konjektur immediately after
-        - validate the block:
-            * Fakta and Konjektur must look complete (not cut by generation)
-                — check parentheses balanced and predicate-like pattern present (contains True/False or endswith ')')
-            * Aturan rule count must equal context_sentence_count (if provided)
-        - if valid: return (fact, rule_text, conjecture)
-        If none of the final-form blocks validate, fallback to reasonable last-block selection.
-        Always returns three strings.
         """
 
         def _clean_lead(s: str) -> str:
@@ -318,43 +305,31 @@ class GPT3_Reasoning_Graph_Baseline:
             return len(lines), lines
 
         def _search_complete_predicate(s: str) -> bool:
-            """
-            Heuristic for "not cut by max tokens":
-            - parentheses balanced
-            - contains a predicate-like token with a ( ... True/False ) or ends with ')'
-            - otherwise considered incomplete
-            """
             if not s or not s.strip():
                 return False
             s = s.strip()
-            # balanced parentheses
             if s.count('(') != s.count(')'):
                 return False
-            # strong signal: predicate(...) containing True/False (common in your outputs)
             if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
                 return True
-            # or at least ends with a closing paren (likely complete)
             if s.endswith(')'):
                 return True
-            # fallback: contains '(' and ')' somewhere and balanced (less strict)
             if '(' in s and ')' in s:
                 return True
             return False
 
         content = content or ""
 
-        # 1) Collect final-form blocks (choose last valid one by scanning backwards)
+        # Collect final-form blocks
         final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
         final_blocks = re.findall(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
         final_blocks_text = [b[0] for b in final_blocks]  # list in occurrence order
 
-        # If no explicit final-form anchors, treat the whole content as a single block
         if not final_blocks_text:
             final_blocks_text = [content]
 
         # scan from last to first
         for block in reversed(final_blocks_text):
-            # find Fakta / Aturan / Konjektur occurrences inside this block
             fact_iter = list(re.finditer(
                 r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
                 block, re.DOTALL | re.IGNORECASE))
@@ -365,11 +340,9 @@ class GPT3_Reasoning_Graph_Baseline:
                 r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
                 block, re.DOTALL | re.IGNORECASE))
 
-            # if no Aturan in this block, it's invalid — continue to previous block
             if not rule_iter:
                 continue
 
-            # choose the rule match for this block:
             selected_rule = None
             if isinstance(context_sentence_count, int) and context_sentence_count > 0:
                 for m in reversed(rule_iter):
@@ -379,7 +352,6 @@ class GPT3_Reasoning_Graph_Baseline:
                         selected_rule = m
                         break
 
-            # fallback: latest rule block that has any rules (non-empty lines)
             if selected_rule is None:
                 for m in reversed(rule_iter):
                     rtxt = _clean_lead(m.group(1))
@@ -392,11 +364,8 @@ class GPT3_Reasoning_Graph_Baseline:
             if selected_rule is None:
                 selected_rule = rule_iter[-1]
 
-            # extract rule text and lines (normalize minimal noise)
             rule_text = _clean_lead(selected_rule.group(1)) if selected_rule else ""
-            rule_count, rule_lines = _rule_count_and_lines(rule_text)
 
-            # find the Fakta immediately before this Aturan (by position within block)
             rule_start = selected_rule.start() if selected_rule else 0
             preceding_facts = [m for m in fact_iter if m.start() <= rule_start]
             if preceding_facts:
@@ -404,7 +373,6 @@ class GPT3_Reasoning_Graph_Baseline:
             else:
                 fact_text = _clean_lead(fact_iter[-1].group(1)) if fact_iter else ""
 
-            # find the Konjektur immediately after the chosen Aturan (by position)
             rule_end = selected_rule.end() if selected_rule else 0
             following_conjs = [m for m in conj_iter if m.start() >= rule_end]
             if following_conjs:
@@ -412,27 +380,20 @@ class GPT3_Reasoning_Graph_Baseline:
             else:
                 conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
 
-            # VALIDATION: Fakta and Konjektur must not be cut; Aturan count must equal context_sentence_count (if provided)
             fact_ok = _search_complete_predicate(fact_text)
             conj_ok = _search_complete_predicate(conj_text)
-            count_ok = True
-            if isinstance(context_sentence_count, int) and context_sentence_count >= 0:
-                count_ok = (rule_count == context_sentence_count)
 
             # If valid, return this triple
-            if fact_ok and conj_ok and count_ok:
+            if fact_ok and conj_ok:
                 # normalize some arrow variants to a common form for downstream parsing
-                rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|–)\s*', ' >>> ', rule_text)
+                rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule_text)
                 rule_text = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule_text)
                 return fact_text, rule_text, conj_text
 
-            # otherwise continue to the previous final block
-
-        # If no final-form block validated, fallback logic: return last block's best attempt
-        # Use the last block in original order (final_blocks_text[-1]) or content if none
+        # fallback
+        # Use the last block in original order (final_blocks_text[-1])
         fallback_block = final_blocks_text[-1] if final_blocks_text else content
 
-        # extract last Fakta/Aturan/Konjektur in fallback_block
         fm = list(re.finditer(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
                             fallback_block, re.DOTALL | re.IGNORECASE))
         rm = list(re.finditer(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
@@ -444,63 +405,112 @@ class GPT3_Reasoning_Graph_Baseline:
         rule = _clean_lead(rm[-1].group(1)) if rm else ""
         conjecture = _clean_lead(cm[-1].group(1)) if cm else ""
 
-        # normalize arrows in fallback rule
-        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|–)\s*', ' >>> ', rule)
+        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule)
         rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
 
         return fact, rule, conjecture
 
     def post_process_decompose(self, content):
-        if self.language == 'en':
-            words_to_find = ['Final Form', 'Final Answer']
-        elif self.language == 'id':
-            words_to_find = ['Bentuk Akhir', 'Output Akhir']
-        
-        # build a safe alternation from the list (escape special regex chars)
-        escaped = [re.escape(w) for w in words_to_find]
-        pattern = r'(?:' + '|'.join(escaped) + r')'
-        regex = re.compile(pattern, re.IGNORECASE)  # case-insensitive
-        
-        matches = list(regex.finditer(content))
-        if matches:
-            first = matches[0]
+        # # normalize invisible chars
+        # content = content.replace('\u200b', '').replace('\ufeff', '').strip()
 
-            rest = content[first.end():]
+        # capture final-form blocks
+        final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
+        final_blocks = re.findall(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
+        final_blocks_text = [b[0] for b in final_blocks] if final_blocks else [content]
 
-            # if there's an optional colon (like "Bentuk Akhir:") consume it and get the following text
-            colon_match = re.match(r'\s*:\s*(.*)', rest, flags=re.DOTALL)
-            if colon_match:
-                context = colon_match.group(1)
-            else:
-                # no colon — use the rest (strip leading whitespace)
-                context = rest.lstrip()
+        def _balanced_parens(s: str) -> bool:
+            if s.count('(') != s.count(')'):
+                return False
+            # latex inline \( \) balance check (if used)
+            if s.count(r'\(') != s.count(r'\)'):
+                # if one side present but not both, treat as unbalanced
+                if s.count(r'\(') or s.count(r'\)'):
+                    return False
+            return True
 
-            context_lines = context.splitlines()
-            filtered_context_lines = [line for line in context_lines if "(" in line]
-            context = "\n".join(filtered_context_lines).strip()
+        def _looks_predicate_like(s: str) -> bool:
+            if not s or not s.strip():
+                return False
+            if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
+                return True
+            if re.search(r'\b[a-zA-Z_]\w*\s*\([^()]*\)', s):
+                return True
+            if r'\forall' in s:
+                return True
+            # fallback: ends with ')'
+            if s.strip().endswith(')'):
+                return True
+            return False
 
-        else:
-            #fall back to scanning whole content
-            context_lines = content.splitlines()
-            filtered_context_lines = [line for line in context_lines if "(" in line]
-            context = "\n".join(filtered_context_lines).strip()
+        def _extract_section(block: str, header: str, stop_headers: list) -> str:
+            pat = rf'{re.escape(header)}\s*[:\-]?\s*(.*?)(?=(?:' + '|'.join([re.escape(h) + r'\s*[:\-]?' for h in stop_headers]) + r')|$)'
+            m = re.search(pat, block, flags=re.DOTALL | re.IGNORECASE)
+            return m.group(1).rstrip() if m else ""
 
-        return context
-    
-    def clean_conjecture(self, conjecture):
-        if isinstance(conjecture, dict):
-            conjecture = "\n".join([f"{key}: {value}" for key, value in conjecture.items()])
-        splitted_conjecture = conjecture.replace('\\n', '\n').split('\n')
-        cleaned_conjecture = []
-        for item in splitted_conjecture:
-            if "(" in item:
-                remove_list = ['Aturan (others):', 'Aturan (biconditional):', 'Aturan (either_or):']
-                if not any(remove_item in item for remove_item in remove_list):
-                    splited_item = item.split(":::")[0]
-                    cleaned_conjecture.append(splited_item)
-                
-        return '\n'.join(cleaned_conjecture)
-        
+        def _nonempty_lines_preserve(s: str):
+            return [ln for ln in (l.rstrip() for l in s.splitlines()) if ln.strip()]
+
+        # scan from last to first and pick first valid block
+        for block in reversed(final_blocks_text):
+            fakta_raw = _extract_section(block, 'Fakta', ['Aturan', 'Konjektur'])
+            aturan_raw = _extract_section(block, 'Aturan', ['Konjektur', 'Fakta', 'Aturan dalam CNF', 'Aturan dalam'])
+            konj_raw = _extract_section(block, 'Konjektur', ['Fakta', 'Aturan'])
+
+            fakta_lines = _nonempty_lines_preserve(fakta_raw)
+            aturan_lines = _nonempty_lines_preserve(aturan_raw)
+            konj_lines = _nonempty_lines_preserve(konj_raw)
+
+            konj_line = konj_lines[0] if konj_lines else ""
+
+            facts_ok = bool(fakta_lines) and all((_balanced_parens(l) and _looks_predicate_like(l)) for l in fakta_lines)
+            conj_ok = bool(konj_line) and (_balanced_parens(konj_line) and _looks_predicate_like(konj_line))
+            rules_ok = bool(aturan_lines)
+
+            if facts_ok and conj_ok and rules_ok:
+                out = []
+                out.append("Pemecahan\n")
+                out.append("***Bentuk Akhir***:")
+                out.append("Fakta:")
+                for ln in fakta_lines:
+                    out.append(ln)
+                out.append("")
+                out.append("Aturan dalam CNF:")
+                for ln in aturan_lines:
+                    out.append(ln)
+                out.append("")
+                out.append("Konjektur:")
+                out.append(konj_line)
+                out.append("")  # trailing newline
+                return "\n".join(out)
+
+        # fallback: best-effort formatting of the last block (preserve lines)
+        fallback = final_blocks_text[-1]
+        fakta_raw = _extract_section(fallback, 'Fakta', ['Aturan', 'Konjektur'])
+        aturan_raw = _extract_section(fallback, 'Aturan', ['Konjektur', 'Fakta'])
+        konj_raw = _extract_section(fallback, 'Konjektur', ['Fakta', 'Aturan'])
+
+        fakta_lines = _nonempty_lines_preserve(fakta_raw)
+        aturan_lines = _nonempty_lines_preserve(aturan_raw)
+        konj_lines = _nonempty_lines_preserve(konj_raw)
+        konj_line = konj_lines[0] if konj_lines else ""
+
+        out = []
+        out.append("Pemecahan\n")
+        out.append("***Bentuk Akhir***:")
+        out.append("Fakta:")
+        for ln in fakta_lines:
+            out.append(ln)
+        out.append("")
+        out.append("Aturan dalam CNF:")
+        for ln in aturan_lines:
+            out.append(ln)
+        out.append("")
+        out.append("Konjektur:")
+        out.append(konj_line)
+        out.append("")
+        return "\n".join(out)
+            
     def save_output(self, outputs, file_suffix=None):
         model_name = self.model_name
         model_name = sanitize_filename(model_name)
@@ -700,7 +710,6 @@ def parse_args():
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
-    parser.add_argument('--language', type=str, default='en', help="Language for extract final answer options:(id, en)")
     args = parser.parse_args()
     return args
 

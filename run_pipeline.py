@@ -78,7 +78,6 @@ def main():
     BATCH_NUM = str(args.batch_size) if args.batch_size else int(os.environ.get("BATCH_NUM"))
     MAX_NEW_TOKENS = str(args.max_new_tokens) if args.max_new_tokens else int(os.environ.get("MAX_NEW_TOKENS"))
     SEARCH_ROUND = args.search_round if args.search_round else int(os.environ.get("SEARCH_ROUND"))
-    LANGUAGE = args.language if args.language else os.environ.get("LANGUAGE", "en")
 
     print(f"Model={MODEL} Dataset={DATASET} Prompts={PROMPTS_PATH} Split={SPLIT} Results={RESULTS_PATH}, Sample%={SAMPLE_PCT}")
 
@@ -101,7 +100,6 @@ def main():
     try:
         cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs +[
             "--sample_pct", SAMPLE_PCT,
-            "--language", LANGUAGE
         ]
         run_cmd(cmd)
     except subprocess.CalledProcessError as e:
