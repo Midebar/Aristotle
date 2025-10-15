@@ -38,7 +38,7 @@ Asam(Max, True)
 
 Pemecahan:
 
-Bentuk Akhir:
+***Bentuk Akhir***:
 Fakta:
 1. - Yumpus(Max, True)
 

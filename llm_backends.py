@@ -3,6 +3,8 @@ from transformers import BitsAndBytesConfig
 import torch
 import warnings
 from collections.abc import Mapping
+import os
+import traceback
 
 class HFBackend:
     def __init__(self, local_model_path: str = None, hf_model_id: str = None, quantize_4bit: bool = True):
@@ -17,21 +19,45 @@ class HFBackend:
 
         tokenizer = None
         last_exc = None
-        try:
-            # Dont call use_fast in params, keeps erroring
-            tokenizer = AutoTokenizer.from_pretrained(self.model_source)
-        except Exception as e:
-            last_exc = e
-            warnings.warn(f"AutoTokenizer load failed: {e}. Tried default AutoTokenizer.")
+
+        local_files_only = bool(local_model_path)
+
+        hf_token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_HUB_TOKEN") or None
+        hub_kwargs = {"use_auth_token": hf_token} if hf_token else {}
+
+        attempts = [
+            {"use_fast": False, "local_files_only": local_files_only},
+            {"use_fast": True,  "local_files_only": local_files_only},
+            {"local_files_only": local_files_only},
+            {"use_fast": False, "local_files_only": False},
+            {"use_fast": True,  "local_files_only": False},
+            {"local_files_only": False},
+        ]
+
+        errors = []
+        for attempt_kwargs in attempts:
+            try:
+                load_kwargs = dict(attempt_kwargs)
+                load_kwargs.update(hub_kwargs)
+                tokenizer = AutoTokenizer.from_pretrained(self.model_source, **load_kwargs)
+                # sanity check: tokenizer should be callable
+                if tokenizer is not None and callable(getattr(tokenizer, "__call__", None)):
+                    break
+                else:
+                    raise RuntimeError(f"Loaded object is not a callable tokenizer (type={type(tokenizer)})")
+            except Exception as e:
+                last_exc = e
+                errors.append((attempt_kwargs, traceback.format_exc()))
+                warnings.warn(f"AutoTokenizer.from_pretrained failed with args {attempt_kwargs}: {e}")
 
         if tokenizer is None:
-            raise RuntimeError(f"Failed to load tokenizer for {self.model_source}. Last error: {last_exc}")
+            extra = (
+                "\nTried AutoTokenizer.from_pretrained with these attempts:\n"
+                + "\n".join([f"  {a}: {err.splitlines()[-1] if err else ''}" for a, err in errors])
+            )
+            raise RuntimeError(f"Failed to load tokenizer for {self.model_source}. Last error: {last_exc}\n{extra}")
 
-        # Safety check: ensure tokenizer is sensible
-        if isinstance(tokenizer, bool) or not callable(getattr(tokenizer, "__call__", None)):
-            raise RuntimeError(f"Loaded tokenizer is not callable (type={type(tokenizer)}). Aborting.")
-
-        # ensure pad token exists (use eos_token if needed)
+        # ensure pad token exists
         if getattr(tokenizer, "pad_token", None) is None:
             if getattr(tokenizer, "eos_token", None) is not None:
                 tokenizer.pad_token = tokenizer.eos_token
