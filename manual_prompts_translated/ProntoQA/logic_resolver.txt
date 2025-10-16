@@ -40,7 +40,9 @@ Output: Simpulkan label cukup dan klausa baru dalam format:
 Klausa Baru: {new_clause}
 
 Label Cukup: [True/False]
+
 ---
+
 Contoh:
 
 Klausa 1: Tanah(Stella, True)

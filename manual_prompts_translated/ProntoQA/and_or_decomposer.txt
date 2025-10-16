@@ -1,6 +1,6 @@
 Tugas deskripsi:
 Diberikan premis dan konjektur dalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
-—--
+---
 Aturan:
 
 Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
@@ -9,11 +9,10 @@ Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemud
 Skolemisasi: Hilangkan kuantor eksistensial dengan menggunakan fungsi atau konstanta Skolem.
 
 **Catatan Penting:** Prompt ini dirancang hanya untuk memandu model bahasa dalam proses dekomposisi. Jangan mencoba menyelesaikan konjektur, dan pastikan konjektur tetap seperti yang dinyatakan tanpa negasi.
-—--
+---
 Contoh di bawah ini:
 Konteks:
-Fakta:
-1. Yumpus(Max, True)
+
 Aturan:
 1. Jompus($x, True) >>> Pemalu($x, False)
 2. Jompus($x, Fakta) >>> Yumpus($x, True)
@@ -33,14 +32,9 @@ Aturan:
 16. Zumpus($x, True) >>> Kecil($x, True)
 17. Zumpus($x, True) >>> Rompus($x, True)
 
-Konjektur:
-Asam(Max, True)
-
 Pemecahan:
 
-***Bentuk Akhir***:
-Fakta:
-1. - Yumpus(Max, True)
+Bentuk Akhir:
 
 Aturan dalam CNF:
 1. - \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)
@@ -61,12 +55,11 @@ Aturan dalam CNF:
 16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
 17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
 
-Konjektur:
-Asam(Max, True)
-—--
+---
+
 Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi dan skolemisasi.
 Silahkan akhiri dekomposisi dalam "Bentuk Akhir" dan pastikan Anda mencakup setiap klausa dalam bentuk akhir Anda, walaupun klausa tersebut tidak perlu dipecah lagi.
-Silahkan patuhi instruksi dengan ketat dan jangan melakukan apa yang tidak diinstruksikan (misalnya, jangan negasi dugaan dan fakta).
+Silahkan patuhi instruksi dengan ketat dan jangan melakukan apa yang tidak diinstruksikan (misalnya, jangan negasi konjektur dan fakta).
 Perhatikan bahwa Anda perlu menegasi suatu istilah hanya ketika mengubah sebuah implikasi ke CNF. Jika klausa atau istilah tidak mengandung implikasi (misalnya, Fakta atau Konjektur), jangan di-negasikan.
 
 [[PREMISES]]

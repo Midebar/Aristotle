@@ -116,7 +116,6 @@ class GPT3_Reasoning_Graph_Baseline:
         else:
             return "Selected clause not found."
         
-
     def post_process_c(self, response_c):
         sos_list = re.findall(r'\[(.*?)\]', response_c)
         negated_label = re.findall(r'\{(.*?)\}', response_c)
@@ -147,7 +146,6 @@ class GPT3_Reasoning_Graph_Baseline:
         if match:
             return match.group(1).lower()
         return "No final answer found in the text."
-
     
     def final_process(self, final_answer):
         final_answer = final_answer.lower()
@@ -160,7 +158,6 @@ class GPT3_Reasoning_Graph_Baseline:
         else:
             final_answer = "No final answer found in the text."  
         return final_answer
-    
     
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
@@ -324,7 +321,6 @@ class GPT3_Reasoning_Graph_Baseline:
                             .replace('\\left', '').replace('\\newline', '\n').replace('$', '').split('\n'))
                     for item in normalized_context_list if "(" in item and ")" in item
                 ]
-
                 
                 normalized_conjecture = self.clean_conjecture(example['normalized_conjecture'])
                 negated_label = example['negated_label']
@@ -452,6 +448,7 @@ class GPT3_Reasoning_Graph_Baseline:
                         print("Search round: ", search_round)
                         
                     prompts_e = self.construct_prompt_e(negated_label, normalized_conjecture, sos_list, selected_clause, in_context_examples_logic_resolver)
+                    print("Prompt to Logic Solver: ", prompts_e)
                     responses_e, _ = self.openai_api.generate(prompts_e)
                     
                     logic_solver_result = self.post_process_logic_solver(responses_e)
@@ -475,7 +472,7 @@ class GPT3_Reasoning_Graph_Baseline:
                                 selected_clause = list_of_compelment[i].pop(0)
                                 sos_list = list_of_sos[i]
                                 all_empty = "False"
-                                print("Searching from cache：Current SOS: ", sos_list, "Current Complement: ", selected_clause)
+                                print("Searching from cache: Current SOS: ", sos_list, "Current Complement: ", selected_clause)
                                 break
                                 
                         if len(list_of_compelment) > 0 and all_empty == "True": 

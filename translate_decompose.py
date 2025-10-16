@@ -8,6 +8,7 @@ import re
 import concurrent.futures
 import traceback
 import threading
+from typing import List
 
 class GPT3_Reasoning_Graph_Baseline:
     def __init__(self, args):
@@ -410,106 +411,155 @@ class GPT3_Reasoning_Graph_Baseline:
 
         return fact, rule, conjecture
 
-    def post_process_decompose(self, content):
-        # # normalize invisible chars
-        # content = content.replace('\u200b', '').replace('\ufeff', '').strip()
+    def post_process_decompose(self, content, rules_count=None):
+        """
+        Extract the last valid 'Bentuk Akhir' block that matches the expected rules_count (if provided).
+        If rules_count is provided, prefer a block whose extracted CNF rule line count equals rules_count.
+        If not found, fallback to the last block containing CNF/skolem lines and mark POSSIBLY_TRUNCATED=True.
+        """
+        content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
-        # capture final-form blocks
+        # find final-form blocks
         final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
         final_blocks = re.findall(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
         final_blocks_text = [b[0] for b in final_blocks] if final_blocks else [content]
 
+        def _extract_section_raw(block: str, header: str, stop_headers: list) -> str:
+            pat = rf'{re.escape(header)}\s*[:\-]?\s*(.*?)(?=(?:' + '|'.join([re.escape(h) + r'\s*[:\-]?' for h in stop_headers]) + r')|$)'
+            m = re.search(pat, block, flags=re.DOTALL | re.IGNORECASE)
+            return m.group(1) if m else ""
+
+        def _nonempty_raw_lines(s: str):
+            return [ln for ln in s.splitlines() if ln.strip()]
+
         def _balanced_parens(s: str) -> bool:
+            # simple balance check for parentheses and inline latex \( \)
             if s.count('(') != s.count(')'):
                 return False
-            # latex inline \( \) balance check (if used)
             if s.count(r'\(') != s.count(r'\)'):
-                # if one side present but not both, treat as unbalanced
                 if s.count(r'\(') or s.count(r'\)'):
                     return False
             return True
 
-        def _looks_predicate_like(s: str) -> bool:
-            if not s or not s.strip():
-                return False
-            if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
+        def _looks_truncated_line(s: str) -> bool:
+            s_strip = s.rstrip()
+            # trailing ellipsis or sus truncation marks
+            if s_strip.endswith('...') or s_strip.endswith('…'):
                 return True
-            if re.search(r'\b[a-zA-Z_]\w*\s*\([^()]*\)', s):
+            # incomplete ending
+            if s_strip.endswith('(') or s_strip.endswith(',') or s_strip.endswith('\\') or s_strip.endswith('\\left') or s_strip.endswith('\\right'):
                 return True
-            if r'\forall' in s:
-                return True
-            # fallback: ends with ')'
-            if s.strip().endswith(')'):
+            # if contains parentheses but doesn't end with ) or True/False) it's sus
+            if '(' in s_strip or ')' in s_strip:
+                if not re.search(r'\)\s*$|True\)\s*$|False\)\s*$', s_strip):
+                    return True
+            # unbalanced parentheses
+            if not _balanced_parens(s_strip):
                 return True
             return False
 
-        def _extract_section(block: str, header: str, stop_headers: list) -> str:
-            pat = rf'{re.escape(header)}\s*[:\-]?\s*(.*?)(?=(?:' + '|'.join([re.escape(h) + r'\s*[:\-]?' for h in stop_headers]) + r')|$)'
-            m = re.search(pat, block, flags=re.DOTALL | re.IGNORECASE)
-            return m.group(1).rstrip() if m else ""
-
-        def _nonempty_lines_preserve(s: str):
-            return [ln for ln in (l.rstrip() for l in s.splitlines()) if ln.strip()]
-
-        # scan from last to first and pick first valid block
+        # Collect candidate blocks with metadata so we can choose after scanning
+        candidates = []
         for block in reversed(final_blocks_text):
-            fakta_raw = _extract_section(block, 'Fakta', ['Aturan', 'Konjektur'])
-            aturan_raw = _extract_section(block, 'Aturan', ['Konjektur', 'Fakta', 'Aturan dalam CNF', 'Aturan dalam'])
-            konj_raw = _extract_section(block, 'Konjektur', ['Fakta', 'Aturan'])
+            cnf_raw = _extract_section_raw(block, 'Aturan dalam CNF', ['Skolemisasi', 'Skolem', 'Konjektur', 'Fakta', 'Aturan', 'Pemecahan'])
+            if not cnf_raw:
+                cnf_raw = _extract_section_raw(block, 'Aturan', ['Skolemisasi', 'Skolem', 'Konjektur', 'Fakta', 'Aturan dalam CNF', 'Pemecahan'])
 
-            fakta_lines = _nonempty_lines_preserve(fakta_raw)
-            aturan_lines = _nonempty_lines_preserve(aturan_raw)
-            konj_lines = _nonempty_lines_preserve(konj_raw)
+            skolem_raw = _extract_section_raw(block, 'Skolemisasi', ['Aturan', 'Aturan dalam CNF', 'Konjektur', 'Fakta', 'Pemecahan'])
+            if not skolem_raw:
+                skolem_raw = _extract_section_raw(block, 'Skolem', ['Aturan', 'Konjektur', 'Fakta', 'Pemecahan'])
+            if not skolem_raw:
+                skolem_raw = _extract_section_raw(block, 'Bentuk Akhir Setelah Skolemisasi', ['Aturan', 'Konjektur', 'Fakta', 'Pemecahan'])
 
-            konj_line = konj_lines[0] if konj_lines else ""
+            # fallback: lines containing 'menjadi' anywhere in the block
+            if not skolem_raw:
+                mapping_lines = [ln for ln in block.splitlines() if 'menjadi' in ln]
+                if mapping_lines:
+                    skolem_raw = "\n".join(mapping_lines)
 
-            facts_ok = bool(fakta_lines) and all((_balanced_parens(l) and _looks_predicate_like(l)) for l in fakta_lines)
-            conj_ok = bool(konj_line) and (_balanced_parens(konj_line) and _looks_predicate_like(konj_line))
-            rules_ok = bool(aturan_lines)
+            cnf_lines = _nonempty_raw_lines(cnf_raw) if cnf_raw else []
+            skolem_lines = _nonempty_raw_lines(skolem_raw) if skolem_raw else []
 
-            if facts_ok and conj_ok and rules_ok:
-                out = []
-                out.append("Pemecahan\n")
-                out.append("***Bentuk Akhir***:")
-                out.append("Fakta:")
-                for ln in fakta_lines:
-                    out.append(ln)
-                out.append("")
-                out.append("Aturan dalam CNF:")
-                for ln in aturan_lines:
-                    out.append(ln)
-                out.append("")
-                out.append("Konjektur:")
-                out.append(konj_line)
-                out.append("")  # trailing newline
-                return "\n".join(out)
+            if not (cnf_lines or skolem_lines):
+                continue
 
-        # fallback: best-effort formatting of the last block (preserve lines)
+            # truncated heuristic applied to the lines we will expose
+            lines_to_check = cnf_lines if cnf_lines else skolem_lines
+            possibly_truncated = any(_looks_truncated_line(ln) for ln in lines_to_check)
+            actual_rule_count = len(cnf_lines) if cnf_lines else len(skolem_lines)
+
+            candidates.append({
+                "block": block,
+                "cnf_lines": cnf_lines,
+                "skolem_lines": skolem_lines,
+                "rule_count": actual_rule_count,
+                "possibly_truncated": possibly_truncated
+            })
+
+        # selection logic
+        selected = None
+        if rules_count is not None:
+            for cand in candidates:
+                if cand["rule_count"] == int(rules_count):
+                    selected = cand
+                    break
+
+        # if no exact match, choose the last candidate
+        if selected is None and candidates:
+            selected = candidates[0]
+            if rules_count is not None and selected["rule_count"] != int(rules_count):
+                selected["possibly_truncated"] = True
+
+        # build output
+        out_lines = []
+        out_lines.append("**Bentuk Akhir:**")
+        out_lines.append("")
+        if selected:
+            cnf_lines = selected["cnf_lines"]
+            skolem_lines = selected["skolem_lines"]
+            out_lines.append("Aturan dalam CNF:")
+            if cnf_lines:
+                out_lines.extend(cnf_lines)
+            else:
+                out_lines.append("(tidak ada Aturan dalam CNF yang ditemukan)")
+
+            out_lines.append("")
+            if skolem_lines:
+                out_lines.append("**Skolemisasi:**")
+                out_lines.extend(skolem_lines)
+                out_lines.append("")
+                out_lines.append("**Bentuk Akhir Setelah Skolemisasi:**")
+                out_lines.extend(skolem_lines)
+            else:
+                out_lines.append("**Skolemisasi:**")
+                out_lines.append("(tidak ada keluaran Skolemisasi eksplisit ditemukan — gunakan Aturan dalam CNF di atas)")
+
+            out_lines.append("")
+            out_lines.append(f"RULE_COUNT: {selected['rule_count']}")
+            out_lines.append(f"EXPECTED_RULE_COUNT: {str(rules_count) if rules_count is not None else 'None'}")
+            out_lines.append(f"POSSIBLY_TRUNCATED: {str(selected['possibly_truncated'])}")
+            out_lines.append("")
+            return "\n".join(out_lines)
+
+        # no candidate found -> fallback to last text block
         fallback = final_blocks_text[-1]
-        fakta_raw = _extract_section(fallback, 'Fakta', ['Aturan', 'Konjektur'])
-        aturan_raw = _extract_section(fallback, 'Aturan', ['Konjektur', 'Fakta'])
-        konj_raw = _extract_section(fallback, 'Konjektur', ['Fakta', 'Aturan'])
+        cnf_raw = _extract_section_raw(fallback, 'Aturan dalam CNF', ['Aturan', 'Skolemisasi', 'Skolem']) or _extract_section_raw(fallback, 'Aturan', ['Skolemisasi', 'Skolem'])
+        cnf_lines = _nonempty_raw_lines(cnf_raw) if cnf_raw else []
+        out_lines.append("Aturan dalam CNF:")
+        if cnf_lines:
+            out_lines.extend(cnf_lines)
+        else:
+            out_lines.append("(tidak ada Aturan dalam CNF yang ditemukan)")
 
-        fakta_lines = _nonempty_lines_preserve(fakta_raw)
-        aturan_lines = _nonempty_lines_preserve(aturan_raw)
-        konj_lines = _nonempty_lines_preserve(konj_raw)
-        konj_line = konj_lines[0] if konj_lines else ""
-
-        out = []
-        out.append("Pemecahan\n")
-        out.append("***Bentuk Akhir***:")
-        out.append("Fakta:")
-        for ln in fakta_lines:
-            out.append(ln)
-        out.append("")
-        out.append("Aturan dalam CNF:")
-        for ln in aturan_lines:
-            out.append(ln)
-        out.append("")
-        out.append("Konjektur:")
-        out.append(konj_line)
-        out.append("")
-        return "\n".join(out)
+        out_lines.append("")
+        out_lines.append("**Skolemisasi:**")
+        out_lines.append("(tidak ada keluaran Skolemisasi eksplisit ditemukan)")
+        out_lines.append("")
+        out_lines.append(f"RULE_COUNT: {len(cnf_lines)}")
+        out_lines.append(f"EXPECTED_RULE_COUNT: {str(rules_count) if rules_count is not None else 'None'}")
+        out_lines.append(f"POSSIBLY_TRUNCATED: {str(any(_looks_truncated_line(ln) for ln in cnf_lines))}")
+        out_lines.append("")
+        return "\n".join(out_lines)
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
@@ -596,9 +646,12 @@ class GPT3_Reasoning_Graph_Baseline:
 
         print("Decomposing rules...")
         if and_or:
-            responses_and_or_process = self.openai_api.generate(self.construct_prompt_b(and_or, icl_and_or_decomposer))
+            prompts_b = self.construct_prompt_b(and_or, icl_and_or_decomposer)
+            print(f"Decomposition prompt_b: {prompts_b} with len {len(prompts_b)}", )
+            responses_and_or_process = self.openai_api.generate(prompts_b)
             responses_and_or_text = responses_and_or_process[0] if isinstance(responses_and_or_process, (list,tuple)) else responses_and_or_process
-            responses_and_or = self.post_process_decompose(responses_and_or_text)
+            print("Decomposition response: ", responses_and_or_text)
+            responses_and_or = self.post_process_decompose(responses_and_or_text, len(prompts_b))
             responses_and_or = self.clean_irrelevant_lines(responses_and_or)
         if either_or:
             responses_either_or_process = self.openai_api.generate(self.construct_prompt_b(either_or, icl_either_or_decomposer))

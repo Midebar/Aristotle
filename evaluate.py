@@ -1,5 +1,7 @@
 import json
 import argparse
+import os
+from utils import sanitize_filename
 
 def load_json_file(file_path):
     """Loads a JSON file and returns its content."""
@@ -48,6 +50,7 @@ def evaluate_instance(id_, instance1, instance2, ground_truth):
 def evaluate_files(dataset_name, model_name):
     """Evaluates all matching instances from two JSON files."""
     results_dir = args.save_path or './results/'
+    model_name = sanitize_filename(args.model_name)
     file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
     file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
     

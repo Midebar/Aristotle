@@ -1,0 +1,237 @@
+Loading raw dataset from /resuls_translated/ProntoQA/workspace_LLM_MODELS_Qwen2.5-7B-Instruct_trans_decompose_no_negation.json
+Loaded 4 examples from dev split.
+Running example: ProntoQA_328
+Negation Removal... Wumpus(Wren, True)
+Negation Removal... Wumpus(Wren, True)
+finish removal
+Negation Removal... 1.  Yumpus(Max, True)
+Negation Removal... 1.  Yumpus(Max, True)
+finish removal
+Negation Removal... 1.  \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)
+Negation Removal... 1.  \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)
+finish removal
+Negation Removal... 2.  \(\forall x (Jompus(x, False) \lor Yumpus(x, True))\)
+Negation Removal... 2.  \(\forall x (Jompus(x, False) \lor Yumpus(x, True))\)
+finish removal
+Negation Removal... 3.  \(\forall x (Yumpus(x, False) \lor Agresif(x, True))\)
+Negation Removal... 3.  \(\forall x (Yumpus(x, False) \lor Agresif(x, True))\)
+finish removal
+Negation Removal... 4.  \(\forall x (Yumpus(x, False) \lor Dumpus(x, True))\)
+Negation Removal... 4.  \(\forall x (Yumpus(x, False) \lor Dumpus(x, True))\)
+finish removal
+Negation Removal... 5.  \(\forall x (Dumpus(x, False) \lor Kayu(x, False))\)
+Negation Removal... 5.  \(\forall x (Dumpus(x, False) \lor Kayu(x, False))\)
+finish removal
+Negation Removal... 6.  \(\forall x (Dumpus(x, False) \lor Wumpus(x, True))\)
+Negation Removal... 6.  \(\forall x (Dumpus(x, False) \lor Wumpus(x, True))\)
+finish removal
+Negation Removal... 7.  \(\forall x (Wumpus(x, False) \lor Merah(x, True))\)
+Negation Removal... 7.  \(\forall x (Wumpus(x, False) \lor Merah(x, True))\)
+finish removal
+Negation Removal... 8.  \(\forall x (Wumpus(x, False) \lor Impus(x, True))\)
+Negation Removal... 8.  \(\forall x (Wumpus(x, False) \lor Impus(x, True))\)
+finish removal
+Negation Removal... 9.  \(\forall x (Impus(x, False) \lor TembusPandang(x, True))\)
+Negation Removal... 9.  \(\forall x (Impus(x, False) \lor TembusPandang(x, True))\)
+finish removal
+Negation Removal... 10.  \(\forall x (Impus(x, False) \lor Tumpus(x, True))\)
+Negation Removal... 10.  \(\forall x (Impus(x, False) \lor Tumpus(x, True))\)
+finish removal
+Negation Removal... 11.  \(\forall x (Numpus(x, False) \lor Asam(x, True))\)
+Negation Removal... 11.  \(\forall x (Numpus(x, False) \lor Asam(x, True))\)
+finish removal
+Negation Removal... 12.  \(\forall x (Tumpus(x, False) \lor Asam(x, False))\)
+Negation Removal... 12.  \(\forall x (Tumpus(x, False) \lor Asam(x, False))\)
+finish removal
+Negation Removal... 13.  \(\forall x (Tumpus(x, False) \lor Vumpus(x, True))\)
+Negation Removal... 13.  \(\forall x (Tumpus(x, False) \lor Vumpus(x, True))\)
+finish removal
+Negation Removal... 14.  \(\forall x (Vumpus(x, False) \lor Tanah(x, True))\)
+Negation Removal... 14.  \(\forall x (Vumpus(x, False) \lor Tanah(x, True))\)
+finish removal
+Negation Removal... 15.  \(\forall x (Vumpus(x, False) \lor Zumpus(x, True))\)
+Negation Removal... 15.  \(\forall x (Vumpus(x, False) \lor Zumpus(x, True))\)
+finish removal
+Negation Removal... 16.  \(\forall x (Zumpus(x, False) \lor Kecil(x, True))\)
+Negation Removal... 16.  \(\forall x (Zumpus(x, False) \lor Kecil(x, True))\)
+finish removal
+Negation Removal... 17.  \(\forall x (Zumpus(x, False) \lor Rompus(x, True))\)
+Negation Removal... 17.  \(\forall x (Zumpus(x, False) \lor Rompus(x, True))\)
+finish removal
+Negation Removal... Asam(Max, True)
+Negation Removal... Asam(Max, True)
+finish removal
+Normalized Context List:  ['Wumpus(Wren, True)', '1.  Yumpus(Max, True)', '1.  \\(\\forall x (Jompus(x, False) \\lor Pemalu(x, False))\\)', '2.  \\(\\forall x (Jompus(x, False) \\lor Yumpus(x, True))\\)', '3.  \\(\\forall x (Yumpus(x, False) \\lor Agresif(x, True))\\)', '4.  \\(\\forall x (Yumpus(x, False) \\lor Dumpus(x, True))\\)', '5.  \\(\\forall x (Dumpus(x, False) \\lor Kayu(x, False))\\)', '6.  \\(\\forall x (Dumpus(x, False) \\lor Wumpus(x, True))\\)', '7.  \\(\\forall x (Wumpus(x, False) \\lor Merah(x, True))\\)', '8.  \\(\\forall x (Wumpus(x, False) \\lor Impus(x, True))\\)', '9.  \\(\\forall x (Impus(x, False) \\lor TembusPandang(x, True))\\)', '10.  \\(\\forall x (Impus(x, False) \\lor Tumpus(x, True))\\)', '11.  \\(\\forall x (Numpus(x, False) \\lor Asam(x, True))\\)', '12.  \\(\\forall x (Tumpus(x, False) \\lor Asam(x, False))\\)', '13.  \\(\\forall x (Tumpus(x, False) \\lor Vumpus(x, True))\\)', '14.  \\(\\forall x (Vumpus(x, False) \\lor Tanah(x, True))\\)', '15.  \\(\\forall x (Vumpus(x, False) \\lor Zumpus(x, True))\\)', '16.  \\(\\forall x (Zumpus(x, False) \\lor Kecil(x, True))\\)', '17.  \\(\\forall x (Zumpus(x, False) \\lor Rompus(x, True))\\)', 'Asam(Max, True)']
+Normalized Conjecture:  Transparan(Wren, True)
+sos_list:  Transparan(Wren, True)
+Search Router Operating...
+Running:  ProntoQA_328
+Ground truth:  A
+{'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. - Yumpus(Max, True)\n1. - \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)\n2. - \\(\\forall x \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\\)\n3. - \\(\\forall x \\left(Yumpus(x, False) \\lor Agresif(x, True)\\right)\\)\n4. - \\(\\forall x \\left(Yumpus(x, False) \\lor Dumpus(x, True)\\right)\\)\n5. - \\(\\forall x \\left(Dumpus(x, False) \\lor Kayu(x, False)\\right)\\)\n6. - \\(\\forall x \\left(Dumpus(x, False) \\lor Wumpus(x, True)\\right)\\)\n7. - \\(\\forall x \\left(Wumpus(x, False) \\lor Merah(x, True)\\right)\\)\n8. - \\(\\forall x \\left(Wumpus(x, False) \\lor Impus(x, True)\\right)\\)\n9. - \\(\\forall x \\left(Impus(x, False) \\lor TembusPandang(x, True)\\right)\\)\n10. - \\(\\forall x \\left(Impus(x, False) \\lor Tumpus(x, True)\\right)\\)\n11. - \\(\\forall x \\left(Numpus(x, False) \\lor Asam(x, True)\\right)\\)\n12. - \\(\\forall x \\left(Tumpus(x, False) \\lor Asam(x, False)\\right)\\)\n13. - \\(\\forall x \\left(Tumpus(x, False) \\lor Vumpus(x, True)\\right)\\)\n14. - \\(\\forall x \\left(Vumpus(x, False) \\lor Tanah(x, True)\\right)\\)\n15. - \\(\\forall x \\left(Vumpus(x, False) \\lor Zumpus(x, True)\\right)\\)\n16. - \\(\\forall x \\left(Zumpus(x, False) \\lor Kecil(x, True)\\right)\\)\n17. - \\(\\forall x \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\)\nAsam(Max, True)', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+Running example: ProntoQA_328Saving output for example: {'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. - Yumpus(Max, True)\n1. - \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)\n2. - \\(\\forall x \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\\)\n3. - \\(\\forall x \\left(Yumpus(x, False) \\lor Agresif(x, True)\\right)\\)\n4. - \\(\\forall x \\left(Yumpus(x, False) \\lor Dumpus(x, True)\\right)\\)\n5. - \\(\\forall x \\left(Dumpus(x, False) \\lor Kayu(x, False)\\right)\\)\n6. - \\(\\forall x \\left(Dumpus(x, False) \\lor Wumpus(x, True)\\right)\\)\n7. - \\(\\forall x \\left(Wumpus(x, False) \\lor Merah(x, True)\\right)\\)\n8. - \\(\\forall x \\left(Wumpus(x, False) \\lor Impus(x, True)\\right)\\)\n9. - \\(\\forall x \\left(Impus(x, False) \\lor TembusPandang(x, True)\\right)\\)\n10. - \\(\\forall x \\left(Impus(x, False) \\lor Tumpus(x, True)\\right)\\)\n11. - \\(\\forall x \\left(Numpus(x, False) \\lor Asam(x, True)\\right)\\)\n12. - \\(\\forall x \\left(Tumpus(x, False) \\lor Asam(x, False)\\right)\\)\n13. - \\(\\forall x \\left(Tumpus(x, False) \\lor Vumpus(x, True)\\right)\\)\n14. - \\(\\forall x \\left(Vumpus(x, False) \\lor Tanah(x, True)\\right)\\)\n15. - \\(\\forall x \\left(Vumpus(x, False) \\lor Zumpus(x, True)\\right)\\)\n16. - \\(\\forall x \\left(Zumpus(x, False) \\lor Kecil(x, True)\\right)\\)\n17. - \\(\\forall x \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\)\nAsam(Max, True)', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+
+Negation Removal... Saving result with thread lock in path:  Wumpus(Wren, True)/resuls_translated/ProntoQA/workspace_LLM_MODELS_Qwen2.5-7B-Instruct_search_negation_False.json
+
+Negation Removal... Wumpus(Wren, True)
+finish removal
+Negation Removal... 1.  Yumpus(Max, True)
+Negation Removal... 1.  Yumpus(Max, True)
+finish removal
+Negation Removal... 1.  \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)
+Negation Removal... 1.  \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)
+finish removal
+Negation Removal... 2.  \(\forall x (Jompus(x, False) \lor Yumpus(x, True))\)
+Negation Removal... 2.  \(\forall x (Jompus(x, False) \lor Yumpus(x, True))\)
+finish removal
+Negation Removal... 3.  \(\forall x (Yumpus(x, False) \lor Agresif(x, True))\)
+Negation Removal... 3.  \(\forall x (Yumpus(x, False) \lor Agresif(x, True))\)
+finish removal
+Negation Removal... 4.  \(\forall x (Yumpus(x, False) \lor Dumpus(x, True))\)
+Negation Removal... 4.  \(\forall x (Yumpus(x, False) \lor Dumpus(x, True))\)
+finish removal
+Negation Removal... 5.  \(\forall x (Dumpus(x, False) \lor Kayu(x, False))\)
+Negation Removal... 5.  \(\forall x (Dumpus(x, False) \lor Kayu(x, False))\)
+finish removal
+Negation Removal... 6.  \(\forall x (Dumpus(x, False) \lor Wumpus(x, True))\)
+Negation Removal... 6.  \(\forall x (Dumpus(x, False) \lor Wumpus(x, True))\)
+finish removal
+Negation Removal... 7.  \(\forall x (Wumpus(x, False) \lor Merah(x, True))\)
+Negation Removal... 7.  \(\forall x (Wumpus(x, False) \lor Merah(x, True))\)
+finish removal
+Negation Removal... 8.  \(\forall x (Wumpus(x, False) \lor Impus(x, True))\)
+Negation Removal... 8.  \(\forall x (Wumpus(x, False) \lor Impus(x, True))\)
+finish removal
+Negation Removal... 9.  \(\forall x (Impus(x, False) \lor TembusPandang(x, True))\)
+Negation Removal... 9.  \(\forall x (Impus(x, False) \lor TembusPandang(x, True))\)
+finish removal
+Negation Removal... 10.  \(\forall x (Impus(x, False) \lor Tumpus(x, True))\)
+Negation Removal... 10.  \(\forall x (Impus(x, False) \lor Tumpus(x, True))\)
+finish removal
+Negation Removal... 11.  \(\forall x (Numpus(x, False) \lor Asam(x, True))\)
+Negation Removal... 11.  \(\forall x (Numpus(x, False) \lor Asam(x, True))\)
+finish removal
+Negation Removal... 12.  \(\forall x (Tumpus(x, False) \lor Asam(x, False))\)
+Negation Removal... 12.  \(\forall x (Tumpus(x, False) \lor Asam(x, False))\)
+finish removal
+Negation Removal... 13.  \(\forall x (Tumpus(x, False) \lor Vumpus(x, True))\)
+Negation Removal... 13.  \(\forall x (Tumpus(x, False) \lor Vumpus(x, True))\)
+finish removal
+Negation Removal... 14.  \(\forall x (Vumpus(x, False) \lor Tanah(x, True))\)
+Negation Removal... 14.  \(\forall x (Vumpus(x, False) \lor Tanah(x, True))\)
+finish removal
+Negation Removal... 15.  \(\forall x (Vumpus(x, False) \lor Zumpus(x, True))\)
+Negation Removal... 15.  \(\forall x (Vumpus(x, False) \lor Zumpus(x, True))\)
+finish removal
+Negation Removal... 16.  \(\forall x (Zumpus(x, False) \lor Kecil(x, True))\)
+Negation Removal... 16.  \(\forall x (Zumpus(x, False) \lor Kecil(x, True))\)
+finish removal
+Negation Removal... 17.  \(\forall x (Zumpus(x, False) \lor Rompus(x, True))\)
+Negation Removal... 17.  \(\forall x (Zumpus(x, False) \lor Rompus(x, True))\)
+finish removal
+Negation Removal... Asam(Max, True)
+Negation Removal... Asam(Max, True)
+finish removal
+Normalized Context List:  ['Wumpus(Wren, True)', '1.  Yumpus(Max, True)', '1.  \\(\\forall x (Jompus(x, False) \\lor Pemalu(x, False))\\)', '2.  \\(\\forall x (Jompus(x, False) \\lor Yumpus(x, True))\\)', '3.  \\(\\forall x (Yumpus(x, False) \\lor Agresif(x, True))\\)', '4.  \\(\\forall x (Yumpus(x, False) \\lor Dumpus(x, True))\\)', '5.  \\(\\forall x (Dumpus(x, False) \\lor Kayu(x, False))\\)', '6.  \\(\\forall x (Dumpus(x, False) \\lor Wumpus(x, True))\\)', '7.  \\(\\forall x (Wumpus(x, False) \\lor Merah(x, True))\\)', '8.  \\(\\forall x (Wumpus(x, False) \\lor Impus(x, True))\\)', '9.  \\(\\forall x (Impus(x, False) \\lor TembusPandang(x, True))\\)', '10.  \\(\\forall x (Impus(x, False) \\lor Tumpus(x, True))\\)', '11.  \\(\\forall x (Numpus(x, False) \\lor Asam(x, True))\\)', '12.  \\(\\forall x (Tumpus(x, False) \\lor Asam(x, False))\\)', '13.  \\(\\forall x (Tumpus(x, False) \\lor Vumpus(x, True))\\)', '14.  \\(\\forall x (Vumpus(x, False) \\lor Tanah(x, True))\\)', '15.  \\(\\forall x (Vumpus(x, False) \\lor Zumpus(x, True))\\)', '16.  \\(\\forall x (Zumpus(x, False) \\lor Kecil(x, True))\\)', '17.  \\(\\forall x (Zumpus(x, False) \\lor Rompus(x, True))\\)', 'Asam(Max, True)']
+Normalized Conjecture:  Transparan(Wren, True)
+sos_list:  Transparan(Wren, True)
+Search Router Operating...
+Running:  ProntoQA_328
+Ground truth:  A
+{'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. - Yumpus(Max, True)\n1. - \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)\n2. - \\(\\forall x \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\\)\n3. - \\(\\forall x \\left(Yumpus(x, False) \\lor Agresif(x, True)\\right)\\)\n4. - \\(\\forall x \\left(Yumpus(x, False) \\lor Dumpus(x, True)\\right)\\)\n5. - \\(\\forall x \\left(Dumpus(x, False) \\lor Kayu(x, False)\\right)\\)\n6. - \\(\\forall x \\left(Dumpus(x, False) \\lor Wumpus(x, True)\\right)\\)\n7. - \\(\\forall x \\left(Wumpus(x, False) \\lor Merah(x, True)\\right)\\)\n8. - \\(\\forall x \\left(Wumpus(x, False) \\lor Impus(x, True)\\right)\\)\n9. - \\(\\forall x \\left(Impus(x, False) \\lor TembusPandang(x, True)\\right)\\)\n10. - \\(\\forall x \\left(Impus(x, False) \\lor Tumpus(x, True)\\right)\\)\n11. - \\(\\forall x \\left(Numpus(x, False) \\lor Asam(x, True)\\right)\\)\n12. - \\(\\forall x \\left(Tumpus(x, False) \\lor Asam(x, False)\\right)\\)\n13. - \\(\\forall x \\left(Tumpus(x, False) \\lor Vumpus(x, True)\\right)\\)\n14. - \\(\\forall x \\left(Vumpus(x, False) \\lor Tanah(x, True)\\right)\\)\n15. - \\(\\forall x \\left(Vumpus(x, False) \\lor Zumpus(x, True)\\right)\\)\n16. - \\(\\forall x \\left(Zumpus(x, False) \\lor Kecil(x, True)\\right)\\)\n17. - \\(\\forall x \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\)\nAsam(Max, True)', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+Running example: ProntoQA_328
+Saving output for example: {'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. - Yumpus(Max, True)\n1. - \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)\n2. - \\(\\forall x \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\\)\n3. - \\(\\forall x \\left(Yumpus(x, False) \\lor Agresif(x, True)\\right)\\)\n4. - \\(\\forall x \\left(Yumpus(x, False) \\lor Dumpus(x, True)\\right)\\)\n5. - \\(\\forall x \\left(Dumpus(x, False) \\lor Kayu(x, False)\\right)\\)\n6. - \\(\\forall x \\left(Dumpus(x, False) \\lor Wumpus(x, True)\\right)\\)\n7. - \\(\\forall x \\left(Wumpus(x, False) \\lor Merah(x, True)\\right)\\)\n8. - \\(\\forall x \\left(Wumpus(x, False) \\lor Impus(x, True)\\right)\\)\n9. - \\(\\forall x \\left(Impus(x, False) \\lor TembusPandang(x, True)\\right)\\)\n10. - \\(\\forall x \\left(Impus(x, False) \\lor Tumpus(x, True)\\right)\\)\n11. - \\(\\forall x \\left(Numpus(x, False) \\lor Asam(x, True)\\right)\\)\n12. - \\(\\forall x \\left(Tumpus(x, False) \\lor Asam(x, False)\\right)\\)\n13. - \\(\\forall x \\left(Tumpus(x, False) \\lor Vumpus(x, True)\\right)\\)\n14. - \\(\\forall x \\left(Vumpus(x, False) \\lor Tanah(x, True)\\right)\\)\n15. - \\(\\forall x \\left(Vumpus(x, False) \\lor Zumpus(x, True)\\right)\\)\n16. - \\(\\forall x \\left(Zumpus(x, False) \\lor Kecil(x, True)\\right)\\)\n17. - \\(\\forall x \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\)\nAsam(Max, True)', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}Negation Removal...
+ Saving result with thread lock in path:  Wumpus(Wren, True)/resuls_translated/ProntoQA/workspace_LLM_MODELS_Qwen2.5-7B-Instruct_search_negation_False.json
+
+Negation Removal... Wumpus(Wren, True)
+finish removal
+Negation Removal... 1. Yumpus(Max, True)
+Negation Removal... 1. Yumpus(Max, True)
+finish removal
+Negation Removal... Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
+Negation Removal... Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF, True) dan kemudian ke Conjunctive Normal Form (CNF, True).
+finish removal
+Negation Removal...  Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)", bukan " \(\forall x (\neg Jompus(x, True) \lor Pemalu(x, False))\)".
+Negation Removal...  Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)", bukan " \(\forall x (\neg Jompus(x, True) \lor Pemalu(x, False))\)".
+finish removal
+Negation Removal... dalam bentuk firstorder logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
+Negation Removal... dalam bentuk firstorder logic form (FOL, True), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
+finish removal
+Normalized Context List:  ['Wumpus(Wren, True)', '1. Yumpus(Max, True)', 'Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF, True) dan kemudian ke Conjunctive Normal Form (CNF, True).', 'Dalam konversi CNF, nasi nilai boolean langsung daripada menambahkan simbol  di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \\(\\forall x (Jompus(x, False) \\lor Pemalu(x, False))\\)", bukan " \\(\\forall x ( Jompus(x, False) \\lor Pemalu(x, False))\\)".', 'dalam bentuk firstorder logic form (FOL, True), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.']
+Normalized Conjecture:  Transparan(Wren, True)
+sos_list:  Transparan(Wren, True)
+Search Router Operating...
+Running:  ProntoQA_328
+Ground truth:  A
+{'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. Yumpus(Max, True)\nNormalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).\n- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)", bukan "- \\(\\forall x \\left(\\neg Jompus(x, True) \\lor Pemalu(x, False)\\right)\\)".\ndalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+Running example: ProntoQA_328Saving output for example: {'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': '1. Yumpus(Max, True)\nNormalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).\n- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)", bukan "- \\(\\forall x \\left(\\neg Jompus(x, True) \\lor Pemalu(x, False)\\right)\\)".\ndalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+
+Negation Removal... Saving result with thread lock in path:  Wumpus(Wren, True)/resuls_translated/ProntoQA/workspace_LLM_MODELS_Qwen2.5-7B-Instruct_search_negation_False.json
+
+Negation Removal... Wumpus(Wren, True)
+finish removal
+Negation Removal... ) >>> Yumpus(x, True)
+Negation Removal... ) >>> Yumpus(x, True)
+finish removal
+Negation Removal... 3. Yumpus(x, True) >>> Agresif(x, True)
+Negation Removal... 3. Yumpus(x, True) >>> Agresif(x, True)
+finish removal
+Negation Removal... 4. Yumpus(x, True) >>> Dumpus(x, True)
+Negation Removal... 4. Yumpus(x, True) >>> Dumpus(x, True)
+finish removal
+Negation Removal... 5. Dumpus(x, True) >>> Kayu(x, False)
+Negation Removal... 5. Dumpus(x, True) >>> Kayu(x, False)
+finish removal
+Negation Removal... 6. Dumpus(x, True) >>> Wumpus(x, True)
+Negation Removal... 6. Dumpus(x, True) >>> Wumpus(x, True)
+finish removal
+Negation Removal... 7. Wumpus(x, True) >>> Merah(x, True)
+Negation Removal... 7. Wumpus(x, True) >>> Merah(x, True)
+finish removal
+Negation Removal... 8. Wumpus(x, True) >>> Impus(x, True)
+Negation Removal... 8. Wumpus(x, True) >>> Impus(x, True)
+finish removal
+Negation Removal... 9. Impus(x, True) >>> TembusPandang(x, x, True)
+Negation Removal... 9. Impus(x, True) >>> TembusPandang(x, x, True)
+finish removal
+Negation Removal... 10. Impus(x, True) >>> Tumpus(x, True)
+Negation Removal... 10. Impus(x, True) >>> Tumpus(x, True)
+finish removal
+Negation Removal... 11. Numpus(x, True) >>> Asam(x, True)
+Negation Removal... 11. Numpus(x, True) >>> Asam(x, True)
+finish removal
+Negation Removal... 12. Tumpus(x, True) >>> Asam(x, False)
+Negation Removal... 12. Tumpus(x, True) >>> Asam(x, False)
+finish removal
+Negation Removal... 13. Tumpus(x, True) >>> Vumpus(x, True)
+Negation Removal... 13. Tumpus(x, True) >>> Vumpus(x, True)
+finish removal
+Negation Removal... 14. Vumpus(x, True) >>> Tanah(x, True)
+Negation Removal... 14. Vumpus(x, True) >>> Tanah(x, True)
+finish removal
+Negation Removal... 15. Vumpus(x, True) >>> Zumpus(x, True)
+Negation Removal... 15. Vumpus(x, True) >>> Zumpus(x, True)
+finish removal
+Negation Removal... 16. Zumpus(x, True) >>> Kecil(x, True)
+Negation Removal... 16. Zumpus(x, True) >>> Kecil(x, True)
+finish removal
+Negation Removal... 17. Zumpus(x, True) >>> Rompus(x, True)
+Negation Removal... 17. Zumpus(x, True) >>> Rompus(x, True)
+finish removal
+Negation Removal... Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
+Negation Removal... Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF, True) dan kemudian ke Conjunctive Normal Form (CNF, True).
+finish removal
+Negation Removal...  Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)", bukan " \(\forall x (\neg Jompus(x, True) \lor Pemalu(x, False))\)".
+Negation Removal...  Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \(\forall x (Jompus(x, False) \lor Pemalu(x, False))\)", bukan " \(\forall x (\neg Jompus(x, True) \lor Pemalu(x, False))\)".
+finish removal
+Negation Removal... dalam bentuk firstorder logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
+Negation Removal... dalam bentuk firstorder logic form (FOL, True), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.
+finish removal
+Normalized Context List:  ['Wumpus(Wren, True)', ') >>> Yumpus(x, True)', '3. Yumpus(x, True) >>> Agresif(x, True)', '4. Yumpus(x, True) >>> Dumpus(x, True)', '5. Dumpus(x, True) >>> Kayu(x, False)', '6. Dumpus(x, True) >>> Wumpus(x, True)', '7. Wumpus(x, True) >>> Merah(x, True)', '8. Wumpus(x, True) >>> Impus(x, True)', '9. Impus(x, True) >>> TembusPandang(x, x, True)', '10. Impus(x, True) >>> Tumpus(x, True)', '11. Numpus(x, True) >>> Asam(x, True)', '12. Tumpus(x, True) >>> Asam(x, False)', '13. Tumpus(x, True) >>> Vumpus(x, True)', '14. Vumpus(x, True) >>> Tanah(x, True)', '15. Vumpus(x, True) >>> Zumpus(x, True)', '16. Zumpus(x, True) >>> Kecil(x, True)', '17. Zumpus(x, True) >>> Rompus(x, True)', 'Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF, True) dan kemudian ke Conjunctive Normal Form (CNF, True).', 'Dalam konversi CNF, nasi nilai boolean langsung daripada menambahkan simbol  di depan. Contohnya, ubah "Jompus(x, True) >>> Pemalu(x, False)" menjadi " \\(\\forall x (Jompus(x, False) \\lor Pemalu(x, False))\\)", bukan " \\(\\forall x ( Jompus(x, False) \\lor Pemalu(x, False))\\)".', 'dalam bentuk firstorder logic form (FOL, True), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.']
+Normalized Conjecture:  Transparan(Wren, True)
+sos_list:  Transparan(Wren, True)
+Search Router Operating...
+Running:  ProntoQA_328
+Ground truth:  A
+{'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': ') >>> Yumpus($x, True)\n3. Yumpus($x, True) >>> Agresif($x, True)\n4. Yumpus($x, True) >>> Dumpus($x, True)\n5. Dumpus($x, True) >>> Kayu($x, False)\n6. Dumpus($x, True) >>> Wumpus($x, True)\n7. Wumpus($x, True) >>> Merah($x, True)\n8. Wumpus($x, True) >>> Impus($x, True)\n9. Impus($x, True) >>> TembusPandang($x, x, True)\n10. Impus($x, True) >>> Tumpus($x, True)\n11. Numpus($x, True) >>> Asam($x, True)\n12. Tumpus($x, True) >>> Asam($x, False)\n13. Tumpus($x, True) >>> Vumpus($x, True)\n14. Vumpus($x, True) >>> Tanah($x, True)\n15. Vumpus($x, True) >>> Zumpus($x, True)\n16. Zumpus($x, True) >>> Kecil($x, True)\n17. Zumpus($x, True) >>> Rompus($x, True)\nNormalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).\n- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)", bukan "- \\(\\forall x \\left(\\neg Jompus(x, True) \\lor Pemalu(x, False)\\right)\\)".\ndalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+Saving output for example: {'id': 'ProntoQA_328', 'original_context': 'Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.', 'question': ' Wren adalah transparan.', 'translated_context': {'Translated_Facts': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'Translated_Rules': 'Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)', 'Translated_Conjecture': 'Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----'}, 'normalized_context': {'Fact': 'Wren adalah wumpus ::: Wumpus(Wren, True)', 'and_or': ') >>> Yumpus($x, True)\n3. Yumpus($x, True) >>> Agresif($x, True)\n4. Yumpus($x, True) >>> Dumpus($x, True)\n5. Dumpus($x, True) >>> Kayu($x, False)\n6. Dumpus($x, True) >>> Wumpus($x, True)\n7. Wumpus($x, True) >>> Merah($x, True)\n8. Wumpus($x, True) >>> Impus($x, True)\n9. Impus($x, True) >>> TembusPandang($x, x, True)\n10. Impus($x, True) >>> Tumpus($x, True)\n11. Numpus($x, True) >>> Asam($x, True)\n12. Tumpus($x, True) >>> Asam($x, False)\n13. Tumpus($x, True) >>> Vumpus($x, True)\n14. Vumpus($x, True) >>> Tanah($x, True)\n15. Vumpus($x, True) >>> Zumpus($x, True)\n16. Zumpus($x, True) >>> Kecil($x, True)\n17. Zumpus($x, True) >>> Rompus($x, True)\nNormalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).\n- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)", bukan "- \\(\\forall x \\left(\\neg Jompus(x, True) \\lor Pemalu(x, False)\\right)\\)".\ndalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi dan skolemisasi.', 'either_or': None, 'biconditional': None}, 'normalized_conjecture': 'Transparan(Wren, True)', 'negated_label': 'false', 'reasoning_step': '', 'ground_truth': 'A', 'final_answer': 'No complement found in the context.', 'final_choice': 'No final answer found in the text.', 'search_round': 0}
+Saving result with thread lock in path:  /resuls_translated/ProntoQA/workspace_LLM_MODELS_Qwen2.5-7B-Instruct_search_negation_False.json
