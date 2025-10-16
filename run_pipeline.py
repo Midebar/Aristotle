@@ -111,7 +111,7 @@ def main():
     try:
         negate_cmd = [sys.executable, str(ROOT / "negate.py"),
                       "--dataset_name", DATASET,
-                      "--model", MODEL,
+                      "--model_name", MODEL,
                       "--save_path", RESULTS_PATH]
         run_cmd(negate_cmd)
     except subprocess.CalledProcessError as e:
