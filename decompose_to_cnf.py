@@ -16,7 +16,6 @@ class GPT3_Reasoning_Graph_Baseline:
         self.data_path = args.data_path
         self.dataset_name = args.dataset_name
         self.split = args.split
-        self.sample_pct = args.sample_pct
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.mode = args.mode
@@ -69,11 +68,12 @@ class GPT3_Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_raw_dataset(self, split, sample_pct):
-        print(f"SAMPLE PCT: {sample_pct}")
-        with open(os.path.join(self.data_path, self.dataset_name, f'{split}.json')) as f:
+    def load_raw_dataset(self):
+        model_name = sanitize_filename(args.model_name)
+        input_path = f'{model_name}_trans_only.json'
+        input_path = os.path.join(args.save_path, args.dataset_name, input_path)
+        with open(input_path, 'r') as f:
             raw_dataset = json.load(f)
-            raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
         
     def index_context(self, context):
@@ -268,7 +268,7 @@ class GPT3_Reasoning_Graph_Baseline:
         print("Splitting context: ", context)
         normalized_context_lines = context.split('\n')
         unique_context_lines = self.remove_duplicates(normalized_context_lines)
-        normalized_context = [line.split('\land') for line in unique_context_lines]
+        normalized_context = [line.split('\\land') for line in unique_context_lines]
         flattened_normalized_context = [item for sublist in normalized_context for item in sublist]
         cleaned_normalized_context = [line.split(":::")[0].strip() for line in flattened_normalized_context]
         cleaned_normalized_context = [re.sub(r'^\d+\.\s*', '', line) for line in cleaned_normalized_context]
@@ -412,11 +412,6 @@ class GPT3_Reasoning_Graph_Baseline:
         return fact, rule, conjecture
 
     def post_process_decompose(self, content, rules_count=None):
-        """
-        Extract the last valid 'Bentuk Akhir' block that matches the expected rules_count (if provided).
-        If rules_count is provided, prefer a block whose extracted CNF rule line count equals rules_count.
-        If not found, fallback to the last block containing CNF/skolem lines and mark POSSIBLY_TRUNCATED=True.
-        """
         content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
         # find final-form blocks
@@ -625,9 +620,7 @@ class GPT3_Reasoning_Graph_Baseline:
         
         # count sentences
         context_text = example.get('context', '') or ''
-        # Split on sentence end punctuation followed by whitespace (keeps punctuation on the chunk).
         raw_sentences = re.split(r'(?<=[.!?])\s+', context_text.strip())
-        # Filter out any empty results (in case of trailing whitespace)
         sentences = [s for s in raw_sentences if s.strip()]
         context_sentence_count = len(sentences)-1 # exclude facts at end of sentence
 
@@ -647,7 +640,7 @@ class GPT3_Reasoning_Graph_Baseline:
         print("Decomposing rules...")
         if and_or:
             prompts_b = self.construct_prompt_b(and_or, icl_and_or_decomposer)
-            print(f"Decomposition prompt_b: {prompts_b} with len {len(prompts_b)}", )
+            print(f"Decomposition prompt_b with and_or len {len(and_or)} and with prompts_len{len(prompts_b)}: {prompts_b} ", )
             responses_and_or_process = self.openai_api.generate(prompts_b)
             responses_and_or_text = responses_and_or_process[0] if isinstance(responses_and_or_process, (list,tuple)) else responses_and_or_process
             print("Decomposition response: ", responses_and_or_text)
@@ -694,7 +687,7 @@ class GPT3_Reasoning_Graph_Baseline:
             'original_context': original_context,
             'question': question, 
             'translated_context': {"Translated_Facts": translated_facts, "Translated_Rules": translated_rules, "Translated_Conjecture": translated_conjecture},
-            'decomposed_process': {key: value for key, value in {"and_or": locals().get("responses_and_or_process"), "either_or": locals().get("responses_either_or_process"), "biconditional": locals().get("responses_biconditional_process")}.items() if value is not None},
+            'decomposition_process': {key: value for key, value in {"and_or": locals().get("responses_and_or_process"), "either_or": locals().get("responses_either_or_process"), "biconditional": locals().get("responses_biconditional_process")}.items() if value is not None},
             'normalized_context': {"Fact": translated_facts, "and_or": responses_and_or, "either_or": responses_either_or, "biconditional": responses_biconditional},
             'normalized_conjecture': normalized_conjecture,
             'negated_label': negated_label,
@@ -766,10 +759,8 @@ def parse_args():
     parser.add_argument('--data_path', type=str, default='./data')
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--split', type=str, default='dev')
-    parser.add_argument('--sample_pct', type=int, default=100)
     parser.add_argument('--save_path', type=str, default='./results')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
-    parser.add_argument('--api_key', type=str)
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--stop_words', type=str, default='------')
     parser.add_argument('--mode', type=str)

@@ -43,7 +43,6 @@ class GPT3_Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    
     def load_raw_dataset(self, split):
         model_name = sanitize_filename(self.model_name)
         results_dir = args.save_path or './results/'

@@ -95,10 +95,10 @@ def main():
         "--batch_num", BATCH_NUM,
     ]
 
-    # 1) translate_decompose.py
+    # 1) translate_to_fol.py
     print("\n==> Running translate_decompose")
     try:
-        cmd = [sys.executable, str(ROOT / "translate_decompose.py")] + base_kwargs +[
+        cmd = [sys.executable, str(ROOT / "translate_to_fol.py")] + base_kwargs +[
             "--sample_pct", SAMPLE_PCT,
         ]
         run_cmd(cmd)
@@ -106,7 +106,20 @@ def main():
         print("translate_decompose failed:", e)
         sys.exit(2)
 
-    # 2) negate.py
+    # 2) decompose_to_cnf.py
+    print("\n==> Running translate_decompose")
+    try:
+        cmd = [sys.executable, str(ROOT / "decompose_to_cnf.py")] + base_kwargs +[
+            "--dataset_name", DATASET,
+            "--model_name", MODEL,
+            "--save_path", RESULTS_PATH
+        ]
+        run_cmd(cmd)
+    except subprocess.CalledProcessError as e:
+        print("translate_decompose failed:", e)
+        sys.exit(3)
+
+    # 3) negate.py
     print("\n==> Running negate")
     try:
         negate_cmd = [sys.executable, str(ROOT / "negate.py"),
@@ -116,9 +129,9 @@ def main():
         run_cmd(negate_cmd)
     except subprocess.CalledProcessError as e:
         print("negate.py failed:", e)
-        sys.exit(3)
+        sys.exit(4)
 
-    # 3) search_resolve.py for negation True and False
+    # 4) search_resolve.py for negation True and False
     for neg in ("True","False"):
         print(f"\n==> Running search_resolve (negation={neg})")
         try:
@@ -129,9 +142,9 @@ def main():
             run_cmd(search_cmd)
         except subprocess.CalledProcessError as e:
             print("search_resolve.py failed:", e)
-            sys.exit(4)
+            sys.exit(5)
 
-    # 4) evaluate.py
+    # 5) evaluate.py
     print("\n==> Running evaluate")
     try:
         eval_cmd = [sys.executable, str(ROOT / "evaluate.py"),
@@ -141,7 +154,7 @@ def main():
         run_cmd(eval_cmd)
     except subprocess.CalledProcessError as e:
         print("evaluate.py failed:", e)
-        sys.exit(5)
+        sys.exit(6)
 
     print("\nPipeline finished successfully.")
 
