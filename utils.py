@@ -4,6 +4,7 @@ import asyncio
 from typing import Any, Dict, List, Optional
 from retrying import retry
 import re
+from persistent_worker import PersistentWorkerManager
 
 # Try to import local llm_backends adapter
 try:
@@ -43,13 +44,12 @@ def call_chat(
     max_tokens: int = 512,
     temperature: float = 0.0,
     load_in_4bit: bool = False,
-    base_url: Optional[str] = None,
 ) -> str:
     """
     Core router that returns a single text string (the generated text).
     - model: model identifier (or 'local-hf' / HF model id)
     - messages: list of dicts with keys 'role' and 'content'
-    - backend: 'hf' (default), 'openai', or 'shim' (if base_url provided)
+    - backend: 'hf' (default)
     - returns: plain string output
     """
     backend = backend or os.getenv("LLM_BACKEND", "hf")
@@ -168,7 +168,6 @@ class ModelWrapper:
     Methods:
       - generate(prompt) -> (text, finish_reason) for chat-style,
       - prompt_generate(prompt) -> text for completion-style,
-      - batch_generate(...) etc.
     """
 
     def __init__(self, model_name: str, stop_words: Any, max_new_tokens: int) -> None:
@@ -177,6 +176,22 @@ class ModelWrapper:
         self.stop_words = stop_words
         self.backend = os.getenv("LLM_BACKEND")
         self.load_in_4bit = os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")
+        # persistent worker manager (lazy init)
+        self._use_persistent = (os.getenv("LLM_USE_PERSISTENT_WORKER", "0") in ("1", "true", "True")) and self.backend in ("hf", "local", "local-hf")
+        self._pw_manager: Optional[PersistentWorkerManager] = None
+        self._model_source = os.getenv("LOCAL_MODEL_PATH", None) or self.model_name
+
+    def _ensure_manager(self):
+        if not self._use_persistent:
+            return
+        if self._pw_manager is None or not getattr(self._pw_manager, "proc", None) or not self._pw_manager.proc.is_alive():
+            # (re)start manager
+            try:
+                self._pw_manager = PersistentWorkerManager(self._model_source, quant_4bit=self.load_in_4bit)
+            except Exception as e:
+                # fallback: disable persistent and raise
+                self._pw_manager = None
+                raise
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def chat_generate(self, input_string: str, temperature: float = 0.0):
@@ -184,32 +199,61 @@ class ModelWrapper:
             {"role": "system", "content": "Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna."},
             {"role": "user", "content": input_string}
         ]
-        resp = chat_completions_with_backoff(
-            model=self.model_name,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=self.max_new_tokens,
-            top_p=1.0,
-            stop=self.stop_words
-        )
-        generated_text = resp["choices"][0]["message"]["content"].strip()
-        finish_reason = resp["choices"][0].get("finish_reason", None)
-        return generated_text, finish_reason
+        # If using persistent worker, route via manager
+        if self._use_persistent:
+            self._ensure_manager()
+            # format messages to prompt string
+            prompt = format_messages_to_prompt(messages)
+            client_wait = float(os.getenv("LLM_CLIENT_WAIT", "60"))  # how long client will wait for a response
+            per_call_max_time = float(os.getenv("LLM_WORKER_MAX_TIME", str(self.max_new_tokens)))  # seconds for worker watchdog
+            try:
+                res = self._pw_manager.generate(prompt, timeout=client_wait, max_new_tokens=self.max_new_tokens, temperature=temperature, max_time=per_call_max_time)
+            except Exception as e:
+                raise RuntimeError(f"Persistent worker generation failed: {e}")
+            if not res.get("ok"):
+                return res.get("error", ""), "timeout"
+            return res.get("text", ""), "stop"
+        else:
+            resp = chat_completions_with_backoff(
+                model=self.model_name,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=self.max_new_tokens,
+                top_p=1.0,
+                stop=self.stop_words
+            )
+            generated_text = resp["choices"][0]["message"]["content"].strip()
+            finish_reason = resp["choices"][0].get("finish_reason", None)
+            return generated_text, finish_reason
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def prompt_generate(self, input_string: str, temperature: float = 0.0):
-        resp = completions_with_backoff(
-            model=self.model_name,
-            prompt=input_string,
-            max_tokens=self.max_new_tokens,
-            temperature=temperature,
-            top_p=1.0,
-            frequency_penalty=0.0,
-            presence_penalty=0.0,
-            stop=self.stop_words
-        )
-        generated_text = resp["choices"][0]["text"].strip()
-        return generated_text
+        if self._use_persistent:
+            self._ensure_manager()
+            prompt = input_string
+            client_wait = float(os.getenv("LLM_CLIENT_WAIT", "60"))
+            per_call_max_time = float(os.getenv("LLM_WORKER_MAX_TIME", str(self.max_new_tokens)))
+            res = self._pw_manager.generate(prompt, timeout=client_wait, max_new_tokens=self.max_new_tokens, temperature=temperature, max_time=per_call_max_time)
+            if not res.get("ok"):
+                return res.get("error", "")
+            # response might be a list if batch used; for prompt_generate expect string
+            text = res.get("text")
+            if isinstance(text, list):
+                return text[0] if text else ""
+            return text
+        else:
+            resp = completions_with_backoff(
+                model=self.model_name,
+                prompt=input_string,
+                max_tokens=self.max_new_tokens,
+                temperature=temperature,
+                top_p=1.0,
+                frequency_penalty=0.0,
+                presence_penalty=0.0,
+                stop=self.stop_words
+            )
+            generated_text = resp["choices"][0]["text"].strip()
+            return generated_text
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def generate(self, input_string: str, temperature: float = 0.0):
