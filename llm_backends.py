@@ -1,3 +1,4 @@
+#llm_backends.py
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import BitsAndBytesConfig
 import torch
@@ -110,16 +111,14 @@ class HFBackend:
 
     def generate(self, prompt: str, max_new_tokens: int = 128, temperature: float = 0.0, top_p: float = 1.0, do_sample: bool = False, max_time: Optional[float] = None) -> str:
         """
-        Generate text from the model, local HF or Runpod.
+        Generate text from the local HF model.
         Returns: single string (decoded).
         """
         if self.tokenizer is None or not callable(getattr(self.tokenizer, "__call__", None)):
             raise RuntimeError("Tokenizer is not ready or not callable.")
 
-        # Tokenize
         inputs = self.tokenizer(prompt, return_tensors="pt", truncation=True)
 
-        # BatchEncoding (or others) might have .to(device) which moves contained tensors.
         try:
             if hasattr(inputs, "to") and callable(getattr(inputs, "to")):
                 inputs = inputs.to(self.device)
@@ -156,8 +155,7 @@ class HFBackend:
         # Remove None values
         gen_kwargs = {k: v for k, v in gen_kwargs.items() if v is not None}
 
-        with torch.inference_mode():
-            outputs = self.model.generate(**gen_kwargs)
+        outputs = self.model.generate(**gen_kwargs)
 
         # outputs may be tensor or tuple/list; extract first generated ids
         if isinstance(outputs, torch.Tensor):
@@ -170,52 +168,3 @@ class HFBackend:
         # Decode
         decoded = self.tokenizer.decode(out_ids, skip_special_tokens=True)
         return decoded
-    
-    def generate_batch(self, prompts: list, max_new_tokens: int = 128, temperature: float = 0.0, top_p: float = 1.0, max_time: Optional[float] = None):
-        """
-        Batched generation: tokenizes with padding and generates for the whole batch.
-        Returns a list of decoded strings (one per prompt).
-        """
-        if not prompts:
-            return []
-
-        enc = self.tokenizer(prompts, return_tensors="pt", padding=True, truncation=True)
-        try:
-            if hasattr(enc, "to") and callable(getattr(enc, "to")):
-                enc = enc.to(self.device)
-        except Exception:
-            pass
-
-        inputs_dict = {k: v for k, v in enc.items()}
-        for k, v in list(inputs_dict.items()):
-            if isinstance(v, torch.Tensor):
-                inputs_dict[k] = v.to(self.device)
-
-        gen_kwargs = dict(
-            input_ids=inputs_dict.get("input_ids"),
-            attention_mask=inputs_dict.get("attention_mask"),
-            max_new_tokens=int(max_new_tokens),
-            do_sample=False,
-            temperature=float(temperature),
-            top_p=float(top_p),
-            pad_token_id=getattr(self.tokenizer, "pad_token_id", getattr(self.model.config, "pad_token_id", None)),
-            eos_token_id=getattr(self.tokenizer, "eos_token_id", getattr(self.model.config, "eos_token_id", None)),
-        )
-        if max_time is not None:
-            gen_kwargs["max_time"] = float(max_time)
-
-        with torch.inference_mode():
-            outs = self.model.generate(**gen_kwargs)
-
-        # outs shape: (batch, seq_len) -> decode per row
-        decoded_list = []
-        if isinstance(outs, torch.Tensor):
-            for row in outs:
-                decoded_list.append(self.tokenizer.decode(row, skip_special_tokens=True))
-        elif isinstance(outs, (list, tuple)):
-            for row in outs:
-                decoded_list.append(self.tokenizer.decode(row, skip_special_tokens=True))
-        else:
-            raise RuntimeError(f"model.generate returned unexpected type for batch: {type(outs)}")
-
-        return decoded_list

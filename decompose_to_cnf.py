@@ -1,4 +1,4 @@
-# translate_decompose.py
+# decompose_to_cnf.py
 import json
 import os
 from tqdm import tqdm
@@ -10,7 +10,7 @@ import traceback
 import threading
 from typing import List
 
-class GPT3_Reasoning_Graph_Baseline:
+class Reasoning_Graph_Baseline:
     def __init__(self, args):
         self.args = args
         self.data_path = args.data_path
@@ -773,5 +773,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = GPT3_Reasoning_Graph_Baseline(args)
+    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
     gpt3_problem_reduction.reasoning_graph_generation()

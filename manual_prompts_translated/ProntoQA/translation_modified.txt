@@ -77,6 +77,44 @@ Zumpus($x, True) >>> Rompus($x, True)
 Konjektur:
 Asam(Max, True)
 
+------
+
+Berikut adalah contohnya:
+Konteks:
+Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap yumpus bersifat garang. Setiap yumpus adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu feisty. Impuses adalah tumpuses. Numpuses berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah rompuses. Timothy adalah yumpus.
+
+Konjektur:
+Timothy bukan tembus pandang.
+###
+***Bentuk Akhir***
+
+Fakta:
+Timothy adalah yumpus ::: Yumpus(Timothy, True)
+
+Aturan:
+Zumpus($x, True) >>> Terang($x, False)
+Zumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Garang($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Cerah($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Marah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> Feisty($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Berbuah($x, True)
+Tumpus($x, True) >>> Moderat($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Bahagia($x, False)
+Vumpus($x, True) >>> Jompus($x, True)
+Jompus($x, True) >>> BaikHati($x, False)
+Jompus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+TembusPandang(Timothy, False)
+
+-----
+
 Di bawah ini adalah yang perlu Anda terjemahkan:
 Konteks:
 [[PREMISES]]
