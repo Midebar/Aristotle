@@ -1,4 +1,4 @@
-# translate_decompose.py
+# translate_to_fol.py
 import json
 import os
 from tqdm import tqdm
@@ -10,7 +10,7 @@ import traceback
 import threading
 from typing import List
 
-class GPT3_Reasoning_Graph_Baseline:
+class Reasoning_Graph_Baseline:
     def __init__(self, args):
         self.args = args
         self.data_path = args.data_path
@@ -22,14 +22,15 @@ class GPT3_Reasoning_Graph_Baseline:
         self.mode = args.mode
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
+        self.prompts_file = args.prompts_file
         self.file_lock = threading.Lock()
         if args.base_url:
             self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
         else:
             self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
             
-    def load_in_context_examples_trans(self, prompts_folder='./prompts'):
-        file_path = os.path.join(prompts_folder, self.dataset_name, 'translation.txt')
+    def load_in_context_examples_trans(self, prompts_folder='./prompts', prompts_file='translation'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, f"{prompts_file}.txt")
         print("Loading translation file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
@@ -144,9 +145,18 @@ class GPT3_Reasoning_Graph_Baseline:
         if not final_blocks_text:
             final_blocks_text = [content]
 
-        # scan from first, skip to the third element, use reversed if model is "instruct", for block in reversed(final_blocks_text)
         # print("FINAL BLOCKS TEXT:", final_blocks_text)
-        for block in (final_blocks_text[4:]):# 2 in the prompts command, 2 in the example
+
+        # Determine starting index based on prompts file name
+        filename = os.path.basename(getattr(self, "prompts_file", "") or "")
+        name, _ = os.path.splitext(filename)
+        if "modified" in name.lower():
+            final_block_index = 5
+        else:
+            final_block_index = 4
+
+        # scan from first, skip to the element, use reversed if model is "instruct", for block in reversed(final_blocks_text)
+        for block in (final_blocks_text[final_block_index:]):
             print(f"BLOCK:\n{block}\n---END BLOCK---")
             fact_iter = list(re.finditer(
                 r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
@@ -199,14 +209,15 @@ class GPT3_Reasoning_Graph_Baseline:
                 conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
 
             if conj_text:
-                conj_text = re.split(r'\n|\n-{3,}\n|-{5,}|-----|', conj_text, maxsplit=1)[0].strip()
+                conj_text = re.split(r'\n-{3,}\n|-{5,}|-----|', conj_text, maxsplit=1)[0].strip()
 
             fact_ok = _search_complete_predicate(fact_text)
             conj_ok = _search_complete_predicate(conj_text)
 
             # If valid, return this triple
             if fact_ok and conj_ok:
-                # normalize some arrow variants to a common form for downstream proces
+                # normalize some arrow variants
+                rule = re.sub(r'\s*(-)\s*', ' \n ', rule) # Sometimes they list '-' as proofs
                 rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule_text)
                 rule_text = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule_text)
                 return fact_text, rule_text, conj_text
@@ -226,7 +237,7 @@ class GPT3_Reasoning_Graph_Baseline:
         rule = _clean_lead(rm[-1].group(1)) if rm else ""
         conjecture = _clean_lead(cm[-1].group(1)) if cm else ""
 
-        rule = re.sub(r'\s*(-)\s*', ' >>> ', rule) # Sometimes they list '-' as proofs
+        rule = re.sub(r'\s*(-)\s*', ' \n ', rule)
         rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule)
         rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
 
@@ -333,7 +344,7 @@ class GPT3_Reasoning_Graph_Baseline:
         raw_dataset = self.load_raw_dataset(self.split, self.sample_pct)
         print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
 
-        in_context_examples_trans = self.load_in_context_examples_trans(self.prompts_folder)
+        in_context_examples_trans = self.load_in_context_examples_trans(self.prompts_folder, self.prompts_file)
 
         print("Number of batch: ", self.batch_num)
         counter = 0
@@ -391,10 +402,11 @@ def parse_args():
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--prompts_file', default='translation_modified.txt')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = GPT3_Reasoning_Graph_Baseline(args)
+    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
     gpt3_problem_reduction.reasoning_graph_generation()

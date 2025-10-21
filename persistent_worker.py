@@ -23,14 +23,13 @@ import threading
 import time
 import os
 import traceback
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from llm_backends import HFBackend
 
 # Timeout for queue.get in manager loop (seconds)
 _QUEUE_GET_POLL = 0.5
 def _worker_main(request_q: mp.Queue, response_q: mp.Queue, model_source: str, quant_4bit: bool, init_event: Event):
     """
-    Worker process entrypoint.
     Loads HFBackend and serves requests until killed.
     Each request payload: dict {
         "prompt": str,
@@ -51,19 +50,16 @@ def _worker_main(request_q: mp.Queue, response_q: mp.Queue, model_source: str, q
                        quantize_4bit=quant_4bit)
     except Exception as e:
         tb = traceback.format_exc()
-        # notify manager of fatal init error then exit
         try:
             response_q.put(("__worker_init_failed__", {"ok": False, "error": f"Worker init failed: {e}", "trace": tb}))
         except Exception:
             pass
-        # ensure init_event is set so manager doesn't hang forever
         try:
             init_event.set()
         except Exception:
             pass
         os._exit(2)
 
-    # signal to manager that worker is ready
     try:
         init_event.set()
     except Exception:
@@ -77,7 +73,6 @@ def _worker_main(request_q: mp.Queue, response_q: mp.Queue, model_source: str, q
         except Exception:
             break
 
-        # handle shutdown sentinel
         if req_id == "__shutdown__":
             try:
                 response_q.put(("__shutdown__", {"ok": True}))
@@ -135,12 +130,12 @@ def _worker_main(request_q: mp.Queue, response_q: mp.Queue, model_source: str, q
             except Exception:
                 max_time = 30.0
 
-        gen_thread.join(timeout=max_time)
+        # give a small grace interval for cleanup (in seconds)
+        grace = float(os.environ.get("LLM_WORKER_GRACE_SEC", "5.0"))
+        gen_thread.join(timeout=max_time + grace)
         if gen_thread.is_alive():
-            # Generation didn't finish within max_time -> worker self-terminate.
-            # Put an error notification and kill the process to free GPU.
             try:
-                response_q.put((req_id, {"ok": False, "error": f"generation timeout (worker killed after {max_time}s)"}))
+                response_q.put((req_id, {"ok": False, "error": f"generation timeout (worker killed after {max_time + grace}s)"}))
             except Exception:
                 pass
             # flush logs then force exit: ensures model/inference is killed and GPU memory freed
@@ -160,7 +155,7 @@ def _worker_main(request_q: mp.Queue, response_q: mp.Queue, model_source: str, q
 
 class PersistentWorkerManager:
     """
-    Manager class used by client process to talk with worker process via queues.
+    Class used by client process to talk with worker process via queues.
     - It will spawn the worker process and automatically restart it if it dies.
     - generate(prompt, timeout=client_wait_seconds, **payload_args) will:
         * put (req_id, payload) on request_q
@@ -247,7 +242,6 @@ class PersistentWorkerManager:
         while True:
             # if worker died, break and return timeout
             if not self.proc.is_alive():
-                # restart worker in background
                 try:
                     self._restart_worker()
                 except Exception:
@@ -258,7 +252,6 @@ class PersistentWorkerManager:
             try:
                 rid, payload = self.response_q.get(timeout=_QUEUE_GET_POLL)
             except Exception:
-                # timeout on queue get; check global timeout
                 if time.time() - start > timeout:
                     return {"ok": False, "error": f"client wait timeout after {timeout}s"}
                 continue

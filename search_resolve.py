@@ -10,7 +10,7 @@ import threading
 import traceback
 from utils import sanitize_filename
 
-class GPT3_Reasoning_Graph_Baseline:
+class Reasoning_Graph_Baseline:
     def __init__(self, args):
         self.args = args
         self.data_path = args.data_path
@@ -605,5 +605,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = GPT3_Reasoning_Graph_Baseline(args)
+    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
     gpt3_problem_reduction.reasoning_graph_generation()
