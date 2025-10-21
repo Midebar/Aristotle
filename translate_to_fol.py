@@ -172,21 +172,21 @@ class Reasoning_Graph_Baseline:
                 continue
 
             selected_rule = None
-            if isinstance(context_sentence_count, int) and context_sentence_count > 0:
-                for m in reversed(rule_iter):
-                    rtxt = _clean_lead(m.group(1))
-                    cnt, _ = _rule_count_and_lines(rtxt)
-                    if cnt == context_sentence_count:
-                        selected_rule = m
-                        break
+            # if isinstance(context_sentence_count, int) and context_sentence_count > 0:
+            #     for m in reversed(rule_iter):
+            #         rtxt = _clean_lead(m.group(1))
+            #         cnt, _ = _rule_count_and_lines(rtxt)
+            #         if cnt == context_sentence_count:
+            #             selected_rule = m
+            #             break
 
-            if selected_rule is None:
-                for m in reversed(rule_iter):
-                    rtxt = _clean_lead(m.group(1))
-                    cnt, _ = _rule_count_and_lines(rtxt)
-                    if cnt > 0:
-                        selected_rule = m
-                        break
+            # if selected_rule is None:
+            #     for m in reversed(rule_iter):
+            #         rtxt = _clean_lead(m.group(1))
+            #         cnt, _ = _rule_count_and_lines(rtxt)
+            #         if cnt > 0:
+            #             selected_rule = m
+            #             break
 
             # safety
             if selected_rule is None:

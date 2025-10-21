@@ -3,8 +3,9 @@ Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tu
 2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal
 3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
 4) parsing konjektur ke dalam bentuk logika
-5) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.
-6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+5) jangan mencoba menyelesaikan konjektur atau permasalahan, cukup melakukan perintah parsing yang dibutuhkan
+6) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.
+7) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 
 ------
 
@@ -81,7 +82,7 @@ Asam(Max, True)
 
 Berikut adalah contohnya:
 Konteks:
-Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap yumpus bersifat garang. Setiap yumpus adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu feisty. Impuses adalah tumpuses. Numpuses berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah rompuses. Timothy adalah yumpus.
+Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
 
 Konjektur:
 Timothy bukan tembus pandang.
@@ -94,21 +95,21 @@ Timothy adalah yumpus ::: Yumpus(Timothy, True)
 Aturan:
 Zumpus($x, True) >>> Terang($x, False)
 Zumpus($x, True) >>> Yumpus($x, True)
-Yumpus($x, True) >>> Garang($x, True)
-Yumpus($x, True) >>> Dumpus($x, True)
+Numpus($x, True) >>> Garang($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
 Dumpus($x, True) >>> Cerah($x, False)
 Dumpus($x, True) >>> Wumpus($x, True)
 Wumpus($x, True) >>> Marah($x, True)
 Wumpus($x, True) >>> Impus($x, True)
 Impus($x, True) >>> Feisty($x, True)
 Impus($x, True) >>> Tumpus($x, True)
-Numpus($x, True) >>> Berbuah($x, True)
+Yumpus($x, True) >>> Berbuah($x, True)
 Tumpus($x, True) >>> Moderat($x, False)
 Tumpus($x, True) >>> Vumpus($x, True)
 Vumpus($x, True) >>> Bahagia($x, False)
 Vumpus($x, True) >>> Jompus($x, True)
 Jompus($x, True) >>> BaikHati($x, False)
-Jompus($x, True) >>> Rompus($x, True)
+Jompus($x, True) >>> Merah($x, True)
 
 Konjektur:
 TembusPandang(Timothy, False)
