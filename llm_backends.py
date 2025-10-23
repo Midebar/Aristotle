@@ -1,4 +1,4 @@
-#llm_backends.py
+# llm_backends.py
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from transformers import BitsAndBytesConfig
 import torch
@@ -7,6 +7,26 @@ from collections.abc import Mapping
 import os
 import traceback
 from typing import Optional
+import psutil
+
+def build_max_memory_dict(reserve_per_gpu_gb: int = 2, cpu_reserve_gb: int = 8):
+    """
+    Build a max_memory mapping for device_map='auto'.
+    reserve_per_gpu_gb: how many GiB to leave free per GPU to avoid collisions.
+    cpu_reserve_gb: how many GiB to reserve on host for OS/other processes.
+    """
+    max_memory = {}
+    if torch.cuda.is_available():
+        for i in range(torch.cuda.device_count()):
+            props = torch.cuda.get_device_properties(i)
+            total_gib = int(props.total_memory // (1024 ** 3))
+            usable = max(1, total_gib - reserve_per_gpu_gb)
+            max_memory[i] = f"{usable}GiB"   # integer key for GPU 0,1,...
+    cpu_avail_gb = int(psutil.virtual_memory().available // (1024 ** 3))
+    cpu_for_model = max(4, cpu_avail_gb - cpu_reserve_gb)
+    max_memory["cpu"] = f"{cpu_for_model}GiB"
+    return max_memory
+
 
 class HFBackend:
     def __init__(self, local_model_path: str = None, hf_model_id: str = None, quantize_4bit: bool = True):
@@ -73,19 +93,29 @@ class HFBackend:
 
         # ---- Model load (attempt quantized) ----
         model = None
+        # Prepare a conservative max_memory mapping to avoid accidental OOMs on GPU
+        max_memory = build_max_memory_dict(reserve_per_gpu_gb=2, cpu_reserve_gb=8)
+
         if quantize_4bit:
             try:
                 quant_config = BitsAndBytesConfig(
                     load_in_4bit=True,
+                    # nf4 preferred when available
                     bnb_4bit_quant_type="nf4" if hasattr(BitsAndBytesConfig, "bnb_4bit_quant_type") else "fp4",
                     bnb_4bit_use_double_quant=False,
                     bnb_4bit_compute_dtype="float16",
+                    # NEW: enable fp32 CPU offload so large modules can remain on CPU instead of failing the load
+                    llm_int8_enable_fp32_cpu_offload=True,
                 )
+                # Pass max_memory so device_map='auto' will respect GPU/CPU memory limits
                 model = AutoModelForCausalLM.from_pretrained(
                     self.model_source,
                     device_map="auto",
                     trust_remote_code=True,
-                    quantization_config=quant_config
+                    quantization_config=quant_config,
+                    max_memory=max_memory,
+                    low_cpu_mem_usage=True,  # reduce peak memory during load
+                    **hub_kwargs
                 )
             except Exception as e:
                 warnings.warn(f"4-bit quantized load failed: {e}. Falling back to non-quantized load.")
@@ -95,13 +125,15 @@ class HFBackend:
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_source,
                 device_map="auto",
-                trust_remote_code=True
+                trust_remote_code=True,
+                max_memory=max_memory,
+                low_cpu_mem_usage=True,
+                **hub_kwargs
             )
 
         try:
             self.device = next(model.parameters()).device
         except StopIteration:
-            # model has no parameters -> cpu fallback
             self.device = torch.device("cpu")
         self.model = model
 
@@ -155,16 +187,21 @@ class HFBackend:
         # Remove None values
         gen_kwargs = {k: v for k, v in gen_kwargs.items() if v is not None}
 
-        outputs = self.model.generate(**gen_kwargs)
+        # Do generation in inference mode (no grads)
+        self.model.eval()
+        with torch.inference_mode():
+            outputs = self.model.generate(**gen_kwargs)
 
-        # outputs may be tensor or tuple/list; extract first generated ids
-        if isinstance(outputs, torch.Tensor):
-            out_ids = outputs[0]
-        elif isinstance(outputs, (list, tuple)):
-            out_ids = outputs[0]
-        else:
-            raise RuntimeError(f"model.generate returned unexpected type: {type(outputs)}")
+        try:
+            out_ids = outputs[0] if isinstance(outputs, (list, tuple)) else outputs[0]
+            decoded = self.tokenizer.decode(out_ids, skip_special_tokens=True)
+        finally:
+            # free generated tensors (if on GPU) and clear small caches if needed
+            try:
+                del outputs, out_ids
+            except Exception:
+                pass
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
-        # Decode
-        decoded = self.tokenizer.decode(out_ids, skip_special_tokens=True)
         return decoded

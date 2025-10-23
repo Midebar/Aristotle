@@ -114,6 +114,7 @@ class Reasoning_Graph_Baseline:
     
 
     def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
+
         def _clean_lead(s: str) -> str:
             return re.sub(r'^[\s:\-]*', '', (s or "").strip())
 
@@ -125,10 +126,13 @@ class Reasoning_Graph_Baseline:
             if not s or not s.strip():
                 return False
             s = s.strip()
+            # parentheses balanced heuristic
             if s.count('(') != s.count(')'):
                 return False
+            # predicate-like containing True/False
             if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
                 return True
+            # fallback
             if s.endswith(')'):
                 return True
             if '(' in s and ')' in s:
@@ -137,61 +141,58 @@ class Reasoning_Graph_Baseline:
 
         content = content or ""
 
-        # Collect final-form blocks
+        # collect matches with positions (occurrence order)
         final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
-        final_blocks = re.findall(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
-        final_blocks_text = [b[0] for b in final_blocks]  # list in occurrence order
+        block_iter = list(re.finditer(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE))
+        final_blocks_text = [m.group(1) for m in block_iter] if block_iter else [content]
 
-        if not final_blocks_text:
-            final_blocks_text = [content]
+        # Build list of (start_pos, text) for each block
+        blocks_with_pos = []
+        for m in block_iter:
+            blocks_with_pos.append((m.start(0), m.group(1)))
 
-        # print("FINAL BLOCKS TEXT:", final_blocks_text)
+        # find marker location (prefer longer phrase)
+        marker_candidates = [
+            "Di bawah ini adalah yang perlu Anda terjemahkan",
+            "Di bawah ini adalah yang perlu Anda terjemahkan:",
+            "Di bawah ini adalah yang perlu Anda terjemahkan .",
+            "Di bawah ini adalah yang perlu anda terjemahkan",
+            "Di bawah ini",
+            "Di bawah ini adalah",
+            "Di bawah ini adalah yang perlu",
+        ]
+        content_lower = content.lower()
+        marker_pos = None
+        for cand in marker_candidates:
+            pos = content_lower.find(cand.lower())
+            if pos != -1:
+                marker_pos = pos
+                break
 
-        # Determine starting index based on prompts file name
-        filename = os.path.basename(getattr(self, "prompts_file", "") or "")
-        name, _ = os.path.splitext(filename)
-        if "modified" in name.lower():
-            final_block_index = 5
-        else:
-            final_block_index = 4
+        # regexes for sections inside a block
+        fact_pat = re.compile(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
+        rule_pat = re.compile(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
+        conj_pat = re.compile(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
 
-        # scan from first, skip to the element, use reversed if model is "instruct", for block in reversed(final_blocks_text)
-        for block in (final_blocks_text[final_block_index:]):
-            print(f"BLOCK:\n{block}\n---END BLOCK---")
-            fact_iter = list(re.finditer(
-                r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
-                block, re.DOTALL | re.IGNORECASE))
-            rule_iter = list(re.finditer(
-                r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
-                block, re.DOTALL | re.IGNORECASE))
-            conj_iter = list(re.finditer(
-                r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
-                block, re.DOTALL | re.IGNORECASE))
+        def _trim_after_separators(s: str) -> str:
+            if not s:
+                return s
+            # split on dashes, '-----', Markdown headings, 'Human:', '[USER]', or the next example markers
+            parts = re.split(r'\n-{3,}\s*\n|-{5,}|-----|\n#+\s*$|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|\n---\n', s, maxsplit=1)
+            trimmed = parts[0].strip()
+            # also truncate at "Di bawah ini" if accidentally included
+            trimmed = re.split(r'\bDi bawah ini\b', trimmed, maxsplit=1)[0].strip()
+            return trimmed
+
+        def _extract_from_block(block_text):
+            fact_iter = list(fact_pat.finditer(block_text))
+            rule_iter = list(rule_pat.finditer(block_text))
+            conj_iter = list(conj_pat.finditer(block_text))
 
             if not rule_iter:
-                continue
+                return None
 
-            selected_rule = None
-            # if isinstance(context_sentence_count, int) and context_sentence_count > 0:
-            #     for m in reversed(rule_iter):
-            #         rtxt = _clean_lead(m.group(1))
-            #         cnt, _ = _rule_count_and_lines(rtxt)
-            #         if cnt == context_sentence_count:
-            #             selected_rule = m
-            #             break
-
-            # if selected_rule is None:
-            #     for m in reversed(rule_iter):
-            #         rtxt = _clean_lead(m.group(1))
-            #         cnt, _ = _rule_count_and_lines(rtxt)
-            #         if cnt > 0:
-            #             selected_rule = m
-            #             break
-
-            # safety
-            if selected_rule is None:
-                selected_rule = rule_iter[-1]
-
+            selected_rule = rule_iter[-1]
             rule_text = _clean_lead(selected_rule.group(1)) if selected_rule else ""
 
             rule_start = selected_rule.start() if selected_rule else 0
@@ -208,38 +209,73 @@ class Reasoning_Graph_Baseline:
             else:
                 conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
 
-            if conj_text:
-                conj_text = re.split(r'\n-{3,}\n|-{5,}|-----|', conj_text, maxsplit=1)[0].strip()
+            # trim after separators
+            fact_text = _trim_after_separators(fact_text)
+            rule_text = _trim_after_separators(rule_text)
+            conj_text = _trim_after_separators(conj_text)
 
-            fact_ok = _search_complete_predicate(fact_text)
-            conj_ok = _search_complete_predicate(conj_text)
-
-            # If valid, return this triple
-            if fact_ok and conj_ok:
-                # normalize some arrow variants
-                rule = re.sub(r'\s*(-)\s*', ' \n ', rule) # Sometimes they list '-' as proofs
-                rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule_text)
+            if _search_complete_predicate(fact_text) and _search_complete_predicate(conj_text):
+                # normalize arrows and remove list bullets at line starts
+                rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—)\s*', ' >>> ', rule_text)
                 rule_text = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule_text)
+                rule_text = re.sub(r'(?m)^\s*-\s*', '', rule_text)
                 return fact_text, rule_text, conj_text
+            return None
 
-        # fallback
-        # Use the last block in original order (final_blocks_text[-1])
-        fallback_block = final_blocks_text[-1] if final_blocks_text else content
+        # 1) If marker exists, pick first block whose start >= marker_pos
+        if marker_pos is not None and blocks_with_pos:
+            for start_pos, block_text in blocks_with_pos:
+                if start_pos >= marker_pos:
+                    extracted = _extract_from_block(block_text)
+                    if extracted:
+                        return extracted
 
-        fm = list(re.finditer(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
-                            fallback_block, re.DOTALL | re.IGNORECASE))
-        rm = list(re.finditer(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
-                            fallback_block, re.DOTALL | re.IGNORECASE))
-        cm = list(re.finditer(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
-                            fallback_block, re.DOTALL | re.IGNORECASE))
+        # 2) fallback: filename (modified -> 5, else 4) with lookahead
+        filename = os.path.basename(getattr(self, "prompts_file", "") or "")
+        name, _ = os.path.splitext(filename)
+        if "modified" in name.lower():
+            final_block_index = 5
+        else:
+            final_block_index = 4
+        final_block_index = max(0, final_block_index)
+        max_lookahead = 6
+
+        candidate_indices = []
+        if final_block_index < len(final_blocks_text):
+            end_idx = min(len(final_blocks_text), final_block_index + max_lookahead)
+            candidate_indices = list(range(final_block_index, end_idx))
+        else:
+            start_idx = max(0, len(final_blocks_text) - max_lookahead)
+            candidate_indices = list(range(start_idx, len(final_blocks_text)))
+
+        for ci in candidate_indices:
+            block_text = final_blocks_text[ci]
+            extracted = _extract_from_block(block_text)
+            if extracted:
+                return extracted
+
+        # 3) final fallback
+        for block_text in (final_blocks_text):
+            extracted = _extract_from_block(block_text)
+            if extracted:
+                return extracted
+
+        # 4) last resort: try simple regex on the entire content/ original from repo
+        fm = list(fact_pat.finditer(content))
+        rm = list(rule_pat.finditer(content))
+        cm = list(conj_pat.finditer(content))
 
         fact = _clean_lead(fm[-1].group(1)) if fm else ""
         rule = _clean_lead(rm[-1].group(1)) if rm else ""
         conjecture = _clean_lead(cm[-1].group(1)) if cm else ""
 
-        rule = re.sub(r'\s*(-)\s*', ' \n ', rule)
-        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule)
+        fact = _trim_after_separators(fact)
+        rule = _trim_after_separators(rule)
+        conjecture = _trim_after_separators(conjecture)
+
+        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—)\s*', ' >>> ', rule)
         rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
+        rule = re.sub(r'(?m)^\s*-\s*', '', rule)
 
         return fact, rule, conjecture
 
