@@ -1,4 +1,4 @@
-Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
+Deskripsi Tugas: Anda diberikan konteks dan konjektur. Tugasnya adalah:
 1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
 2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal
 3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
@@ -11,9 +11,10 @@ Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tu
 
 Berikut adalah contohnya:
 Konteks:
-Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Rompuses adalah zumpus. Alex adalah tumpus.
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses itu nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Rompuses adalah zumpus. Alex adalah tumpus.
+
 Konjektur:
-Alex bersifat tidak pemalu.
+Alex bukan pemalu.
 ###
 ***Bentuk Akhir***
 
@@ -46,7 +47,7 @@ Pemalu(Alex, False)
 
 Berikut adalah contohnya:
 Konteks:
-Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses bukan terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
 
 Konjektur:
 Max asam.
@@ -82,10 +83,10 @@ Asam(Max, True)
 
 Berikut adalah contohnya:
 Konteks:
-Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
+Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu bersifat feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
 
 Konjektur:
-Timothy bukan tembus pandang.
+Timothy tidak tembus pandang.
 ###
 ***Bentuk Akhir***
 
