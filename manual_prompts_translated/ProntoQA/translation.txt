@@ -1,16 +1,19 @@
 Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
 1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
-2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal (contoh: Wumpuses -> Wumpus)
-3) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
-4) parsing konjektur menjadi bentuk logika
-5) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+3) parsing konjektur menjadi bentuk logika
+4) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+
 ------
+
 Berikut adalah contohnya:
 Konteks:
-Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat tidak pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus berwujud cair. Rompuses adalah zumpuses. Alex adalah tumpus.
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Rompuses adalah zumpus. Alex adalah tumpus.
+
 Konjektur:
-Alex bersifat tidak pemalu.
+Alex bukan pemalu.
 ###
+***Bentuk Akhir***
 
 Fakta:
 Alex adalah tumpus ::: Tumpus(Alex, True)
@@ -31,19 +34,22 @@ Numpus($x, True) >>> Dumpus($x, True)
 Dumpus($x, True) >>> Pemalu($x, False)
 Impus($x, True) >>> Pemalu($x, True) 
 Dumpus($x, True) >>> Rompus($x, True)
-Rompus($x, True) >>> Cair($x, True)
-Rompus($x, True) >>> Zumpus($x, True)
+Rompus($x, True) >>> Cair($x, False)
+Rompus($x, True) >>> Zumpus($x, False)
 
 Konjektur:
 Pemalu(Alex, False)
+
 ------
+
 Berikut adalah contohnya:
 Konteks:
-Jompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses tidak terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
 
 Konjektur:
 Max asam.
 ###
+***Bentuk Akhir***
 
 Fakta:
 Max adalah yumpus ::: Yumpus(Max, True)
@@ -62,7 +68,7 @@ Impus($x, True) >>> Tumpus($x, True)
 Numpus($x, True) >>> Asam($x, True)
 Tumpus($x, True) >>> Asam($x, False)
 Tumpus($x, True) >>> Vumpus($x, True)
-Vumpus($x, True) >>> Tanah($x, True)
+Vumpus($x, True) >>> Tanah($x, False)
 Vumpus($x, True) >>> Zumpus($x, True)
 Zumpus($x, True) >>> Kecil($x, True)
 Zumpus($x, True) >>> Rompus($x, True)
@@ -71,6 +77,7 @@ Konjektur:
 Asam(Max, True)
 
 -----
+
 Di bawah ini adalah yang perlu Anda terjemahkan:
 Konteks:
 [[PREMISES]]

@@ -113,7 +113,8 @@ Delete the pod after, disk usage is EXPENSIVE
 
 ***SCORING***
 We can check for other LLM performance, especially on instruction following ini this case on Indonesia dataset in: https://leaderboard.sea-lion.ai/
-Qwen3-8b seems good for general purpose LLM
+Qwen3-8b seems good for general purpose LLM, but sucks at following instruction,
+Lets switch to Qwen2.5-7b-IT for general purpose following instructions models
 
 ***TRANSLATION NOTES***
 Komodo on paper is good for translation, but there's no instruct version, even then It compared to Llama2, gpt3.5, Qwen1.5
@@ -129,18 +130,18 @@ python run_pipeline.py --dataset_name ProntoQA --sample_pct 0
 
 ######## if one single max_new_token should not be universally applied
 
-python translate_decompose.py --data_path manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --max_new_tokens 4096
+python translate_decompose.py --data_path manual_data_translated --dataset_name ProntoQA --sample_pct 0 --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen2.5-7B-Instruct --batch_num 1 --max_new_tokens 8192
 
-python negate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
+python negate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen2.5-7B-Instruct
 
-python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation False --max_new_tokens 4096
+python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen2.5-7B-Instruct --batch_num 1 --negation False --max_new_tokens 8192
 
-python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B --batch_num 1 --negation True --max_new_tokens 4096
+python search_resolve.py --data_path manual_data_translate --dataset_name ProntoQA --prompts_folder manual_prompts_translated --split dev --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen2.5-7B-Instruct --batch_num 1 --negation True --max_new_tokens 8192
 
-python evaluate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen3-8B
+python evaluate.py --dataset_name ProntoQA --save_path resuls_translated --model_name /workspace/LLM_MODELS/Qwen2.5-7B-Instruct
 
 
-**SLIDES**
+***SLIDES***
 https://www.canva.com/design/DAGz9hZxkcc/bNa0ltg67QC_wT82jb0fuw/edit?utm_content=DAGz9hZxkcc&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
 
 Jumpuses, plurals, ttanslation problem in Bahasa. Different objects?

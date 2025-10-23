@@ -1,3 +1,4 @@
+#utils.py
 import os
 import backoff
 import asyncio
@@ -5,7 +6,6 @@ from typing import Any, Dict, List, Optional
 from retrying import retry
 import re
 
-# Try to import local llm_backends adapter
 try:
     from llm_backends import HFBackend
 except Exception:
@@ -16,9 +16,7 @@ def sanitize_filename(name: str) -> str:
     name = name.replace(os.path.sep, '_')
     if os.path.altsep:
         name = name.replace(os.path.altsep, '_')
-    # keep only common safe characters: letters, numbers, dot, dash, underscore
     name = re.sub(r'[^A-Za-z0-9._-]+', '_', name)
-    # collapse multiple underscores and trim
     name = re.sub(r'_+', '_', name).strip('_')
     if not name:
         name = 'model'
@@ -45,7 +43,7 @@ def call_chat(
     max_tokens: int = 512,
     temperature: float = 0.0,
     load_in_4bit: bool = False,
-    base_url: Optional[str] = None,
+    max_time: int = 120,
 ) -> str:
     """
     Core router that returns a single text string (the generated text).
@@ -56,29 +54,22 @@ def call_chat(
     """
     backend = backend or os.getenv("LLM_BACKEND", "hf")
 
-    # If base_url is passed explicitly (or via env), prefer contacting shim/openai-compat server
-    base_url = base_url or os.getenv("OPENAI_BASE_URL") or os.getenv("SHIM_BASE_URL") or None
-
-    # 1) HF backend (local model)
+    # HF backend (local model)
     if backend.lower() in ("hf", "local", "local-hf"):
         if HFBackend is None:
             raise RuntimeError("HFBackend adapter not available (llm_backends.HFBackend import failed).")
-
-        # Prefer LOCAL_MODEL_PATH environment variable if present
         local_path = os.getenv("LOCAL_MODEL_PATH", None)
-
         try:
             if local_path:
                 hf_backend = HFBackend(local_model_path=local_path, hf_model_id=model, quantize_4bit=load_in_4bit)
             else:
                 hf_backend = HFBackend(local_model_path=None, hf_model_id=model, quantize_4bit=load_in_4bit)
         except Exception as e:
-            # If instantiation fails
             raise RuntimeError(f"Failed to initialize HFBackend for model '{model}' (local_path={local_path}): {e}")
 
         prompt = format_messages_to_prompt(messages)
         # HFBackend.generate expects max_new_tokens (map max_tokens -> max_new_tokens)
-        return hf_backend.generate(prompt, max_new_tokens=max_tokens, temperature=temperature)
+        return hf_backend.generate(prompt, max_new_tokens=max_tokens, temperature=temperature, max_time=max_time)
 
 
 # -------------------------
@@ -104,7 +95,7 @@ def completions_with_backoff(**kwargs) -> Dict[str, Any]:
                      max_tokens=max_tokens,
                      temperature=temperature,
                      load_in_4bit=(os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")),
-                     base_url=os.getenv("SHIM_BASE_URL", None))
+                     max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120")),)
     return {"choices": [{"text": text}]}
 
 
@@ -124,7 +115,8 @@ def chat_completions_with_backoff(**kwargs) -> Dict[str, Any]:
                      backend=os.getenv("LLM_BACKEND", "hf"),
                      max_tokens=max_tokens,
                      temperature=temperature,
-                     load_in_4bit=(os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")),)
+                     load_in_4bit=(os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")),
+                     max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120")),)
     return {"choices": [{"message": {"content": text}, "finish_reason": "stop"}]}
 
 
@@ -138,14 +130,12 @@ async def _async_chat_call_wrapper(messages, model, temperature, max_tokens, top
         lambda: chat_completions_with_backoff(model=model, messages=messages, temperature=temperature, max_tokens=max_tokens, top_p=top_p, stop=stop_words)
     )
 
-
 async def _async_prompt_call_wrapper(prompt, model, temperature, max_tokens, top_p, stop_words):
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(
         None,
         lambda: completions_with_backoff(model=model, prompt=prompt, temperature=temperature, max_tokens=max_tokens, top_p=top_p, stop=stop_words)
     )
-
 
 async def dispatch_openai_chat_requests(
     messages_list: List[List[Dict[str, Any]]],
@@ -157,7 +147,6 @@ async def dispatch_openai_chat_requests(
 ) -> List[Dict[str, Any]]:
     tasks = [_async_chat_call_wrapper(x, model, temperature, max_tokens, top_p, stop_words) for x in messages_list]
     return await asyncio.gather(*tasks)
-
 
 async def dispatch_openai_prompt_requests(
     prompt_list: List[str],

@@ -119,7 +119,7 @@ def default_translation_prompt(example: Dict[str, Any]) -> str:
            return the single token: ERROR
         6) Start the response with '{{' and end with '}}' — nothing before or after.
 
-        Below is the example to translate (translate only the language in values; keep option-values EXACT):
+        Below is the one you need to translate (translate only the language in values; keep option-values EXACT):
         {example_json}
 
         Now produce the translated JSON object (and nothing else).
