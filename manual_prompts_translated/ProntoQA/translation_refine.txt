@@ -1,8 +1,9 @@
-Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:
-1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
-2) menulis semua fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
-3) parsing konjektur menjadi bentuk logika
-4) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+Deskripsi Tugas: Anda diberikan sebuah konteks dari suatu permasalahan berserta pertanyaan dalam konjektur. Tugasnya adalah:
+1) Menerjemahkan konteks ke dalam aturan logika berdasarkan predikat yang ditentukan
+2) Menulis semua fakta yang disebutkan dalam masalah
+3) Terjemahkan fakta yang ditemukan ke dalam bentuk logika juga
+3) Terjemahkan konjektur yang diberikan ke dalam bentuk logika juga
+4) Silahkan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 
 ------
 

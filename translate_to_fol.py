@@ -118,73 +118,42 @@ class Reasoning_Graph_Baseline:
         def _clean_lead(s: str) -> str:
             return re.sub(r'^[\s:\-]*', '', (s or "").strip())
 
-        def _rule_count_and_lines(txt: str):
-            lines = [ln for ln in re.split(r'\r?\n', txt or "") if ln.strip()]
-            return len(lines), lines
-
         def _search_complete_predicate(s: str) -> bool:
             if not s or not s.strip():
                 return False
             s = s.strip()
-            # parentheses balanced heuristic
             if s.count('(') != s.count(')'):
                 return False
-            # predicate-like containing True/False
             if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
                 return True
-            # fallback
             if s.endswith(')'):
                 return True
             if '(' in s and ')' in s:
                 return True
             return False
 
+        def _trim_after_separators(s: str) -> str:
+            if not s:
+                return s
+            parts = re.split(r'\n-{3,}\s*\n|-{5,}|-----|\n#+\s*\n|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|\n---\n', s, maxsplit=1)
+            trimmed = parts[0].strip()
+            # stop at "Di bawah ini" if accidentally included
+            trimmed = re.split(r'\bDi bawah ini\b', trimmed, maxsplit=1)[0].strip()
+            return trimmed
+
         content = content or ""
 
-        # collect matches with positions (occurrence order)
+        # find all final-form blocks with match objects (so we have positions)
         final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
-        block_iter = list(re.finditer(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE))
-        final_blocks_text = [m.group(1) for m in block_iter] if block_iter else [content]
+        block_matches = list(re.finditer(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE))
+        final_blocks_text = [m.group(1) for m in block_matches] if block_matches else [content]
 
-        # Build list of (start_pos, text) for each block
-        blocks_with_pos = []
-        for m in block_iter:
-            blocks_with_pos.append((m.start(0), m.group(1)))
-
-        # find marker location (prefer longer phrase)
-        marker_candidates = [
-            "Di bawah ini adalah yang perlu Anda terjemahkan",
-            "Di bawah ini adalah yang perlu Anda terjemahkan:",
-            "Di bawah ini adalah yang perlu Anda terjemahkan .",
-            "Di bawah ini adalah yang perlu anda terjemahkan",
-            "Di bawah ini",
-            "Di bawah ini adalah",
-            "Di bawah ini adalah yang perlu",
-        ]
-        content_lower = content.lower()
-        marker_pos = None
-        for cand in marker_candidates:
-            pos = content_lower.find(cand.lower())
-            if pos != -1:
-                marker_pos = pos
-                break
-
-        # regexes for sections inside a block
+        # compile section regexes
         fact_pat = re.compile(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
         rule_pat = re.compile(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
         conj_pat = re.compile(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)', re.DOTALL | re.IGNORECASE)
 
-        def _trim_after_separators(s: str) -> str:
-            if not s:
-                return s
-            # split on dashes, '-----', Markdown headings, 'Human:', '[USER]', or the next example markers
-            parts = re.split(r'\n-{3,}\s*\n|-{5,}|-----|\n#+\s*$|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|\n---\n', s, maxsplit=1)
-            trimmed = parts[0].strip()
-            # also truncate at "Di bawah ini" if accidentally included
-            trimmed = re.split(r'\bDi bawah ini\b', trimmed, maxsplit=1)[0].strip()
-            return trimmed
-
-        def _extract_from_block(block_text):
+        def _extract_from_block_text(block_text):
             fact_iter = list(fact_pat.finditer(block_text))
             rule_iter = list(rule_pat.finditer(block_text))
             conj_iter = list(conj_pat.finditer(block_text))
@@ -215,22 +184,36 @@ class Reasoning_Graph_Baseline:
             conj_text = _trim_after_separators(conj_text)
 
             if _search_complete_predicate(fact_text) and _search_complete_predicate(conj_text):
-                # normalize arrows and remove list bullets at line starts
+                # normalize arrows and remove leading bullets
+                rule_text = re.sub(r'(?m)^\s*-\s*', '', rule_text)
                 rule_text = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—)\s*', ' >>> ', rule_text)
                 rule_text = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule_text)
-                rule_text = re.sub(r'(?m)^\s*-\s*', '', rule_text)
                 return fact_text, rule_text, conj_text
             return None
 
-        # 1) If marker exists, pick first block whose start >= marker_pos
-        if marker_pos is not None and blocks_with_pos:
-            for start_pos, block_text in blocks_with_pos:
-                if start_pos >= marker_pos:
-                    extracted = _extract_from_block(block_text)
+        # 1) Prefer the first block after the explicit marker
+        marker_regex = re.compile(
+            r'Di bawah ini(?:\s+adalah(?:\s+yang\s+perlu\s+Anda\s+terjemahkan)?)?:?',
+            flags=re.IGNORECASE
+        )
+        marker_match = marker_regex.search(content)
+
+        if marker_match:
+            marker_pos = marker_match.end()
+            # find first block whose start >= marker_pos
+            for m in block_matches:
+                if m.start(0) >= marker_pos:
+                    extracted = _extract_from_block_text(m.group(1))
                     if extracted:
                         return extracted
+                    else:
+                        # block exists after marker but extraction failed -> return empty triple
+                        # to avoid accidentally taking earlier examples
+                        return "", "", ""
+            # marker present but no block after marker -> explicitly return empty triple
+            return "", "", ""
 
-        # 2) fallback: filename (modified -> 5, else 4) with lookahead
+        # 2) If no marker, fall back to filename heuristic (modified -> index 5, else 4)
         filename = os.path.basename(getattr(self, "prompts_file", "") or "")
         name, _ = os.path.splitext(filename)
         if "modified" in name.lower():
@@ -238,29 +221,27 @@ class Reasoning_Graph_Baseline:
         else:
             final_block_index = 4
         final_block_index = max(0, final_block_index)
-        max_lookahead = 6
 
-        candidate_indices = []
-        if final_block_index < len(final_blocks_text):
-            end_idx = min(len(final_blocks_text), final_block_index + max_lookahead)
-            candidate_indices = list(range(final_block_index, end_idx))
-        else:
+        # small lookahead window
+        max_lookahead = 6
+        candidate_indices = list(range(final_block_index, min(len(final_blocks_text), final_block_index + max_lookahead)))
+        # if index out of range, try last few blocks
+        if not candidate_indices:
             start_idx = max(0, len(final_blocks_text) - max_lookahead)
             candidate_indices = list(range(start_idx, len(final_blocks_text)))
 
         for ci in candidate_indices:
-            block_text = final_blocks_text[ci]
-            extracted = _extract_from_block(block_text)
+            extracted = _extract_from_block_text(final_blocks_text[ci])
             if extracted:
                 return extracted
 
-        # 3) final fallback
-        for block_text in (final_blocks_text):
-            extracted = _extract_from_block(block_text)
+        # 3) Try every block from the end as last resort
+        for block_text in reversed(final_blocks_text):
+            extracted = _extract_from_block_text(block_text)
             if extracted:
                 return extracted
 
-        # 4) last resort: try simple regex on the entire content/ original from repo
+        # 4) attempt to pull any matching sections from whole content (last resort)
         fm = list(fact_pat.finditer(content))
         rm = list(rule_pat.finditer(content))
         cm = list(conj_pat.finditer(content))
@@ -273,11 +254,12 @@ class Reasoning_Graph_Baseline:
         rule = _trim_after_separators(rule)
         conjecture = _trim_after_separators(conjecture)
 
+        rule = re.sub(r'(?m)^\s*-\s*', '', rule)
         rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—)\s*', ' >>> ', rule)
         rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
-        rule = re.sub(r'(?m)^\s*-\s*', '', rule)
 
         return fact, rule, conjecture
+
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):

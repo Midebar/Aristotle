@@ -66,7 +66,7 @@ Dumpus($x, True) >>> Kayu($x, False)
 Dumpus($x, True) >>> Wumpus($x, True)
 Wumpus($x, True) >>> Merah($x, True)
 Wumpus($x, True) >>> Impus($x, True)
-Impus($x, True) >>> TembusPandang($x, True)
+Impus($x, True) >>> TembusPandang($x, False)
 Impus($x, True) >>> Tumpus($x, True)
 Numpus($x, True) >>> Asam($x, True)
 Tumpus($x, True) >>> Asam($x, False)
@@ -86,7 +86,7 @@ Konteks:
 Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu bersifat feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
 
 Konjektur:
-Timothy tidak tembus pandang.
+Timothy adalah tidak tembus pandang.
 ###
 ***Bentuk Akhir***
 
