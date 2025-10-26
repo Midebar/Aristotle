@@ -1,8 +1,6 @@
 """
 translate_dataset.py
 
-Translate a dataset (JSON) into Bahasa Indonesia using LLM backend calls (via utils.ModelWrapper).
-
 Usage example:
   python translate_dataset.py --dataset_name <dataset> --split <split> --output_dir <output_folder> --model_name <model>
 """
@@ -18,14 +16,12 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from tqdm import tqdm
 
-# Try to import the ModelWrapper wrapper from utils.py
 try:
     from utils import ModelWrapper
 except Exception as e:
     print("Error importing ModelWrapper from utils.py:", e)
     raise
 
-#dotenv loader
 try:
     from dotenv import load_dotenv
     DOTENV_AVAILABLE = True
@@ -98,9 +94,6 @@ def sample_examples(examples: List[Dict[str, Any]], pct: int, seed: int = 42) ->
 OPTION_TOKENS = ["True", "False", "Unknown", "Yes", "No", "None"]
 
 def default_translation_prompt(example: Dict[str, Any]) -> str:
-    """
-    Prompt instructs the model strongly to NOT translate option values.
-    """
     example_json = json.dumps(example, indent=2, ensure_ascii=False)
     prompt = f"""
         You are a professional translator. Translate only the *values* (natural-language text)
@@ -121,6 +114,9 @@ def default_translation_prompt(example: Dict[str, Any]) -> str:
 
         Below is the one you need to translate (translate only the language in values; keep option-values EXACT):
         {example_json}
+
+        And this is the translated example in JSON format.
+        
 
         Now produce the translated JSON object (and nothing else).
     """
@@ -243,11 +239,10 @@ def main():
 
     print("[translate_dataset] Using default translation prompt template (built-in).")
 
-    api_key = os.environ.get("OPENAI_API_KEY", "")
     stop_words = os.environ.get("STOP_WORDS", "------")
     model_name_env = os.environ.get("LLM_MODEL", "")
     print(model_name_env)
-    openai_model = ModelWrapper(API_KEY=api_key, model_name=model_name_env, stop_words=stop_words, max_new_tokens=args.max_new_tokens, base_url=os.getenv("BASE_URL", None))
+    openai_model = ModelWrapper(model_name=model_name_env, stop_words=stop_words, max_new_tokens=args.max_new_tokens)
 
     prompts = []
     # keep original examples for option restoration
