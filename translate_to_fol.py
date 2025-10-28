@@ -24,10 +24,7 @@ class Reasoning_Graph_Baseline:
         self.prompts_folder = args.prompts_folder
         self.prompts_file = args.prompts_file
         self.file_lock = threading.Lock()
-        if args.base_url:
-            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
-        else:
-            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
+        self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
             
     def load_in_context_examples_trans(self, prompts_folder='./prompts', prompts_file='translation'):
         file_path = os.path.join(prompts_folder, self.dataset_name, f"{prompts_file}.txt")
@@ -118,153 +115,156 @@ class Reasoning_Graph_Baseline:
         def _clean_lead(s: str) -> str:
             return re.sub(r'^[\s:\-]*', '', (s or "").strip())
 
-        def _normalize_arrows(s: str) -> str:
-            s = re.sub(r'(?m)^[\s\-\*\u2022]+\s*', '', s)
-            s = re.sub(r'["“”\']', '', s)     
-            s = re.sub(r'\s*(→|⇒|=>|->>|->|—|–)\s*', ' >>> ', s)
-            s = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', s)
-            return s.strip()
-
-        def _trim_after_separators(s: str) -> str:
-            if not s:
-                return s
-            # separators
-            parts = re.split(
-                r'\n-{3,}\s*|\n#{2,}\s*|\n\*\*\*Akhir Blok\*\*\*|\nAkhir Blok\b|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|\nBerikut\s+adalah\s+contoh(?:ya)?|Di bawah ini',
-                s, flags=re.IGNORECASE, maxsplit=1
-            )
-            return parts[0].strip()
+        def _search_complete_predicate(s: str) -> bool:
+            if not s or not s.strip():
+                return False
+            s = s.strip()
+            if s.count('(') != s.count(')'):
+                return False
+            if re.search(r'\b\w+\s*\([^()]*\b(True|False)\b[^()]*\)', s, re.IGNORECASE):
+                return True
+            if s.endswith(')'):
+                return True
+            if '(' in s and ')' in s:
+                return True
+            return False
 
         content = content or ""
 
-        # remove fenced-code blocks early
-        content_nofences = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+        # 1) Find the marker "Di bawah ini ...". Anchor search after.
+        marker_pat = re.compile(
+            r'Di bawah ini(?:\s+adalah(?:\s+yang\s+perlu\s+Anda\s+terjemahkan)?)?:?',
+            flags=re.IGNORECASE
+        )
+        marker_m = marker_pat.search(content)
+        search_start = marker_m.end() if marker_m else 0
 
-        marker = re.search(r'Di bawah ini(?:\s+adalah(?:\s+yang\s+perlu\s+Anda\s+terjemahkan)?)?:?', content_nofences, flags=re.IGNORECASE)
+        # 2) Find the first ***Bentuk Akhir*** block after the marker.
+        block_pattern = re.compile(
+            r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*'    # heading
+            r'(.*?)'                                         # non-greedy body capture
+            r'(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*|\*\*\*Akhir Blok\*\*\*|-{3,}|###\s*$|Human:|\Z))',
+            flags=re.DOTALL | re.IGNORECASE
+        )
 
-        heading_re = re.compile(r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*', flags=re.IGNORECASE)
-        headings = list(heading_re.finditer(content_nofences))
-
-        chosen_block = None
-
-        # extract text from its end up to the nearest separator
-        def _extract_block_from_heading(h):
-            start = h.end()
-            next_heading_start = None
-            for nh in headings:
-                if nh.start() > h.start():
-                    next_heading_start = nh.start()
-                    break
-            # find the earliest separator after start
-            sep_match = re.search(
-                r'\n-{3,}\s*|\n#{2,}\s*|\n\*\*\*Akhir Blok\*\*\*|\nAkhir Blok\b|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|\nBerikut\s+adalah\s+contoh(?:ya)?|Di bawah ini',
-                content_nofences[start:], flags=re.IGNORECASE
-            )
-            sep_pos = (start + sep_match.start()) if sep_match else None
-            end_candidates = [p for p in (next_heading_start, sep_pos) if p is not None]
-            end = min(end_candidates) if end_candidates else len(content_nofences)
-            return content_nofences[start:end].strip()
-
-        if marker:
-            marker_pos = marker.end()
-            # pick the first heading that starts after the marker
-            for h in headings:
-                if h.start() >= marker_pos:
-                    chosen_block = _extract_block_from_heading(h)
-                    chosen_block = _trim_after_separators(chosen_block)
-                    break
-            if chosen_block is None:
-                return "", "", ""
-        else:
-            # no marker
-            if headings:
-                chosen_block = _extract_block_from_heading(headings[0])
-                chosen_block = _trim_after_separators(chosen_block)
-            else:
-                # no headings anywhere
-                chosen_block = _trim_after_separators(content_nofences)
-
-        bt = (chosen_block or "").strip()
-        if not bt:
-            return "", "", ""
-
-        fact_iter = re.search(r'(?:\*\*Fakta\*\*|Fakta[:\-]?)\s*(.*?)(?=(?:\*\*Aturan\*\*|Aturan[:\-]?)|(?:\*\*Konjektur\*\*|Konjektur[:\-]?)|$)', bt, flags=re.DOTALL | re.IGNORECASE)
-        rule_iter = re.search(r'(?:\*\*Aturan\*\*|Aturan[:\-]?)\s*(.*?)(?=(?:\*\*Konjektur\*\*|Konjektur[:\-]?)|(?:\*\*Fakta\*\*|Fakta[:\-]?)|$)', bt, flags=re.DOTALL | re.IGNORECASE)
-        conj_iter = re.search(r'(?:\*\*Konjektur\*\*|Konjektur[:\-]?)\s*(.*?)(?=(?:\*\*Fakta\*\*|Fakta[:\-]?)|(?:\*\*Aturan\*\*|Aturan[:\-]?)|$)', bt, flags=re.DOTALL | re.IGNORECASE)
-
-        fact_text = _clean_lead(fact_iter.group(1)) if fact_iter else ""
-        rule_text = _clean_lead(rule_iter.group(1)) if rule_iter else ""
-        conj_text = _clean_lead(conj_iter.group(1)) if conj_iter else ""
-
-        # conjecture trim at explicit separators like ----- or block-end markers
-        conj_text = re.split(r'\n-{3,}\n|-{5,}|-----|\n\*\*\*Akhir Blok\*\*\*|\nAkhir Blok\b', conj_text, maxsplit=1)[0].strip()
-
-        # split on conjecture marker; otherwise take first concrete predicate-like line as fact
-        if not (fact_iter or rule_iter or conj_iter):
-            if re.search(r'Konjektur', bt, flags=re.IGNORECASE):
-                parts = re.split(r'Konjektur[:\-]?', bt, flags=re.IGNORECASE, maxsplit=1)
-                left = parts[0]
-                conj_text = _clean_lead(parts[1]) if len(parts) > 1 else ""
-                if re.search(r'Aturan', left, flags=re.IGNORECASE):
-                    pleft = re.split(r'Aturan[:\-]?', left, flags=re.IGNORECASE, maxsplit=1)
-                    fact_text = _clean_lead(pleft[0])
-                    rule_text = _clean_lead(pleft[1]) if len(pleft) > 1 else ""
-                else:
-                    lines = [l for l in left.splitlines() if l.strip()]
-                    if lines:
-                        fact_text = _clean_lead(lines[0])
-                        rule_text = _clean_lead("\n".join(lines[1:]))
-            else:
-                # no labels at all, try to find a predicate-like fact in the block
-                m = re.search(r'\b([A-Za-z]\w*\(\s*[A-Za-z0-9_]+\s*,\s*(?:True|False)\s*\))', bt)
-                if m:
-                    fact_text = m.group(1)
-                preds = re.findall(r'[A-Za-z]\w*\(\s*\$?x\s*,\s*(?:True|False)\s*\)\s*(?:>>>.*)?', bt)
-                if preds:
-                    rule_text = "\n".join([_normalize_arrows(p) for p in preds])
-
-        rule_lines = []
-        for ln in rule_text.splitlines():
-            ln2 = ln.strip()
-            if not ln2:
-                continue
-            ln2 = _normalize_arrows(ln2)
-            ln2 = re.split(r'Human:|\[USER\]|\[SYSTEM\]|Di bawah ini', ln2, flags=re.IGNORECASE)[0].strip()
-            if ln2 and ln2 not in rule_lines:
-                rule_lines.append(ln2)
-        rule_text = "\n".join(rule_lines).strip()
-
-        fact = ""
-        m = re.search(r':::\s*(.*)', fact_text)
+        m = block_pattern.search(content, pos=search_start)
         if m:
-            rhs = m.group(1).strip()
-            p = re.search(r'([A-Za-z]\w*\(\s*[A-Za-z0-9_]+\s*,\s*(?:True|False)\s*\))', rhs)
-            if p:
-                fact = p.group(1)
-        if not fact:
-            p = re.search(r'([A-Za-z]\w*\(\s*[A-Za-z0-9_]+\s*,\s*(?:True|False)\s*\))', fact_text)
-            if p:
-                fact = p.group(1)
-        fact = _clean_lead(fact)
-
-        conj = ""
-        p = re.search(r'([A-Za-z]\w*\(\s*[A-Za-z0-9_]+\s*,\s*(?:True|False)\s*\))', conj_text)
-        if p:
-            conj = p.group(1)
+            chosen_block = m.group(1).strip()
         else:
-            q = re.search(r'["“](.*?)[”"]', conj_text)
-            if q:
-                inside = q.group(1)
-                p2 = re.search(r'([A-Za-z]\w*\([^)]*\b(True|False)\b[^)]*\))', inside, flags=re.IGNORECASE)
-                if p2:
-                    conj = p2.group(1)
-        conj = _clean_lead(conj)
+            # fallback: try to get first occurrence anywhere
+            m2 = block_pattern.search(content)
+            if m2:
+                chosen_block = m2.group(1).strip()
+            else:
+                # try to extract anything between the last '***Bentuk Akhir***' and end, else entire content
+                last_heading = re.search(r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*(?![\s\S]*\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)', content, flags=re.IGNORECASE)
+                if last_heading:
+                    chosen_block = content[last_heading.end():].strip()
+                else:
+                    chosen_block = content.strip()
 
-        rule = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—|-)\s*', ' >>> ', rule_text)
-        rule = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rule)
+        # Trim common trailing noise markers inside the chosen block
+        terminator_re = re.compile(r'\n\*\*\*Akhir Blok\*\*\*|\n-{3,}|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|```', flags=re.IGNORECASE)
+        chosen_block = terminator_re.split(chosen_block, maxsplit=1)[0].strip()
 
-        return fact, rule, conj
+        print("=== CHOSEN BLOCK ===")
+        print(chosen_block)
+        print("=== END CHOSEN BLOCK ===")
 
+        # 3) Extract Fakta / Aturan / Konjektur sections from the chosen block.
+        fact_iter = list(re.finditer(
+            r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
+            chosen_block, re.DOTALL | re.IGNORECASE))
+        rule_iter = list(re.finditer(
+            r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)',
+            chosen_block, re.DOTALL | re.IGNORECASE))
+        conj_iter = list(re.finditer(
+            r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
+            chosen_block, re.DOTALL | re.IGNORECASE))
+
+        # If there are no explicit headings, try a looser approach: search for patterns like "Fakta:" or  "Konjektur:" anywhere
+        if not (fact_iter or rule_iter or conj_iter):
+            # Attempt to split by lines and heuristically find the parts
+            lines = [ln for ln in re.split(r'\r?\n', chosen_block) if ln.strip()]
+            # Try to find indexes of lines starting with "Fakta", "Aturan", "Konjektur"
+            fact_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Fakta|Facts)\b', ln, re.I)), None)
+            rule_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Aturan|Rules)\b', ln, re.I)), None)
+            conj_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Konjektur|Conjecture)\b', ln, re.I)), None)
+
+            # Build approximate sections from found indices
+            def _section_from_idxs(start_idx, next_idxs):
+                if start_idx is None:
+                    return ""
+                end = min([i for i in next_idxs if i is not None and i > start_idx] + [len(lines)])
+                return "\n".join(lines[start_idx+1:end]).strip()  # skip header line
+
+            fact_text = _section_from_idxs(fact_idx, [rule_idx, conj_idx])
+            rule_text = _section_from_idxs(rule_idx, [fact_idx, conj_idx])
+            conj_text = _section_from_idxs(conj_idx, [fact_idx, rule_idx])
+        else:
+            selected_rule = None
+
+            # otherwise pick last rule section present in the chosen block
+            if selected_rule is None and rule_iter:
+                selected_rule = rule_iter[-1]
+
+            rule_text = _clean_lead(selected_rule.group(1)) if selected_rule else ""
+            rule_start = selected_rule.start() if selected_rule else 0
+
+            # closest fact block that starts before the rule_start
+            preceding_facts = [m for m in fact_iter if m.start() <= rule_start] if fact_iter else []
+            if preceding_facts:
+                fact_text = _clean_lead(preceding_facts[-1].group(1))
+            else:
+                fact_text = _clean_lead(fact_iter[-1].group(1)) if fact_iter else ""
+
+            # closest conj that starts after rule_end
+            rule_end = selected_rule.end() if selected_rule else 0
+            following_conjs = [m for m in conj_iter if m.start() >= rule_end] if conj_iter else []
+            if following_conjs:
+                conj_text = _clean_lead(following_conjs[0].group(1))
+            else:
+                conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
+
+        # Trim conjecture if it contains separators / trailing comments
+        if isinstance(conj_text, str) and conj_text:
+            conj_text = re.split(r'\n-{3,}\n|-{5,}|-----|', conj_text, maxsplit=1)[0].strip()
+
+        def _normalize_rule_text(rt: str) -> str:
+            if not rt:
+                return rt
+            rt = re.sub(r'^\s*-\s*', '', rt, flags=re.MULTILINE)
+            rt = re.sub(r'\s*(→|⇒|=>|->>|->|=>|—)\s*', ' >>> ', rt)
+            rt = re.sub(r'\s*(\<\-\>|\<\=\>|\<\-\=\>)\s*', ' <-> ', rt)
+            rt = re.sub(r'\n{3,}', '\n\n', rt)
+            return rt.strip()
+
+        rule_text = _normalize_rule_text(rule_text)
+        fact_text = (fact_text or "").strip()
+        conj_text = (conj_text or "").strip()
+
+        # If found valid triple where fact and conj look like predicates
+        if _search_complete_predicate(fact_text) and _search_complete_predicate(conj_text):
+            return fact_text, rule_text, conj_text
+
+        # fallback extraction from the whole chosen_block
+        fm = list(re.finditer(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
+        rm = list(re.finditer(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
+        cm = list(re.finditer(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
+
+        if not fact_text:
+            fact_text = _clean_lead(fm[-1].group(1)) if fm else fact_text
+        if not rule_text:
+            rule_text = _clean_lead(rm[-1].group(1)) if rm else rule_text
+            rule_text = _normalize_rule_text(rule_text)
+        if not conj_text:
+            conj_text = _clean_lead(cm[-1].group(1)) if cm else conj_text
+
+        fact_text = fact_text.strip()
+        rule_text = rule_text.strip()
+        conj_text = conj_text.strip()
+
+        return fact_text, rule_text, conj_text
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
