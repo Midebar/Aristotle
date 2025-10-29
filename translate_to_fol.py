@@ -131,7 +131,7 @@ class Reasoning_Graph_Baseline:
 
         content = content or ""
 
-        # 1) Find the marker "Di bawah ini ...". Anchor search after.
+        # 1) Find the marker "Di bawah ini ...".
         marker_pat = re.compile(
             r'Di bawah ini(?:\s+adalah(?:\s+yang\s+perlu\s+Anda\s+terjemahkan)?)?:?',
             flags=re.IGNORECASE
@@ -141,9 +141,9 @@ class Reasoning_Graph_Baseline:
 
         # 2) Find the first ***Bentuk Akhir*** block after the marker.
         block_pattern = re.compile(
-            r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*'    # heading
-            r'(.*?)'                                         # non-greedy body capture
-            r'(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*|\*\*\*Akhir Blok\*\*\*|-{3,}|###\s*$|Human:|\Z))',
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*'  # heading
+            r'(.*?)'                            # non-greedy body capture
+            r'(?=(\*\*\*(?:Bentuk Akhir)\*\*\*|\*\*\*Akhir Blok\*\*\*|-{3,}|###\s*$|\Z))',
             flags=re.DOTALL | re.IGNORECASE
         )
 
@@ -156,22 +156,22 @@ class Reasoning_Graph_Baseline:
             if m2:
                 chosen_block = m2.group(1).strip()
             else:
-                # try to extract anything between the last '***Bentuk Akhir***' and end, else entire content
-                last_heading = re.search(r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*(?![\s\S]*\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)', content, flags=re.IGNORECASE)
+                # try to extract anything between the last **Bentuk Akhir*** and end, else entire content
+                last_heading = re.search(r'\*\*\*(?:Bentuk Akhir)\*\*\*(?![\s\S]*\*\*\*(?:Bentuk Akhir)\*\*\*)', content, flags=re.IGNORECASE)
                 if last_heading:
                     chosen_block = content[last_heading.end():].strip()
                 else:
                     chosen_block = content.strip()
 
         # Trim common trailing noise markers inside the chosen block
-        terminator_re = re.compile(r'\n\*\*\*Akhir Blok\*\*\*|\n-{3,}|\nHuman:|\n\[USER\]|\n\[SYSTEM\]|```', flags=re.IGNORECASE)
+        terminator_re = re.compile(r'\n\*\*\*Akhir Blok\*\*\*|\n-{3,}|\n\```', flags=re.IGNORECASE)
         chosen_block = terminator_re.split(chosen_block, maxsplit=1)[0].strip()
 
         print("=== CHOSEN BLOCK ===")
         print(chosen_block)
         print("=== END CHOSEN BLOCK ===")
 
-        # 3) Extract Fakta / Aturan / Konjektur sections from the chosen block.
+        # 3) Extract sections from the chosen block.
         fact_iter = list(re.finditer(
             r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)',
             chosen_block, re.DOTALL | re.IGNORECASE))
@@ -182,11 +182,9 @@ class Reasoning_Graph_Baseline:
             r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)',
             chosen_block, re.DOTALL | re.IGNORECASE))
 
-        # If there are no explicit headings, try a looser approach: search for patterns like "Fakta:" or  "Konjektur:" anywhere
+        # If there are no explicit headings, try search for patterns like anywhere
         if not (fact_iter or rule_iter or conj_iter):
-            # Attempt to split by lines and heuristically find the parts
             lines = [ln for ln in re.split(r'\r?\n', chosen_block) if ln.strip()]
-            # Try to find indexes of lines starting with "Fakta", "Aturan", "Konjektur"
             fact_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Fakta|Facts)\b', ln, re.I)), None)
             rule_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Aturan|Rules)\b', ln, re.I)), None)
             conj_idx = next((i for i,ln in enumerate(lines) if re.match(r'^\s*(Konjektur|Conjecture)\b', ln, re.I)), None)
@@ -204,7 +202,6 @@ class Reasoning_Graph_Baseline:
         else:
             selected_rule = None
 
-            # otherwise pick last rule section present in the chosen block
             if selected_rule is None and rule_iter:
                 selected_rule = rule_iter[-1]
 
@@ -226,7 +223,6 @@ class Reasoning_Graph_Baseline:
             else:
                 conj_text = _clean_lead(conj_iter[-1].group(1)) if conj_iter else ""
 
-        # Trim conjecture if it contains separators / trailing comments
         if isinstance(conj_text, str) and conj_text:
             conj_text = re.split(r'\n-{3,}\n|-{5,}|-----|', conj_text, maxsplit=1)[0].strip()
 
@@ -247,24 +243,6 @@ class Reasoning_Graph_Baseline:
         if _search_complete_predicate(fact_text) and _search_complete_predicate(conj_text):
             return fact_text, rule_text, conj_text
 
-        # fallback extraction from the whole chosen_block
-        fm = list(re.finditer(r'Fakta\s*[:\-]?\s*(.*?)(?=(Aturan\s*[:\-]?)|(Konjektur\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
-        rm = list(re.finditer(r'Aturan\s*[:\-]?\s*(.*?)(?=(Konjektur\s*[:\-]?)|(Fakta\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
-        cm = list(re.finditer(r'Konjektur\s*[:\-]?\s*(.*?)(?=(Fakta\s*[:\-]?)|(Aturan\s*[:\-]?)|$)', chosen_block, re.DOTALL | re.IGNORECASE))
-
-        if not fact_text:
-            fact_text = _clean_lead(fm[-1].group(1)) if fm else fact_text
-        if not rule_text:
-            rule_text = _clean_lead(rm[-1].group(1)) if rm else rule_text
-            rule_text = _normalize_rule_text(rule_text)
-        if not conj_text:
-            conj_text = _clean_lead(cm[-1].group(1)) if cm else conj_text
-
-        fact_text = fact_text.strip()
-        rule_text = rule_text.strip()
-        conj_text = conj_text.strip()
-
-        return fact_text, rule_text, conj_text
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
