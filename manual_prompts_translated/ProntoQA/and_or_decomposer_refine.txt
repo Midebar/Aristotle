@@ -18,7 +18,7 @@ Pemecahan:
 Aturan dalam CNF:
 1. - \(\forall x \left(Jompus(x, False) \lor Eksentris(x, False)\right)\)
 
-**Akhir Blok***
+***Akhir Blok***
 
 ---
 
@@ -39,7 +39,7 @@ Aturan dalam CNF:
 2. - \(\forall x \left(Wumpus(x, False) \lor Yumpus(x, True)\right)\)
 3. - \(\forall x \left(Yumpus(x, False) \lor Oranye(x, False)\right)\)
 
-**Akhir Blok***
+***Akhir Blok***
 
 ---
 
@@ -74,7 +74,7 @@ Aturan dalam CNF:
 9. - \(\forall x \left(Dumpus(x, False) \lor Bercahaya(x, False)\right)\)
 10. - \(\forall x \left(Wumpus(x, False) \lor Yumpus(x, True)\right)\)
 
-**Akhir Blok***
+***Akhir Blok***
 
 ---
 
@@ -119,7 +119,7 @@ Aturan dalam CNF:
 14. - \(\forall x \left(Jompus(x, False) \lor Pedas(x, False)\right)\)
 15. - \(\forall x \left(Jompus(x, False) \lor Wumpus(x, True)\right)\)
 
-**Akhir Blok***
+***Akhir Blok***
 
 ---
 
@@ -168,7 +168,7 @@ Aturan dalam CNF:
 16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
 17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
 
-**Akhir Blok***
+***Akhir Blok***
 
 ---
 
@@ -176,5 +176,7 @@ Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi.
 Silahkan akhiri dekomposisi dalam "Bentuk Akhir" dan pastikan Anda mencakup setiap klausa dalam bentuk akhir Anda, walaupun klausa tersebut tidak perlu dipecah lagi.
 Silahkan patuhi instruksi dengan ketat dan jangan melakukan apa yang tidak diinstruksikan.
 Perhatikan bahwa Anda perlu menegasi suatu istilah hanya ketika mengubah sebuah implikasi ke CNF.
+Konteks:
 
+Aturan:
 [[PREMISES]]
