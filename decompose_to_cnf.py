@@ -289,12 +289,14 @@ class Reasoning_Graph_Baseline:
         )
 
         final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
-        if final_block_match:
-            block = final_block_match.group(1)
-        else:
-            # fallback: try to find any final block in the whole content
-            final_block_match_full = re.search(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
-            block = final_block_match_full.group(1) if final_block_match_full else content
+
+        if not final_block_match:
+            return [], None
+
+        block = final_block_match.group(1)
+
+        print(f"\n\nCHOSEN BLOCK: \n\n{block}\n\n")
+        print("END OF CHOSEN BLOCK\n\n")
 
         def _extract_section_raw(block: str, header: str, stop_headers: list) -> str:
             # build stop pattern that recognizes the stop headers as section starts
@@ -306,9 +308,6 @@ class Reasoning_Graph_Baseline:
 
         def _nonempty_raw_lines(s: str):
             return [ln.strip() for ln in s.splitlines() if ln.strip()]
-
-        print(f"CHOSEN BLOCK: \n\n{block}\n\n")
-        print("END OF CHOSEN BLOCK\n\n")
 
         cnf_headers = ['Aturan dalam CNF', 'Aturan CNF', 'Aturan', 'Rules', 'Aturan (CNF)']
         skolem_headers = ['Skolemisasi', 'Skolem', 'Bentuk Akhir Setelah Skolemisasi', 'Skolemization']
