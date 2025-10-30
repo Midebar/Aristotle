@@ -15,18 +15,18 @@ class Reasoning_Graph_Baseline:
         self.args = args
         self.data_path = args.data_path
         self.dataset_name = args.dataset_name
-        self.split = args.split
         self.sample_pct = args.sample_pct
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.mode = args.mode
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
+        self.prompts_file = args.prompts_file
         self.file_lock = threading.Lock()
         self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
     
-    def load_in_context_and_or_decomposer(self, prompts_folder='./prompts'):
-        file_path = os.path.join(prompts_folder, self.dataset_name, 'and_or_decomposer.txt')
+    def load_in_context_and_or_decomposer(self, prompts_folder='./prompts', prompts_file='and_or_decomposer'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, f'{prompts_file}.txt')
         print("Loading decomposer file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
@@ -60,9 +60,9 @@ class Reasoning_Graph_Baseline:
     
     def load_raw_dataset(self, sample_pct):
         print(f"SAMPLE PCT: {sample_pct}")
-        model_name = sanitize_filename(args.model_name)
+        model_name = sanitize_filename(self.model_name)
         input_path = f'{model_name}_trans_only.json'
-        input_path = os.path.join(args.save_path, args.dataset_name, input_path)
+        input_path = os.path.join(self.data_path, self.dataset_name, input_path)
         with open(input_path, 'r') as f:
             raw_dataset = json.load(f)
             raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
@@ -274,167 +274,78 @@ class Reasoning_Graph_Baseline:
 
         content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
-        # marker after which we should look for the first final block
-        marker_pattern = r'Di bawah ini adalah yang perlu Anda pecahkan|Di bawah ini adalah yang perlu Anda pecahkan\.\.|Di bawah ini adalah yang perlu Anda pecahkan:'
+        marker_pattern = r'(.*?)Di bawah ini adalah yang perlu Anda pecahkan(.*?)'
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
-
-        # final-form block pattern (first only)
-        final_block_pattern = r'\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*\s*(.*?)(?=(\*\*\*(?:Bentuk Akhir|Final Form)\*\*\*)|$)'
 
         search_area = content[marker_match.end():] if marker_match else content
 
-        # find only the first final block in the search area; fallback to searching whole content if none found
+        # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
+        final_block_pattern = (
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*'    # opening final-block header
+            r'(.*?)'                                         # capture content (non-greedy)
+            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|'    # stop before akhir blok if exists
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*|'      # or before another final-form header
+            r'$)'                                            # or end of string
+        )
+
         final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
         if final_block_match:
-            final_blocks_text = [final_block_match.group(1)]
+            block = final_block_match.group(1)
         else:
-            # fallback: try full content once
+            # fallback: try to find any final block in the whole content
             final_block_match_full = re.search(final_block_pattern, content, flags=re.DOTALL | re.IGNORECASE)
-            final_blocks_text = [final_block_match_full.group(1)] if final_block_match_full else [content]
+            block = final_block_match_full.group(1) if final_block_match_full else content
 
         def _extract_section_raw(block: str, header: str, stop_headers: list) -> str:
-            # allow common synonyms and optional punctuation after header
-            pat = rf'(?i){re.escape(header)}\s*[:\-\)]?\s*(.*?)(?=(?:' + '|'.join([re.escape(h) + r'\s*[:\-\)]?' for h in stop_headers]) + r')|$)'
+            # build stop pattern that recognizes the stop headers as section starts
+            stop_part = '|'.join([re.escape(h) + r'\s*[:\-\)]?' for h in stop_headers])
+            # header itself, possibly with optional punctuation/colon after it
+            pat = rf'{re.escape(header)}\s*[:\-\)]?\s*(.*?)(?=(?:{stop_part})|\Z)'
             m = re.search(pat, block, flags=re.DOTALL | re.IGNORECASE)
             return m.group(1).strip() if m else ""
 
         def _nonempty_raw_lines(s: str):
-            return [ln for ln in s.splitlines() if ln.strip()]
+            return [ln.strip() for ln in s.splitlines() if ln.strip()]
 
-        def _balanced_parens(s: str) -> bool:
-            # simple balance check for parentheses and inline latex \( \)
-            if s.count('(') != s.count(')'):
-                return False
-            # count literal backslash-paren sequences
-            if s.count(r'\(') != s.count(r'\)'):
-                if s.count(r'\(') or s.count(r'\)'):
-                    return False
-            return True
+        print(f"CHOSEN BLOCK: \n\n{block}\n\n")
+        print("END OF CHOSEN BLOCK\n\n")
 
-        def _looks_truncated_line(s: str) -> bool:
-            s_strip = s.rstrip()
-            # trailing ellipsis or suspicious truncation marks
-            if s_strip.endswith('...') or s_strip.endswith('…'):
-                return True
-            # incomplete ending tokens
-            if s_strip.endswith('(') or s_strip.endswith(',') or s_strip.endswith('\\') or s_strip.endswith('\\left') or s_strip.endswith('\\right'):
-                return True
-            # if contains parentheses but doesn't end with ) or True/False) it's suspicious
-            if '(' in s_strip or ')' in s_strip:
-                if not re.search(r'\)\s*$|True\)\s*$|False\)\s*$', s_strip):
-                    return True
-            # unbalanced parentheses
-            if not _balanced_parens(s_strip):
-                return True
-            return False
-
-        # header synonym lists
         cnf_headers = ['Aturan dalam CNF', 'Aturan CNF', 'Aturan', 'Rules', 'Aturan (CNF)']
         skolem_headers = ['Skolemisasi', 'Skolem', 'Bentuk Akhir Setelah Skolemisasi', 'Skolemization']
         fakta_headers = ['Fakta', 'Facts', 'Fact']
         konj_headers = ['Konjektur', 'Konjecture', 'Conjecture', 'Konjektur:']
 
-        # Process only the first final block (final_blocks_text contains exactly one element)
-        block = final_blocks_text[0]
-
         cnf_raw = ""
         for h in cnf_headers:
-            cnf_raw = _extract_section_raw(block, h, skolem_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form'])
+            cnf_raw = _extract_section_raw(block, h, skolem_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form', 'Akhir Blok'])
             if cnf_raw:
                 break
 
         skolem_raw = ""
         for h in skolem_headers:
-            skolem_raw = _extract_section_raw(block, h, cnf_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form'])
+            skolem_raw = _extract_section_raw(block, h, cnf_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form', 'Akhir Blok'])
             if skolem_raw:
                 break
 
-        # fallback: lines containing 'menjadi' anywhere in the block (mapping style)
-        if not skolem_raw:
-            mapping_lines = [ln for ln in block.splitlines() if 'menjadi' in ln]
-            if mapping_lines:
-                skolem_raw = "\n".join(mapping_lines)
-
-        # extract fakta/konjektur if present
+        # extract fakta/konjektur not returned directly
         fakta_raw = ""
         for h in fakta_headers:
-            fakta_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + konj_headers + ['Pemecahan', 'Bentuk Akhir'])
+            fakta_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + konj_headers + ['Pemecahan', 'Bentuk Akhir', 'Akhir Blok'])
             if fakta_raw:
                 break
 
         konj_raw = ""
         for h in konj_headers:
-            konj_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir'])
+            konj_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Akhir Blok'])
             if konj_raw:
                 break
 
         cnf_lines = _nonempty_raw_lines(cnf_raw) if cnf_raw else []
         skolem_lines = _nonempty_raw_lines(skolem_raw) if skolem_raw else []
-        fakta_lines = _nonempty_raw_lines(fakta_raw) if fakta_raw else []
-        konj_lines = _nonempty_raw_lines(konj_raw) if konj_raw else []
 
-        # truncated heuristic applied to the lines we will expose
-        lines_to_check = cnf_lines if cnf_lines else (skolem_lines if skolem_lines else (fakta_lines if fakta_lines else konj_lines))
-        possibly_truncated = any(_looks_truncated_line(ln) for ln in lines_to_check) if lines_to_check else False
-        actual_rule_count = len(cnf_lines) if cnf_lines else len(skolem_lines)
+        skolem_return = skolem_lines if skolem_lines else None
+        return cnf_lines, skolem_return
 
-        # build output
-        out_lines = []
-        out_lines.append("**Bentuk Akhir:**")
-        out_lines.append("")
-
-        # CNF
-        out_lines.append("Aturan dalam CNF:")
-        if cnf_lines:
-            for i, ln in enumerate(cnf_lines, start=1):
-                out_lines.append(f"{i}. {ln}")
-        else:
-            out_lines.append("(tidak ada Aturan dalam CNF yang ditemukan)")
-
-        out_lines.append("")
-
-        # Fakta
-        out_lines.append("Fakta:")
-        if fakta_lines:
-            for ln in fakta_lines:
-                out_lines.append(ln)
-        else:
-            out_lines.append("(tidak ada blok Fakta yang ditemukan)")
-
-        out_lines.append("")
-
-        # Konjektur
-        out_lines.append("Konjektur:")
-        if konj_lines:
-            for ln in konj_lines:
-                out_lines.append(ln)
-        else:
-            out_lines.append("(tidak ada blok Konjektur yang ditemukan)")
-
-        out_lines.append("")
-
-        # Skolemisasi
-        out_lines.append("**Skolemisasi:**")
-        if skolem_lines:
-            for ln in skolem_lines:
-                out_lines.append(ln)
-            out_lines.append("")
-            out_lines.append("**Bentuk Akhir Setelah Skolemisasi:**")
-            for ln in skolem_lines:
-                out_lines.append(ln)
-        else:
-            out_lines.append("(tidak ada keluaran Skolemisasi eksplisit ditemukan — gunakan Aturan dalam CNF di atas)")
-
-        out_lines.append("")
-
-        # metadata
-        computed_rule_count = len(cnf_lines) if cnf_lines else (len(skolem_lines) if skolem_lines else 0)
-        out_lines.append(f"RULE_COUNT: {computed_rule_count}")
-        out_lines.append(f"EXPECTED_RULE_COUNT: {str(rules_count) if rules_count is not None else 'None'}")
-        out_lines.append(f"POSSIBLY_TRUNCATED: {str(possibly_truncated)}")
-        out_lines.append("")
-
-        return "\n".join(out_lines)
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
@@ -490,10 +401,14 @@ class Reasoning_Graph_Baseline:
         and_or= example['and_or']
         either_or= example['either_or']
         biconditional= example['biconditional']
-        translated_facts= example['translated_facts']
-        translated_rules= example['translated_rules']
-        translated_conjecture= example['translated_conjecture']
+        translated_facts= example["translated_context"]['Translated_Facts']
+        translated_rules= example["translated_context"]['Translated_Rules']
+        translated_conjecture= example["translated_context"]['Translated_Conjecture']
         ground_truth= example['ground_truth']
+
+        responses_and_or = None
+        responses_either_or = None
+        responses_biconditional = None
 
         print("Decomposing rules...")
         if and_or:
@@ -502,8 +417,8 @@ class Reasoning_Graph_Baseline:
             responses_and_or_process = self.openai_api.generate(prompts_b)
             responses_and_or_text = responses_and_or_process[0] if isinstance(responses_and_or_process, (list,tuple)) else responses_and_or_process
             print("Decomposition response: ", responses_and_or_text)
-            responses_and_or = self.post_process_decompose(responses_and_or_text, len(prompts_b))
-            responses_and_or = self.clean_irrelevant_lines(responses_and_or)
+            cnf_lines, skolem_lines = self.post_process_decompose(responses_and_or_text, len(and_or))
+            responses_and_or = self.clean_irrelevant_lines("\n".join(cnf_lines))
         if either_or:
             responses_either_or_process = self.openai_api.generate(self.construct_prompt_b(either_or, icl_either_or_decomposer))
             responses_either_or_text = responses_either_or_process[0] if isinstance(responses_either_or_process, (list,tuple)) else responses_either_or_process
@@ -540,11 +455,11 @@ class Reasoning_Graph_Baseline:
             'original_context': original_context,
             'question': question, 
             'translated_context': {"Translated_Facts": translated_facts, "Translated_Rules": translated_rules, "Translated_Conjecture": translated_conjecture},
-            'decomposition_process': {key: value for key, value in {"and_or": locals().get("responses_and_or_process"), "either_or": locals().get("responses_either_or_process"), "biconditional": locals().get("responses_biconditional_process")}.items() if value is not None},
             'normalized_context': {"Fact": translated_facts, "and_or": responses_and_or, "either_or": responses_either_or, "biconditional": responses_biconditional},
             'normalized_conjecture': normalized_conjecture,
             'negated_label': negated_label,
             'sos_list': sos_list,
+            'decomposition_process': {key: value for key, value in {"and_or": locals().get("responses_and_or_process"), "either_or": locals().get("responses_either_or_process"), "biconditional": locals().get("responses_biconditional_process")}.items() if value is not None},
             'ground_truth': ground_truth
         }
 
@@ -552,17 +467,17 @@ class Reasoning_Graph_Baseline:
         return output, None
         
     def reasoning_graph_generation(self):
-        raw_dataset = self.load_raw_dataset(self.split, self.sample_pct)
-        print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
+        raw_dataset = self.load_raw_dataset(self.sample_pct)
+        print(f"Loaded {len(raw_dataset)} examples.")
         
         if self.dataset_name == "ProntoQA":
-            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder)
+            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder, self.prompts_file)
             icl_either_or_decomposer = None
             icl_biconditional_decomposer = None
         else:
-            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder)
-            icl_either_or_decomposer = self.load_in_context_either_or_decomposer(self.prompts_folder)
-            icl_biconditional_decomposer = self.load_in_context_biconditional_decomposer(self.prompts_folder)
+            icl_and_or_decomposer = self.load_in_context_and_or_decomposer(self.prompts_folder, self.prompts_file)
+            icl_either_or_decomposer = self.load_in_context_either_or_decomposer(self.prompts_folder, self.prompts_file)
+            icl_biconditional_decomposer = self.load_in_context_biconditional_decomposer(self.prompts_folder, self.prompts_file)
 
         print("Number of batch: ", self.batch_num)
         counter = 0
@@ -607,11 +522,10 @@ class Reasoning_Graph_Baseline:
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='./data')
+    parser.add_argument('--data_path', type=str, default='./results_translated')
     parser.add_argument('--dataset_name', type=str)
-    parser.add_argument('--split', type=str, default='dev')
     parser.add_argument('--sample_pct', type=int, default=100)
-    parser.add_argument('--save_path', type=str, default='./results')
+    parser.add_argument('--save_path', type=str, default='./results_translated_decompostion')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--stop_words', type=str, default='------')
@@ -620,6 +534,7 @@ def parse_args():
     parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--prompts_file', default='and_or_decomposer.txt')
     args = parser.parse_args()
     return args
 

@@ -61,7 +61,7 @@ Aturan dalam CNF:
 Konjektur:
 Asam(Max, True)
 
-**Akhir Blok***
+***Akhir Blok***
 ---
 
 Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi dan skolemisasi.
