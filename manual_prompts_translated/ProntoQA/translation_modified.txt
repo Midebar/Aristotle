@@ -4,7 +4,7 @@ Deskripsi Tugas: Anda diberikan konteks dan konjektur. Tugasnya adalah:
 3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
 4) parsing konjektur ke dalam bentuk logika
 5) jangan mencoba menyelesaikan konjektur atau permasalahan, cukup melakukan perintah parsing yang dibutuhkan
-6) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.
+6) berikan penanda ***Bentuk Akhir*** sebagai awalan dan ***Akhir Blok*** sebagai akhiran output dari tugas Anda.
 7) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
 
 ------
@@ -15,6 +15,7 @@ Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wump
 
 Konjektur:
 Alex bukan pemalu.
+
 ###
 ***Bentuk Akhir***
 
@@ -43,6 +44,8 @@ Rompus($x, True) >>> Zumpus($x, False)
 Konjektur:
 Pemalu(Alex, False)
 
+***Akhir Blok***
+
 ------
 
 Berikut adalah contohnya:
@@ -51,6 +54,7 @@ Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif.
 
 Konjektur:
 Max asam.
+
 ###
 ***Bentuk Akhir***
 
@@ -66,7 +70,7 @@ Dumpus($x, True) >>> Kayu($x, False)
 Dumpus($x, True) >>> Wumpus($x, True)
 Wumpus($x, True) >>> Merah($x, True)
 Wumpus($x, True) >>> Impus($x, True)
-Impus($x, True) >>> TembusPandang($x, True)
+Impus($x, True) >>> TembusPandang($x, False)
 Impus($x, True) >>> Tumpus($x, True)
 Numpus($x, True) >>> Asam($x, True)
 Tumpus($x, True) >>> Asam($x, False)
@@ -79,6 +83,8 @@ Zumpus($x, True) >>> Rompus($x, True)
 Konjektur:
 Asam(Max, True)
 
+***Akhir Blok***
+
 ------
 
 Berikut adalah contohnya:
@@ -86,7 +92,8 @@ Konteks:
 Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu bersifat feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
 
 Konjektur:
-Timothy tidak tembus pandang.
+Timothy adalah tidak tembus pandang.
+
 ###
 ***Bentuk Akhir***
 
@@ -114,6 +121,8 @@ Jompus($x, True) >>> Merah($x, True)
 
 Konjektur:
 TembusPandang(Timothy, False)
+
+***Akhir Blok***
 
 -----
 

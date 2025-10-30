@@ -3,7 +3,7 @@ Diberikan premis dan konjektur dalam bentuk first-order logic form (FOL), silahk
 ---
 Aturan:
 
-Normalisasi: Ubah setiap premis dan dugaan ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
+Normalisasi: Ubah setiap premis dan konjektur ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
 - Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)", bukan "- \(\forall x \left(\neg Jompus(x, True) \lor Pemalu(x, False)\right)\)".
 
 Skolemisasi: Hilangkan kuantor eksistensial dengan menggunakan fungsi atau konstanta Skolem.
@@ -15,7 +15,7 @@ Konteks:
 
 Aturan:
 1. Jompus($x, True) >>> Pemalu($x, False)
-2. Jompus($x, Fakta) >>> Yumpus($x, True)
+2. Jompus($x, True) >>> Yumpus($x, True)
 3. Yumpus($x, True) >>> Agresif($x, True)
 4. Yumpus($x, True) >>> Dumpus($x, True)
 5. Dumpus($x, True) >>> Kayu($x, False)
@@ -32,9 +32,12 @@ Aturan:
 16. Zumpus($x, True) >>> Kecil($x, True)
 17. Zumpus($x, True) >>> Rompus($x, True)
 
+Konjektur:
+Sour(Max, True)
+
 Pemecahan:
 
-Bentuk Akhir:
+***Bentuk Akhir***
 
 Aturan dalam CNF:
 1. - \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)
@@ -55,6 +58,10 @@ Aturan dalam CNF:
 16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
 17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
 
+Konjektur:
+Asam(Max, True)
+
+***Akhir Blok***
 ---
 
 Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi dan skolemisasi.

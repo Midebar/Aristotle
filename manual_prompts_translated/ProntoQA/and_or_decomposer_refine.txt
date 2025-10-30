@@ -1,0 +1,182 @@
+Tugas deskripsi:
+Diberikan premis dalam bentuk first-order logic form (FOL), silahkan memecah pernyataan FOL menggunakan normalisasi
+---
+Normalisasi: Ubah setiap premis ke Prenex Normal Form (PNF) dan kemudian ke Conjunctive Normal Form (CNF).
+- Dalam konversi CNF, negasi nilai boolean langsung daripada menambahkan simbol ¬ di depan. Contohnya, ubah "Jompus($x, True) >>> Pemalu($x, False)" menjadi "- \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)", bukan "- \(\forall x \left(\neg Jompus(x, True) \lor Pemalu(x, False)\right)\)".
+---
+
+Contoh di bawah ini:
+Konteks:
+
+Aturan:
+1. Jompus($x, True) >>> Eksentris($x, False)
+
+Pemecahan:
+
+***Bentuk Akhir***
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Jompus(x, False) \lor Eksentris(x, False)\right)\)
+
+***Akhir Blok***
+
+---
+
+Contoh di bawah ini:
+Konteks:
+
+Aturan:
+1. Wumpus($x, True) >>> Besar($x, True)
+2. Wumpus($x, True) >>> Yumpus($x, True)
+3. Yumpus($x, True) >>> Oranye($x, false)
+
+Pemecahan:
+
+***Bentuk Akhir***
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Wumpus(x, False) \lor Besar(x, True)\right)\)
+2. - \(\forall x \left(Wumpus(x, False) \lor Yumpus(x, True)\right)\)
+3. - \(\forall x \left(Yumpus(x, False) \lor Oranye(x, False)\right)\)
+
+***Akhir Blok***
+
+---
+
+Contoh di bawah ini:
+Konteks:
+
+Aturan:
+1. Tumpus($x, True) >>> Baik($x, False)
+2. Tumpus($x, True) >>> Jompus($x, True)
+3. Jompus($x, True) >>> Membosankan($x, False)
+4. Jompus($x, True) >>> Impus($x, True)
+5. Impus($x, True) >>> Besar($x, False)
+6. Impus($x, True) >>> Zumpus($x, True)
+7. Zumpus($x, True) >>> Bahagia($x, True)
+8. Zumpus($x, True) >>> Wumpus($x, True)
+9. Dumpus($x, True) >>> Bercahaya($x, False)
+10. Wumpus($x, True) >>> Yumpus($x, True)
+
+Pemecahan:
+
+***Bentuk Akhir***
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Tumpus(x, False) \lor Baik(x, False)\right)\)
+2. - \(\forall x \left(Tumpus(x, False) \lor Jompus(x, True)\right)\)
+3. - \(\forall x \left(Jompus(x, False) \lor Membosankan(x, False)\right)\)
+4. - \(\forall x \left(Jompus(x, False) \lor Impus(x, True)\right)\)
+5. - \(\forall x \left(Impus(x, False) \lor Besar(x, False)\right)\)
+6. - \(\forall x \left(Impus(x, False) \lor Zumpus(x, True)\right)\)
+7. - \(\forall x \left(Zumpus(x, False) \lor Bahagia(x, True)\right)\)
+8. - \(\forall x \left(Zumpus(x, False) \lor Wumpus(x, True)\right)\)
+9. - \(\forall x \left(Dumpus(x, False) \lor Bercahaya(x, False)\right)\)
+10. - \(\forall x \left(Wumpus(x, False) \lor Yumpus(x, True)\right)\)
+
+***Akhir Blok***
+
+---
+
+Contoh di bawah ini:
+Konteks:
+
+Aturan:
+1. Impus($x, True) >>> Panas($x, False)
+2. Impus($x, True) >>> Wumpus($x, True)
+3. Wumpus($x, True) >>> Temperamen($x, True)
+4. Wumpus($x, True) >>> Numpus($x, True)
+5. Zumpus($x, True) >>> Agresif($x, False)
+6. Numpus($x, True) >>> Temperate($x, False)
+7. Numpus($x, True) >>> Dumpus($x, True)
+8. Dumpus($x, True) >>> Baik($x, True)
+9. Dumpus($x, True) >>> Rompus($x, True)
+10. Rompus($x, True) >>> TembusCahaya($x, True)
+11. Rompus($x, True) >>> Vumpus($x, True)
+12. Vumpus($x, True) >>> MudahDikelola($x, False)
+13. Vumpus($x, True) >>> Jompus($x, True)
+14. Jompus($x, True) >>> Pedas($x, False)
+15. Jompus($x, True) >>> Wumpus($x, True)
+
+Pemecahan:
+
+***Bentuk Akhir***
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Impus(x, False) \lor Panas(x, False)\right)\)
+2. - \(\forall x \left(Impus(x, False) \lor Wumpus(x, True)\right)\)
+3. - \(\forall x \left(Wumpus(x, False) \lor Temperamen(x, True)\right)\)
+4. - \(\forall x \left(Wumpus(x, False) \lor Numpus(x, True)\right)\)
+5. - \(\forall x \left(Zumpus(x, False) \lor Agresif(x, False)\right)\)
+6. - \(\forall x \left(Numpus(x, False) \lor Temperate(x, False)\right)\)
+7. - \(\forall x \left(Numpus(x, False) \lor Dumpus(x, True)\right)\)
+8. - \(\forall x \left(Dumpus(x, False) \lor Baik(x, True)\right)\)
+9. - \(\forall x \left(Dumpus(x, False) \lor Rompus(x, True)\right)\)
+10. - \(\forall x \left(Rompus(x, False) \lor TembusCahaya(x, True)\right)\)
+11. - \(\forall x \left(Rompus(x, False) \lor Vumpus(x, True)\right)\)
+12. - \(\forall x \left(Vumpus(x, False) \lor MudahDikelola(x, False)\right)\)
+13. - \(\forall x \left(Vumpus(x, False) \lor Jompus(x, True)\right)\)
+14. - \(\forall x \left(Jompus(x, False) \lor Pedas(x, False)\right)\)
+15. - \(\forall x \left(Jompus(x, False) \lor Wumpus(x, True)\right)\)
+
+***Akhir Blok***
+
+---
+
+Contoh di bawah ini:
+Konteks:
+
+Aturan:
+1. Jompus($x, True) >>> Pemalu($x, False)
+2. Jompus($x, True) >>> Yumpus($x, True)
+3. Yumpus($x, True) >>> Agresif($x, True)
+4. Yumpus($x, True) >>> Dumpus($x, True)
+5. Dumpus($x, True) >>> Kayu($x, False)
+6. Dumpus($x, True) >>> Wumpus($x, True)
+7. Wumpus($x, True) >>> Merah($x, True)
+8. Wumpus($x, True) >>> Impus($x, True)
+9. Impus($x, True) >>> TembusPandang($x, x, True)
+10. Impus($x, True) >>> Tumpus($x, True)
+11. Numpus($x, True) >>> Asam($x, True)
+12. Tumpus($x, True) >>> Asam($x, False)
+13. Tumpus($x, True) >>> Vumpus($x, True)
+14. Vumpus($x, True) >>> Tanah($x, True)
+15. Vumpus($x, True) >>> Zumpus($x, True)
+16. Zumpus($x, True) >>> Kecil($x, True)
+17. Zumpus($x, True) >>> Rompus($x, True)
+
+Pemecahan:
+
+***Bentuk Akhir***
+
+Aturan dalam CNF:
+1. - \(\forall x \left(Jompus(x, False) \lor Pemalu(x, False)\right)\)
+2. - \(\forall x \left(Jompus(x, False) \lor Yumpus(x, True)\right)\)
+3. - \(\forall x \left(Yumpus(x, False) \lor Agresif(x, True)\right)\)
+4. - \(\forall x \left(Yumpus(x, False) \lor Dumpus(x, True)\right)\)
+5. - \(\forall x \left(Dumpus(x, False) \lor Kayu(x, False)\right)\)
+6. - \(\forall x \left(Dumpus(x, False) \lor Wumpus(x, True)\right)\)
+7. - \(\forall x \left(Wumpus(x, False) \lor Merah(x, True)\right)\)
+8. - \(\forall x \left(Wumpus(x, False) \lor Impus(x, True)\right)\)
+9. - \(\forall x \left(Impus(x, False) \lor TembusPandang(x, True)\right)\)
+10. - \(\forall x \left(Impus(x, False) \lor Tumpus(x, True)\right)\)
+11. - \(\forall x \left(Numpus(x, False) \lor Asam(x, True)\right)\)
+12. - \(\forall x \left(Tumpus(x, False) \lor Asam(x, False)\right)\)
+13. - \(\forall x \left(Tumpus(x, False) \lor Vumpus(x, True)\right)\)
+14. - \(\forall x \left(Vumpus(x, False) \lor Tanah(x, True)\right)\)
+15. - \(\forall x \left(Vumpus(x, False) \lor Zumpus(x, True)\right)\)
+16. - \(\forall x \left(Zumpus(x, False) \lor Kecil(x, True)\right)\)
+17. - \(\forall x \left(Zumpus(x, False) \lor Rompus(x, True)\right)\)
+
+***Akhir Blok***
+
+---
+
+Di bawah ini adalah yang perlu Anda pecahkan menggunakan normalisasi.
+Silahkan akhiri dekomposisi dalam "Bentuk Akhir" dan pastikan Anda mencakup setiap klausa dalam bentuk akhir Anda, walaupun klausa tersebut tidak perlu dipecah lagi.
+Silahkan patuhi instruksi dengan ketat dan jangan melakukan apa yang tidak diinstruksikan.
+Perhatikan bahwa Anda perlu menegasi suatu istilah hanya ketika mengubah sebuah implikasi ke CNF.
+Konteks:
+
+Aturan:
+[[PREMISES]]
