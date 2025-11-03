@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ProntoQA Translated Viewer</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--muted:#666}
+  body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#111}
+  .wrap{max-width:1200px;margin:20px auto;padding:18px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  h1{margin:0;font-size:20px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input[type="text"], textarea, select{padding:8px;border:1px solid #d7dbe8;border-radius:8px;font-size:13px}
+  .btn{padding:8px 10px;border-radius:8px;border:1px solid #d1d5e8;background:#fff;cursor:pointer;font-size:13px}
+  .btn.primary{background:#3b82f6;color:#fff;border-color:transparent}
+  .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 22px rgba(20,30,60,0.06);margin-top:12px}
+  .meta{color:var(--muted);font-size:13px}
+  .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #eef2f8}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .col{flex:1}
+  pre{white-space:pre-wrap;word-break:break-word;background:#fbfdff;padding:8px;border-radius:8px;border:1px solid #f0f4ff;font-size:13px}
+  details summary{cursor:pointer;font-weight:600}
+  .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700;font-size:12px}
+  .badge.A{background:#e6ffed;color:#047857}
+  .badge.B{background:#fff7ed;color:#92400e}
+  .badge.C{background:#fff1f2;color:#9f1239}
+  .controls-right{margin-left:auto;display:flex;gap:8px}
+  .small{font-size:13px;color:var(--muted)}
+  .topbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .paginate{display:flex;gap:8px;align-items:center}
+  .checkbox{transform:scale(1.1)}
+  footer{margin-top:18px;color:var(--muted);font-size:13px}
+  code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
+  @media (max-width:800px){ .row{flex-direction:column} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ProntoQA Translated Viewer</h1>
+    <div class="meta">Format aware viewer for keys: <code>and_or</code>, <code>either_or</code>, <code>biconditional</code>, <code>translation_process</code>.</div>
+  </header>
+
+  <div class="panel">
+    <div class="controls topbar">
+      <input id="file-input" type="file" accept="application/json" class="btn" />
+      <button id="paste-json" class="btn">Paste JSON</button>
+      <button id="load-sample" class="btn">Use Sample</button>
+
+      <input id="search" type="text" placeholder="Search id / question / rules..." style="min-width:260px" />
+      <select id="pageSize">
+        <option value="5">5 / page</option>
+        <option value="10" selected>10 / page</option>
+        <option value="25">25 / page</option>
+        <option value="50">50 / page</option>
+      </select>
+
+      <label class="small">Show label:
+        <select id="filterLabel"><option value="">All</option></select>
+      </label>
+
+      <div class="controls-right">
+        <button id="select-page" class="btn">Select page</button>
+        <button id="clear-selection" class="btn">Clear selection</button>
+        <button id="export-all" class="btn primary">Export CSV (all)</button>
+        <button id="export-selected" class="btn">Export CSV (selected)</button>
+        <button id="download-snapshot" class="btn">Download HTML snapshot</button>
+      </div>
+    </div>
+
+    <div class="small" id="status">Loaded: 0 items — Selected: 0</div>
+    <div id="list" style="margin-top:12px"></div>
+
+    <div class="paginate" style="margin-top:12px;align-items:center">
+      <button id="prev" class="btn">Previous</button>
+      <div class="small" id="page-info">Page 1 / 1</div>
+      <button id="next" class="btn">Next</button>
+      <div style="flex:1"></div>
+      <div class="small" id="range-info"></div>
+    </div>
+  </div>
+
+  <footer>Drag & drop a JSON file, or paste it. If your file is a single object, it will be wrapped into an array.</footer>
+</div>
+
+<!-- Paste modal -->
+<div id="paste-modal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+  <div style="background:#fff;padding:16px;border-radius:10px;max-width:900px;width:90%;box-shadow:0 10px 38px rgba(10,20,40,0.3)">
+    <h3 style="margin-top:0">Paste JSON (array of objects)</h3>
+    <textarea id="paste-area" rows="12" style="width:100%;font-family:monospace"></textarea>
+    <div style="margin-top:8px;text-align:right">
+      <button id="paste-cancel" class="btn">Cancel</button>
+      <button id="paste-load" class="btn primary">Load</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   State & utilities
+   ------------------------- */
+let DATA = [], FILTERED = [], PAGE = 1, PAGE_SIZE = 10, SELECTED = new Set(), CURRENT_PAGE_IDS = [];
+const listNode = document.getElementById('list');
+const statusNode = document.getElementById('status');
+const pageInfo = document.getElementById('page-info');
+const rangeInfo = document.getElementById('range-info');
+const filterLabel = document.getElementById('filterLabel');
+
+function safeText(s){ return s === null || s === undefined ? '' : String(s); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function downloadBlob(content, filename, type='text/plain;charset=utf-8'){ const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function copyToClipboard(s){ if(!navigator.clipboard){ alert('Clipboard not available'); return; } navigator.clipboard.writeText(s).catch(e=>alert('Copy failed: '+e.message)); }
+function toCSV(rows, fields){ const esc=(s)=>{ if(s===null||s===undefined) return ''; const str=String(s).replace(/"/g,'""'); return `"${str}"`; }; const lines=[fields.map(f=>esc(f)).join(',')]; for(const r of rows) lines.push(fields.map(f=>esc(r[f] ?? '')).join(',')); return lines.join('\\n'); }
+
+/* Unescape helper: converts "\\n" -> newline, "\\\\left" -> "\left", etc. */
+function unescapeString(s){
+  if(typeof s !== 'string') return s;
+  // Replace common escape sequences
+  // Handle double-escaped forms first (\\n)
+  return s
+    .replace(/\\\\r/g, '\\r')
+    .replace(/\\\\n/g, '\\n')
+    .replace(/\\\\t/g, '\\t')
+    .replace(/\\r/g, '\r')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\\\/g, '\\');
+}
+
+/* -------------------------
+   Schema-aware pretty printers
+   ------------------------- */
+function renderAndOrBlock(val){
+  // val can be string (with newlines), array of strings, or null
+  if(!val) return '';
+  if(typeof val === 'string'){
+    return unescapeString(val);
+  }
+  if(Array.isArray(val)){
+    return val.map((s,i)=>`${i+1}. ${unescapeString(s)}`).join('\\n');
+  }
+  // object or other -> stringify
+  return JSON.stringify(val, null, 2);
+}
+
+function renderEitherOr(val){
+  if(!val) return '';
+  if(Array.isArray(val) && val.length === 0) return '(none)';
+  if(typeof val === 'string') return unescapeString(val);
+  if(Array.isArray(val)) return val.map((s,i)=>`${i+1}. ${unescapeString(s)}`).join('\\n');
+  return JSON.stringify(val, null, 2);
+}
+
+function renderTranslationProcess(tp){
+  // tp might be an object like { responses_a: [ "...\\n..." ], ...}
+  if(!tp) return '';
+  if(typeof tp === 'string') return unescapeString(tp);
+  if(Array.isArray(tp)) return tp.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\\n\\n');
+  // object: prefer responses_a, responses_b etc
+  const parts = [];
+  if(tp.responses_a) parts.push('responses_a:\\n' + (Array.isArray(tp.responses_a) ? tp.responses_a.map(x=>unescapeString(x)).join('\\n\\n') : unescapeString(tp.responses_a)));
+  if(tp.responses_b) parts.push('responses_b:\\n' + (Array.isArray(tp.responses_b) ? tp.responses_b.map(x=>unescapeString(x)).join('\\n\\n') : unescapeString(tp.responses_b)));
+  // include other keys
+  for(const k of Object.keys(tp)){
+    if(k === 'responses_a' || k === 'responses_b') continue;
+    const v = tp[k];
+    if(typeof v === 'string') parts.push(`${k}:\\n${unescapeString(v)}`);
+    else if(Array.isArray(v)) parts.push(`${k}:\\n${v.map(x=>unescapeString(typeof x === 'string'?x:JSON.stringify(x))).join('\\n\\n')}`);
+    else parts.push(`${k}:\\n${JSON.stringify(v, null, 2)}`);
+  }
+  return parts.join('\\n\\n');
+}
+
+/* -------------------------
+   Main render function
+   ------------------------- */
+function renderList(){
+  listNode.innerHTML = '';
+  PAGE_SIZE = Number(document.getElementById('pageSize').value || 10);
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const label = document.getElementById('filterLabel').value;
+
+  FILTERED = DATA.filter(d=>{
+    if(label && (String(d.ground_truth||'') !== label)) return false;
+    if(!q) return true;
+    const hay = [
+      d.id, d.question, d.original_context,
+      (d.and_or && JSON.stringify(d.and_or)), (d.translated_context && JSON.stringify(d.translated_context))
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  const total = FILTERED.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(PAGE > totalPages) PAGE = totalPages;
+  const start = (PAGE-1)*PAGE_SIZE, end = Math.min(start+PAGE_SIZE, total);
+  const pageItems = FILTERED.slice(start, end);
+  CURRENT_PAGE_IDS = pageItems.map((it,i)=>it.id ?? ('idx_'+(start+i)));
+
+  pageInfo.textContent = 'Page ' + PAGE + ' / ' + totalPages;
+  rangeInfo.textContent = `Showing ${start+1} - ${end} of ${total}`;
+  statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`;
+
+  for(const item of pageItems){
+    const id = item.id ?? ('idx_'+Math.random().toString(36).slice(2,8));
+    const card = document.createElement('div'); card.className='card';
+    const row = document.createElement('div'); row.className='row';
+
+    const cbWrap = document.createElement('div');
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.className='checkbox'; cb.checked = SELECTED.has(id);
+    cb.addEventListener('change', ()=>{ if(cb.checked) SELECTED.add(id); else SELECTED.delete(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
+    cbWrap.appendChild(cb); row.appendChild(cbWrap);
+
+    const col = document.createElement('div'); col.className='col';
+    const title = document.createElement('div'); title.style.display='flex'; title.style.alignItems='center'; title.style.justifyContent='space-between';
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:700">${escapeHtml(id)}</div><div class="small">${escapeHtml(safeText(item.question || (item.translated_context && item.translated_context.Translated_Conjecture) || ''))}</div>`;
+    title.appendChild(left);
+
+    const lbl = item.ground_truth || '-';
+    const b = document.createElement('span'); b.className = 'badge ' + (lbl ? lbl : '-'); b.textContent = lbl || '-';
+    if(lbl === 'A') b.className='badge A'; else if(lbl === 'B') b.className='badge B'; else if(lbl === 'C') b.className='badge C'; else b.className='badge -';
+    title.appendChild(b);
+    col.appendChild(title);
+
+    const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr'; grid.style.gap='10px'; grid.style.marginTop='10px';
+    if(window.innerWidth > 900) grid.style.gridTemplateColumns='1fr 1fr 1fr';
+
+    // original context
+    const origDiv = document.createElement('div'); origDiv.innerHTML = `<div style="font-weight:600">Original Context</div>`;
+    const origPre = document.createElement('pre'); origPre.textContent = unescapeString(item.original_context || '');
+    origDiv.appendChild(origPre);
+    grid.appendChild(origDiv);
+
+    // and_or (rules)
+    const rulesDiv = document.createElement('div'); rulesDiv.innerHTML = `<div style="font-weight:600">and_or (rules)</div>`;
+    const rulesPre = document.createElement('pre'); rulesPre.textContent = renderAndOrBlock(item.and_or);
+    rulesDiv.appendChild(rulesPre);
+    const rulesBtns = document.createElement('div'); rulesBtns.style.marginTop='8px';
+    const copyRules = document.createElement('button'); copyRules.className='btn'; copyRules.textContent='Copy rules'; copyRules.onclick = ()=>copyToClipboard(rulesPre.textContent);
+    rulesBtns.appendChild(copyRules);
+    rulesDiv.appendChild(rulesBtns);
+    grid.appendChild(rulesDiv);
+
+    // either_or / biconditional
+    const miscDiv = document.createElement('div'); miscDiv.innerHTML = `<div style="font-weight:600">either_or / biconditional</div>`;
+    const eoPre = document.createElement('pre'); eoPre.textContent = renderEitherOr(item.either_or);
+    const bcPre = document.createElement('pre'); bcPre.style.marginTop='8px'; bcPre.textContent = renderEitherOr(item.biconditional);
+    miscDiv.appendChild(eoPre); miscDiv.appendChild(bcPre);
+    const copyMisc = document.createElement('button'); copyMisc.className='btn'; copyMisc.textContent='Copy either_or/biconditional'; copyMisc.style.marginTop='8px';
+    copyMisc.onclick = ()=>copyToClipboard(eoPre.textContent + '\\n\\n' + bcPre.textContent);
+    miscDiv.appendChild(copyMisc);
+    grid.appendChild(miscDiv);
+
+    // translation_context (translated facts/rules)
+    const transDiv = document.createElement('div'); transDiv.innerHTML = `<div style="font-weight:600">Translated context</div>`;
+    const transFactPre = document.createElement('pre'); transFactPre.textContent = unescapeString((item.translated_context && item.translated_context.Translated_Facts) || '');
+    const transRulesPre = document.createElement('pre'); transRulesPre.textContent = unescapeString((item.translated_context && item.translated_context.Translated_Rules) || '');
+    transDiv.appendChild(transFactPre); transDiv.appendChild(transRulesPre);
+    const copyTransBtn = document.createElement('button'); copyTransBtn.className='btn'; copyTransBtn.textContent='Copy translated'; copyTransBtn.style.marginTop='8px';
+    copyTransBtn.onclick = ()=>copyToClipboard(transFactPre.textContent + '\\n\\n' + transRulesPre.textContent);
+    transDiv.appendChild(copyTransBtn);
+    grid.appendChild(transDiv);
+
+    // translation_process
+    const procDiv = document.createElement('div'); procDiv.innerHTML = `<div style="font-weight:600">Translation process</div>`;
+    const procPre = document.createElement('pre'); procPre.textContent = renderTranslationProcess(item.translation_process);
+    procDiv.appendChild(procPre);
+    const copyProcBtn = document.createElement('button'); copyProcBtn.className='btn'; copyProcBtn.textContent='Copy translation process'; copyProcBtn.style.marginTop='8px';
+    copyProcBtn.onclick = ()=>copyToClipboard(procPre.textContent);
+    procDiv.appendChild(copyProcBtn);
+    grid.appendChild(procDiv);
+
+    // raw json
+    const rawDiv = document.createElement('div'); rawDiv.style.gridColumn='1 / -1';
+    const rawDet = document.createElement('details');
+    const rawSum = document.createElement('summary'); rawSum.textContent='Raw JSON (click)';
+    rawDet.appendChild(rawSum);
+    const rawPre = document.createElement('pre'); rawPre.textContent = JSON.stringify(item, null, 2);
+    rawDet.appendChild(rawPre);
+    const copyRaw = document.createElement('button'); copyRaw.className='btn'; copyRaw.textContent='Copy raw'; copyRaw.onclick = ()=>copyToClipboard(rawPre.textContent);
+    rawDet.appendChild(copyRaw);
+    rawDiv.appendChild(rawDet);
+    grid.appendChild(rawDiv);
+
+    col.appendChild(grid);
+    row.appendChild(col);
+    card.appendChild(row);
+    listNode.appendChild(card);
+
+    // clicking title toggles selection
+    title.querySelector('div').addEventListener('click', ()=>{ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
+  }
+
+  refreshLabelFilterOptions();
+}
+
+/* -------------------------
+   Controls & handlers
+   ------------------------- */
+document.getElementById('pageSize').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('search').addEventListener('input', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('filterLabel').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('prev').addEventListener('click', ()=>{ if(PAGE > 1) PAGE--; renderList(); });
+document.getElementById('next').addEventListener('click', ()=>{ const total=FILTERED.length; const totalPages=Math.max(1, Math.ceil(total/PAGE_SIZE)); if(PAGE < totalPages) PAGE++; renderList(); });
+document.getElementById('select-page').addEventListener('click', ()=>{ for(const id of CURRENT_PAGE_IDS) SELECTED.add(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
+document.getElementById('clear-selection').addEventListener('click', ()=>{ SELECTED = new Set(); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; renderList(); });
+
+document.getElementById('export-all').addEventListener('click', ()=>{
+  if(DATA.length === 0) return alert('No data loaded');
+  const fields = ['id','question','and_or','ground_truth'];
+  const rows = DATA.map(d => ({ id: d.id ?? '', question: d.question ?? '', and_or: Array.isArray(d.and_or) ? d.and_or.join('\\n') : (d.and_or ?? ''), ground_truth: d.ground_truth ?? '' }));
+  const csv = toCSV(rows, fields);
+  downloadBlob(csv, 'prontoqa_all_alt.csv', 'text/csv;charset=utf-8');
+});
+document.getElementById('export-selected').addEventListener('click', ()=>{
+  if(SELECTED.size === 0) return alert('No rows selected');
+  const rows = DATA.filter(d => SELECTED.has(d.id));
+  if(rows.length === 0) return alert('Selected IDs not found (maybe missing id fields)');
+  const fields = ['id','question','and_or','ground_truth'];
+  const csv = toCSV(rows.map(d => ({ id: d.id ?? '', question: d.question ?? '', and_or: Array.isArray(d.and_or) ? d.and_or.join('\\n') : (d.and_or ?? ''), ground_truth: d.ground_truth ?? '' })), fields);
+  downloadBlob(csv, 'prontoqa_selected_alt.csv', 'text/csv;charset=utf-8');
+});
+document.getElementById('download-snapshot').addEventListener('click', ()=>{
+  const htmlRows = FILTERED.map(d=>`<section style="border:1px solid #ddd;padding:10px;border-radius:8px;margin-bottom:8px"><h3>${escapeHtml(d.id || '')}</h3><p><strong>Question:</strong> ${escapeHtml(d.question || '')}</p><pre>${escapeHtml(JSON.stringify(d, null, 2))}</pre></section>`).join('\\n');
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><title>ProntoQA snapshot</title></head><body><h1>Snapshot</h1>${htmlRows}</body></html>`;
+  downloadBlob(doc, 'prontoqa_snapshot_alt.html', 'text/html;charset=utf-8');
+});
+
+/* -------------------------
+   File load / paste / sample / drag-drop
+   ------------------------- */
+document.getElementById('file-input').addEventListener('change', (ev)=>{
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const r = new FileReader(); r.onload = (e) => { try{ const p = JSON.parse(e.target.result); loadDataArray(p); } catch(err){ alert('Parse error: ' + err.message); } };
+  r.readAsText(f,'utf-8');
+});
+document.getElementById('paste-json').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='flex'; document.getElementById('paste-area').value=''; });
+document.getElementById('paste-cancel').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='none'; });
+document.getElementById('paste-load').addEventListener('click', ()=>{ const txt=document.getElementById('paste-area').value; try{ const p=JSON.parse(txt); loadDataArray(p); document.getElementById('paste-modal').style.display='none'; } catch(e){ alert('Invalid JSON: '+e.message);} });
+document.getElementById('load-sample').addEventListener('click', ()=> loadDataArray(getSampleData()) );
+document.addEventListener('dragover',(e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+document.addEventListener('drop',(e)=>{ e.preventDefault(); const f=e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return; const r=new FileReader(); r.onload=(ev)=>{ try{ const p=JSON.parse(ev.target.result); loadDataArray(p);}catch(ex){alert('Parse error: '+ex.message)} }; r.readAsText(f); });
+
+function loadDataArray(parsed){
+  if(Array.isArray(parsed)) DATA = parsed;
+  else if(parsed && typeof parsed === 'object') DATA = [parsed];
+  else { alert('JSON should be array or object'); return; }
+  for(let i=0;i<DATA.length;i++){ if(DATA[i].id === undefined || DATA[i].id === null) DATA[i].id = 'idx_'+i; }
+  PAGE = 1; SELECTED = new Set(); renderList();
+}
+
+/* -------------------------
+   Sample
+   ------------------------- */
+function getSampleData(){
+  return [{
+    "id":"ProntoQA_328",
+    "original_context":"Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question":"Wren adalah transparan.",
+    "and_or":[
+      "Wumpus($x, True) >>> Besar($x, True)",
+      "Wumpus($x, True) >>> Numpus($x, True)",
+      "Numpus($x, True) >>> Logam($x, True)",
+      "Numpus($x, True) >>> Yumpus($x, True)",
+      "Yumpus($x, True) >>> Cerah($x, True)",
+      "Yumpus($x, True) >>> Jompus($x, True)",
+      "Jompus($x, True) >>> Pahit($x, False)",
+      "Jompus($x, True) >>> Zumpus($x, True)",
+      "Zumpus($x, True) >>> Transparan($x, True)",
+      "Zumpus($x, True) >>> Rompus($x, True)",
+      "Rompus($x, True) >>> Tanah($x, True)",
+      "Rompus($x, True) >>> Impus($x, True)",
+      "Impus($x, True) >>> Baik($x, True)",
+      "Impus($x, True) >>> Dumpus($x, True)",
+      "Dumpus($x, True) >>> Panas($x, False)",
+      "Dumpus($x, True) >>> Vumpus($x, True)",
+      "Tumpus($x, True) >>> Transparan($x, False)",
+      "Tumpus($x, True) >>> Logam($x, True)"
+    ],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context":{
+      "Translated_Facts":"Wumpus(Wren, True)",
+      "Translated_Rules":"Wumpus($x, True) >>> Besar($x, True)\\nWumpus($x, True) >>> Numpus($x, True)\\nNumpus($x, True) >>> Logam($x, True)\\nNumpus($x, True) >>> Yumpus($x, True)\\nYumpus($x, True) >>> Cerah($x, True)\\nYumpus($x, True) >>> Jompus($x, True)\\nJompus($x, True) >>> Pahit($x, False)\\nJompus($x, True) >>> Zumpus($x, True)\\nZumpus($x, True) >>> Transparan($x, True)\\nZumpus($x, True) >>> Rompus($x, True)\\nRompus($x, True) >>> Tanah($x, True)\\nRompus($x, True) >>> Impus($x, True)\\nImpus($x, True) >>> Baik($x, True)\\nImpus($x, True) >>> Dumpus($x, True)\\nDumpus($x, True) >>> Panas($x, False)\\nDumpus($x, True) >>> Vumpus($x, True)\\nTumpus($x, True) >>> Transparan($x, False)\\nTumpus($x, True) >>> Logam($x, True)",
+      "Translated_Conjecture":"Transparan(Wren, True)"
+    },
+    "translation_process":{
+      "responses_a":[
+        "[SYSTEM] Anda adalah asisten...\\n\\n[USER] Deskripsi Tugas: Anda diberikan sebuah konteks ...\\n\\n------\\n\\nBerikut adalah contohnya:\\nKonteks:\\nSetiap jompus memiliki sifat tidak eksentris. Sam adalah Jompus.\\n\\nKonjektur:\\nSam bersifat eksentris.\\n\\n###\\n***Bentuk Akhir***\\n\\nFakta:\\nSam adalah jompus ::: Jompus(Sam, True)\\n\\nAturan:\\nJompus($x, True) >>> Eksentris($x, False)\\n\\nKonjektur:\\nEksentris(Sam, True)\\n\\n***Akhir Blok***\\n###"
+      ],
+      "stop":["stop"]
+    },
+    "ground_truth":"A"
+  }];
+}
+
+/* -------------------------
+   Init: load sample
+   ------------------------- */
+loadDataArray(getSampleData());
+
+/* Helper: refresh labels dropdown */
+function refreshLabelFilterOptions(){
+  const labels = Array.from(new Set(DATA.map(d => d.ground_truth).filter(Boolean)));
+  const cur = filterLabel.value;
+  filterLabel.innerHTML = '<option value="">All</option>';
+  for(const l of labels){ const opt=document.createElement('option'); opt.value=l; opt.textContent=l; if(l===cur) opt.selected=true; filterLabel.appendChild(opt); }
+}
+</script>
+</body>
+</html>

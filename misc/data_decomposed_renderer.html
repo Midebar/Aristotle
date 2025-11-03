@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ProntoQA Decomposer Standalone Viewer (updated)</title>
+<title>ProntoQA Decomposed Viewer</title>
 <style>
   :root{--bg:#f6f7fb;--card:#fff;--muted:#666}
   body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0; background:var(--bg); color:#111}
@@ -38,7 +38,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>ProntoQA Decomposer — Standalone Viewer (updated)</h1>
+    <h1>ProntoQA Decomposed Viewer</h1>
     <div class="meta">Open a JSON (array of objects) or use the sample.</div>
   </header>
 
@@ -127,20 +127,55 @@ function toCSV(rows, fields){ const esc=(s)=>{ if(s===null||s===undefined) retur
 
 /* -------------------------
    Unescape helper (turns "\\n" into real newline, "\\\\left" -> "\left", etc.)
-   Works for common escaped sequences.
    ------------------------- */
 function unescapeString(s){
   if(typeof s !== 'string') return s;
-  // Replace escaped sequences like \n \r \t into real characters
-  // and then convert double-backslashes into single backslash for latex-like tokens (\\left -> \left)
   return s
-    .replace(/\\\\r/g, '\\r')    // handle double-escaped forms first if present
+    .replace(/\\\\r/g, '\\r')
     .replace(/\\\\n/g, '\\n')
     .replace(/\\\\t/g, '\\t')
     .replace(/\\r/g, '\r')
     .replace(/\\n/g, '\n')
     .replace(/\\t/g, '\t')
     .replace(/\\\\/g, '\\');
+}
+
+/* -------------------------
+   NEW: render all translated_context keys pretty
+   - returns an object { htmlNode, prettyText } where prettyText is the combined unescaped text
+   ------------------------- */
+function renderTranslatedContextBlock(translated){
+  const wrapper = document.createElement('div');
+  let combinedParts = [];
+  if(!translated || typeof translated !== 'object'){
+    const pre = document.createElement('pre'); pre.textContent = unescapeString(translated || '');
+    wrapper.appendChild(pre);
+    combinedParts.push(unescapeString(translated || ''));
+    return { node: wrapper, text: combinedParts.join('\\n\\n') };
+  }
+  // for each key show header + unescaped content
+  for(const key of Object.keys(translated)){
+    const kDiv = document.createElement('div');
+    const h = document.createElement('div'); h.style.fontWeight = '600'; h.style.marginTop = '6px'; h.textContent = key;
+    kDiv.appendChild(h);
+    const val = translated[key];
+    // if it's a string -> unescape
+    if(typeof val === 'string'){
+      const pre = document.createElement('pre');
+      pre.textContent = unescapeString(val);
+      kDiv.appendChild(pre);
+      combinedParts.push(`${key}:\\n${unescapeString(val)}`);
+    } else {
+      // otherwise pretty-print JSON (but unescape string leafs)
+      const clone = Array.isArray(val) ? val.map(v => typeof v === 'string' ? unescapeString(v) : v) : (typeof val === 'object' ? Object.fromEntries(Object.entries(val).map(([k,v]) => [k, typeof v === 'string' ? unescapeString(v) : v])) : val);
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(clone, null, 2);
+      kDiv.appendChild(pre);
+      combinedParts.push(`${key}:\\n${JSON.stringify(clone, null, 2)}`);
+    }
+    wrapper.appendChild(kDiv);
+  }
+  return { node: wrapper, text: combinedParts.join('\\n\\n') };
 }
 
 /* -------------------------
@@ -199,7 +234,7 @@ function renderList(){
     const col = document.createElement('div'); col.className = 'col';
     const title = document.createElement('div'); title.style.display='flex'; title.style.alignItems='center'; title.style.justifyContent='space-between';
     const left = document.createElement('div');
-    left.innerHTML = `<div style="font-weight:700">${escapeHtml(id)}</div><div class="small">${escapeHtml(safeText(item.question || (item.translated_context && item.translated_context.Translated_Conjecture) || ''))}</div>`;
+    left.innerHTML = `<div style="font-weight:700">${escapeHtml(id)}</div><div class="small">${escapeHtml(safeText(item.question || item.translated_context && item.translated_context.Translated_Conjecture || ''))}</div>`;
     title.appendChild(left);
 
     const badge = document.createElement('div');
@@ -214,41 +249,41 @@ function renderList(){
 
     col.appendChild(title);
 
+    // grid
     const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr'; grid.style.gap='10px'; grid.style.marginTop='10px';
     if(window.innerWidth > 900) grid.style.gridTemplateColumns='1fr 1fr 1fr';
 
-    // Fact / Translated
-    const factDiv = document.createElement('div');
-    factDiv.innerHTML = `<div style="font-weight:600">Fact / Translated</div>`;
-    const factPre = document.createElement('pre');
-    let factText = '';
-    if(item.translated_context && item.translated_context.Translated_Facts) factText = item.translated_context.Translated_Facts;
-    else if(item.normalized_context && item.normalized_context.Fact) factText = item.normalized_context.Fact;
-    else factText = safeText(item.original_context || '').slice(0,400);
-    factText = unescapeString(factText);
-    factPre.textContent = factText;
-    factDiv.appendChild(factPre);
-    const factBtns = document.createElement('div'); factBtns.style.marginTop='8px';
-    const copyFactBtn = document.createElement('button'); copyFactBtn.className='btn'; copyFactBtn.textContent='Copy fact'; copyFactBtn.onclick = ()=>copyToClipboard(factPre.textContent);
-    const copyTransBtn = document.createElement('button'); copyTransBtn.className='btn'; copyTransBtn.textContent='Copy translated'; copyTransBtn.onclick = ()=>copyToClipboard(JSON.stringify(item.translated_context || {}, null, 2));
-    factBtns.appendChild(copyFactBtn); factBtns.appendChild(copyTransBtn);
-    factDiv.appendChild(factBtns);
-    grid.appendChild(factDiv);
+    // ORIGINAL CONTEXT
+    const origDiv = document.createElement('div');
+    origDiv.innerHTML = `<div style="font-weight:600">Original Context</div>`;
+    const origPre = document.createElement('pre');
+    origPre.textContent = unescapeString(item.original_context || '');
+    origDiv.appendChild(origPre);
+    grid.appendChild(origDiv);
+
+    // NEW: Translated context (render ALL keys)
+    const translatedSection = document.createElement('div');
+    translatedSection.innerHTML = `<div style="font-weight:600">Translated Context (all fields)</div>`;
+    const rendered = renderTranslatedContextBlock(item.translated_context);
+    translatedSection.appendChild(rendered.node);
+    const translatedBtns = document.createElement('div'); translatedBtns.style.marginTop='8px';
+    const copyTranslatedPretty = document.createElement('button'); copyTranslatedPretty.className='btn'; copyTranslatedPretty.textContent='Copy translated (pretty)'; copyTranslatedPretty.onclick = ()=>copyToClipboard(rendered.text);
+    const copyTranslatedRaw = document.createElement('button'); copyTranslatedRaw.className='btn'; copyTranslatedRaw.textContent='Copy translated (raw JSON)'; copyTranslatedRaw.onclick = ()=>copyToClipboard(JSON.stringify(item.translated_context || {}, null, 2));
+    translatedBtns.appendChild(copyTranslatedPretty); translatedBtns.appendChild(copyTranslatedRaw);
+    translatedSection.appendChild(translatedBtns);
+    grid.appendChild(translatedSection);
 
     // Normalized / CNF
     const normDiv = document.createElement('div');
     normDiv.innerHTML = `<div style="font-weight:600">Normalized / CNF</div>`;
     const normPre = document.createElement('pre');
-    // If normalized_context has large string fields (like and_or) unescape them for display
     if(item.normalized_context){
       if(typeof item.normalized_context === 'string') normPre.textContent = unescapeString(item.normalized_context);
       else {
-        // If object, try to pretty-print but unescape any string field values
         const clone = {};
         for(const k in item.normalized_context){
           const v = item.normalized_context[k];
-          if(typeof v === 'string') clone[k] = unescapeString(v);
-          else clone[k] = v;
+          clone[k] = (typeof v === 'string') ? unescapeString(v) : v;
         }
         normPre.textContent = JSON.stringify(clone, null, 2);
       }
@@ -269,14 +304,11 @@ function renderList(){
       details.appendChild(summary);
       const decPre = document.createElement('pre');
 
-      // pretty-format decomposition: if string -> unescape, if object -> try to unescape string/array fields
       if(typeof item.decomposition_process === 'string'){
         decPre.textContent = unescapeString(item.decomposition_process);
       } else if(Array.isArray(item.decomposition_process)){
-        // join array entries, unescape each
         decPre.textContent = item.decomposition_process.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\\n\\n');
       } else {
-        // object: flatten key-values with unescaped strings
         let outLines = [];
         for(const k in item.decomposition_process){
           const v = item.decomposition_process[k];
@@ -315,10 +347,11 @@ function renderList(){
     card.appendChild(row);
     listNode.appendChild(card);
 
-    // click-on-title toggles checkbox
+    // attach click on id to toggle selection
     title.querySelector('div').addEventListener('click', ()=>{ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));});
   }
 
+  // update label options
   refreshLabelFilterOptions();
 }
 
@@ -355,7 +388,10 @@ function loadDataArray(parsed){
   if(Array.isArray(parsed)) DATA = parsed;
   else if(parsed && typeof parsed === 'object') DATA = [parsed];
   else { alert('JSON should be an array or object'); return; }
-  for(let i=0;i<DATA.length;i++){ if(DATA[i].id === undefined || DATA[i].id === null) DATA[i].id = 'idx_'+i; }
+  // ensure id exists (create synthetic if missing)
+  for(let i=0;i<DATA.length;i++){
+    if(DATA[i].id === undefined || DATA[i].id === null) DATA[i].id = 'idx_'+i;
+  }
   PAGE = 1; SELECTED = new Set(); renderList();
 }
 
@@ -366,23 +402,21 @@ function getSampleData(){
   return [
 {
   "id": "ProntoQA_328",
-  "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Wumpuses adalah yumpuses. ... Wren adalah wumpus.",
+  "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Wumpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
   "question": "Wren adalah transparan.",
   "translated_context": {
     "Translated_Facts": "Wumpus(Wren, True)",
-    "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\\nWumpus($x, True) >>> Numpus($x, True)\\nNumpus($x, True) >>> Logam($x, True)\\nNumpus($x, True) >>> Yumpus($x, True)",
+    "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Logam($x, True)",
     "Translated_Conjecture": "Transparan(Wren, True)"
   },
   "normalized_context": {
     "Fact": "Wumpus(Wren, True)",
-    "and_or": "1. - \\\\left(Wumpus(x, False) \\\\lor Besar(x, True)\\\\right)\\n2. - \\\\left(Wumpus(x, False) \\\\lor Numpus(x, True)\\\\right)"
+    "and_or": "1. - \\left(Wumpus(x, False) \\lor Besar(x, True)\\right)\\n2. - \\left(Wumpus(x, False) \\lor Numpus(x, True)\\right)\\n3. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)"
   },
   "normalized_conjecture": "Transparan(Wren, True)",
   "negated_label": "false",
   "sos_list": "Transparan(Wren, True)",
-  "decomposition_process": {
-    "and_or": "1. - \\\\left(Tumpus(x, False) \\\\lor Baik(x, True)\\\\right)\\n2. - \\\\left(Tumpus(x, False) \\\\lor Impus(x, True)\\\\right)"
-  },
+  "decomposition_process": { "and_or": ["[SYSTEM] ... (truncated)"] },
   "ground_truth": "A"
 }
   ];
