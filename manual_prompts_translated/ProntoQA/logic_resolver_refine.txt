@@ -1,0 +1,202 @@
+---
+
+Tugas: Diberikan dua klausa, tugas Anda adalah:
+
+1. **Cek Istilah yang saling Melengkapi / Bertentangan:**
+   - Tentukan apakah suatu istilah dalam klausa 1 bertentangan dengan istilah dalam klausa 2.
+
+**Istilah Pelengkap/Bertentangan:** Dua istilah bertentangan jika mereka berbagi predikat dan argumen yang sama tetapi berbeda dalam polaritas (satu dinegasi) atau nilai boolean (True vs. False).
+
+**Contoh:**
+1. \( P(x, False) \) bertentangan dengan:
+   - \( \neg P(x, False) \) (polaritas berlawanan, nilai boolean sama).
+   - \( P(x, True) \) (polaritas sama, nilai boolean berlawanan).
+
+2. \( \neg P(x, False) \) bertentangan dengan:
+   - \( \neg P(x, True) \) (polaritas sama, nilai boolean berlawanan).
+   - \( P(x, False) \) (polaritas berlawanan, nilai boolean sama).
+
+**Jika istilah bertentangan ditemukan:** Selesaikan klausa menggunakan aturan di bawah ini.
+
+2. **Selesaikan Klausa:**
+
+### **Aturan Penyelesaian:**
+**Operator OR (∨):**
+- Istilah Pelengkap/Bertentangan Ditemukan: \( (A \lor B), \, (\neg A \lor C) \Rightarrow (B \lor C) \)
+
+**Operator AND (∧):**
+- Istilah Pelengkap/Bertentangan Ditemukan dengan Sisa Istilah: \( (A \land B), \, (\neg B \lor C) \Rightarrow (A \land C) \)
+- Istilah Pelengkap/Bertentangan Ditemukan dengan Sisa Istilah: \neg B \land C \lor D, \, \( (B) \Rightarrow False \land C \lor D \Rightarrow False \lor D \Rightarrow \text{D} \)
+- Istilah Pelengkap/Bertentangan Ditemukan yang Mengarah pada Kontradiksi: \( (A \land B), \, \neg B \Rightarrow False \land A \Rightarrow \text{Kontradiksi} \) (Anda hanya dapat menyimpulkan kontradiksi ketika semua istilah dalam kedua klausa terhubung oleh operator **\land**).
+
+3. **Pemeriksaan Cukup Setelah Inferensi:**
+- **Jika kontradiksi ditemukan:**
+  - Simpulkan dengan "Label Cukup: [True]" dan "Klausa Baru: {Kontradiksi}".
+- Jika tidak ditemukan kontradiksi:
+  - Simpulkan dengan "Label Cukup: [False]".
+
+Hasil keluaran: Simpulkan label cukup dan klausa baru dalam format:
+
+***Bentuk Akhir***
+Klausa Baru: {new_clause}
+Label Cukup: [True/False]
+***Akhir Blok***
+
+---
+
+Contoh:
+Klausa 1: Tanah(Stella, True)
+Klausa 2: Numpus(x, False) \\lor Tanah(x, False)
+
+Mari kita uraikan proses penyelesaian untuk klausa yang diberikan:
+
+### **Langkah 1: Cek Istilah Pelengkap/Bertentangan**
+
+**Klausa yang Diberikan:**
+- **Klausa 1:** \( Tanah(Stella, True) \)
+- **Klausa 2:** \( Numpus(x, False) \lor Tanah(x, False) \)
+
+**Identifikasi Potensial Istilah Pelengkap :**
+- \( Tanah(Stella, True) \) dari Klausa 1 berpotensi bertentangan dengan \( Tanah(x, False) \) dalam Klausa 2. Instansiasi dari \( x \) ke \( Stella \) diperlukan untuk memeriksa kontradiksi.
+
+**Instansiasikan Klausa 2 dengan \( x = Stella \):**
+- Klausa 2 Asli: \( Numpus(x, False) \lor Tanah(x, False) \)
+- Klausa 2 yang Diinstansiasikan: \( Numpus(Stella, False) \lor Tanah(Stella, False) \)
+
+**Identifikasi Istilah Pelengkap Setelah Instansiasi:**
+- \( Tanah(Stella, True) \) dalam Klausa 1 adalah pelengkap dari \( Tanah(Stella, False) \) dalam Klausa 2 yang diinstansiasikan (predikat sama, argumen sama, nilai boolean berlawanan).
+
+### **Langkah 2: Selesaikan Klausa**
+
+- **Proses Penyelesaian:**
+  - **Aturan yang digunakan:** **Operator OR (∨) - Istilah Pelengkap/Bertentangan Ditemukan** karena istilah pelengkap/bertentangan dalam kedua klausa 1 dan klausa 2 yang diinstansiasikan terhubung oleh "OR" dengan istilah lain.
+    \[
+    (A \lor B), \, (\neg A \lor C) \quad \Rightarrow \quad (B \lor C)
+    \]
+  - **Substitusikan istilah:**
+    \[
+    (Tanah(Stella, True)), \, (Numpus(Stella, False) \lor Tanah(Stella, False)) \quad \Rightarrow \quad Numpus(Stella, False)
+    \]
+  - **Klausa Hasil:** \( Numpus(Stella, False) \)
+
+### **Langkah 3: Pemeriksaan Cukup**
+
+- **Cek Kontradiksi:**
+  - Klausa hasil \( Numpus(Stella, False) \) tidak menghasilkan kontradiksi. Penyidikan lebih lanjut diperlukan untuk menentukan kesimpulan akhir, jadi label cukup harus False.
+
+***Bentuk Akhir***
+Klausa Baru: { \( Numpus(Stella, False) \)}
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Contoh:
+Klausa 1: Vumpus(Wren, True)
+Klausa 2: Vumpus(Wren, False)
+
+Langkah 1: Cek Istilah Pelengkap/Bertentangan
+
+**Klausa yang Diberikan:**
+- **Klausa 1:** \( Vumpus(Wren, True) \)
+- **Klausa 2:** \( Vumpus(Wren, False) \)
+
+**Identifikasi Istilah Pelengkap/Bertentangan:**
+- \( Vumpus(Wren, True) \) dalam Klausa 1 secara langsung bertentangan dengan \( Vumpus(Wren, False) \) dalam Klausa 2 (predikat dan argumen sama, tetapi nilai boolean berlawanan).
+
+### **Langkah 2: Selesaikan Klausa**
+
+- **Proses Penyelesaian:**
+  - **Aturan Digunakan:** **Kontradiksi Ditemukan** karena kedua istilah bertentangan dan tidak ada istilah lain yang hadir.
+    - \( Vumpus(Wren, True) \) bertentangan dengan \( Vumpus(Wren, False) \), menyebabkan kontradiksi langsung.
+
+  - **Klausa Hasil:** Kontradiksi.
+
+### **Langkah 3: Pemeriksaan Cukup**
+
+- **Cek Kontradiksi:**
+  - Penyelesaian menghasilkan kontradiksi, sehingga cukup tercapai.
+
+***Bentuk Akhir***
+Klausa Baru: {Kontradiksi}
+Label Cukup: [True]
+***Akhir Blok***
+
+---
+
+Contoh:
+Klausa 1: \( Tumpus(Wren, True) \)
+Klausa 2: Tumpus(Wren, False)
+
+Langkah 1: Cek Istilah Pelengkap/Bertentangan
+
+**Klausa yang Diberikan:**
+- **Klausa 1:** \( Tumpus(Wren, True) \)
+- **Klausa 2:** \( Tumpus(Wren, False) \)
+
+**Identifikasi Istilah Pelengkap/Bertentangan:**
+- \( Tumpus(Wren, True) \) dalam Klausa 1 secara langsung bertentangan dengan \( Tumpus(Wren, False) \) dalam Klausa 2 (predikat dan argumen sama, tetapi nilai boolean berlawanan).
+
+### **Langkah 2: Selesaikan Klausa**
+
+- **Proses Penyelesaian:**
+  - **Aturan Digunakan:** **Kontradiksi Ditemukan** karena kedua istilah bertentangan dan tidak ada istilah lain yang hadir.
+    - \( Tumpus(Wren, True) \) bertentangan dengan \( Tumpus(Wren, False) \), menyebabkan kontradiksi langsung.
+
+  - **Klausa Hasil:** Kontradiksi.
+
+### **Langkah 3: Pemeriksaan Cukup**
+
+- **Cek Kontradiksi:**
+  - Penyelesaian menghasilkan kontradiksi, sehingga cukup tercapai.
+
+***Bentuk Akhir***
+Klausa Baru: {Kontradiksi}
+Label Cukup: [True]
+***Akhir Blok***
+
+---
+
+Contoh:
+Klausa 1: Kecil(Alex, False)
+Klausa 2: \\(\\left(Vumpus(x, False) \\lor Numpus(x, True)\\right)\\)
+
+Langkah 1: Cek Istilah Pelengkap/Bertentangan
+
+**Klausa yang Diberikan:**
+- **Klausa 1:** \( Kecil(Alex, False) \)
+- **Klausa 2:** \( \forall x \left(Vumpus(x, False) \lor Numpus(x, True)\right) \)
+
+**Identifikasi Potensial Istilah Pelengkap:**
+- Tidak ada kecocokan predikat antara \( Kecil(Alex, False) \) dalam Klausa 1 dan istilah dalam Klausa 2. Klausa 2 melibatkan predikat \( Vumpus \) dan \( Numpus \), sedangkan Klausa 1 melibatkan \( Kecil \). Oleh karena itu, tidak ada istilah pelengkap atau bertentangan yang ditemukan.
+
+### **Langkah 2: Selesaikan Klausa**
+
+- **Proses Penyelesaian:**
+  - **Tidak Ada Istilah Pelengkap atau Bertentangan Ditemukan:** Tidak ada istilah dalam Klausa 1 yang bertentangan atau melengkapi istilah dalam Klausa 2 karena predikat yang berbeda. Ini menghasilkan tidak ada perubahan melalui penyelesaian karena tidak ada dasar untuk menggabungkan atau memodifikasi klausa.
+
+### **Langkah 3: Pemeriksaan Cukup**
+
+- **Cek Kontradiksi:**
+  - Karena tidak ada istilah yang pelengkap atau bertentangan dan tidak ada penyelesaian yang dapat diterapkan, tidak ada kontradiksi. Penyidikan lebih lanjut diperlukan untuk mengevaluasi nilai kebenaran klausa, jadi label cukup harus False.
+
+***Bentuk Akhir***
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Silakan simpulkan informasi tersebut dengan format berikut:
+***Bentuk Akhir***
+Klausa Baru: {placeholder_for_new_clause}
+Label Cukup: [placeholder_for_sufficiency_label]
+***Akhir Blok***
+---
+
+**Dibawah ini tugas yang perlu Anda lakukan:**
+
+Klausa 1:
+[[SOS]]
+
+Klausa 2: 
+[[SELECTED-CLAUSE]]

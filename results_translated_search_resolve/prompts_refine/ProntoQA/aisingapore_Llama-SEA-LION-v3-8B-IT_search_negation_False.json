@@ -1,0 +1,48 @@
+[
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "translated_context": {
+      "Translated_Facts": "Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)",
+      "Translated_Conjecture": "Transparan(Wren, True)"
+    },
+    "normalized_context": {
+      "Fact": "Wumpus(Wren, True)",
+      "and_or": "1. - \\left(Wumpus(x, False) \\lor Besar(x, True)\\right)\n2. - \\left(Wumpus(x, False) \\lor Numpus(x, True)\\right)\n3. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)\n4. - \\left(Numpus(x, False) \\lor Yumpus(x, True)\\right)\n5. - \\left(Yumpus(x, False) \\lor Cerah(x, True)\\right)\n6. - \\left(Yumpus(x, False) \\lor Jompus(x, True)\\right)\n7. - \\left(Jompus(x, False) \\lor Pahit(x, False)\\right)\n8. - \\left(Jompus(x, False) \\lor Zumpus(x, True)\\right)\n9. - \\left(Zumpus(x, False) \\lor Transparan(x, True)\\right)\n10. - \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\n11. - \\left(Rompus(x, False) \\lor Tanah(x, True)\\right)\n12. - \\left(Rompus(x, False) \\lor Impus(x, True)\\right)\n13. - \\left(Impus(x, False) \\lor Baik(x, True)\\right)\n14. - \\left(Impus(x, False) \\lor Dumpus(x, True)\\right)\n15. - \\left(Dumpus(x, False) \\lor Panas(x, False)\\right)\n16. - \\left(Dumpus(x, False) \\lor Vumpus(x, True)\\right)\n17. - \\left(Tumpus(x, False) \\lor Transparan(x, False)\\right)",
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "Transparan(Wren, True)",
+    "negated_label": "false",
+    "reasoning_step": "1. ['Transparan(Wren, True)', '17.  (Tumpus(x, False) \\\\lor Transparan(x, False))', 'D']",
+    "ground_truth": "A",
+    "final_answer": "No complement found in the context.",
+    "final_choice": "No final answer found in the text.",
+    "search_round": 1
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "translated_context": {
+      "Translated_Facts": "Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)",
+      "Translated_Conjecture": "Transparan(Wren, True)"
+    },
+    "normalized_context": {
+      "Fact": "Wumpus(Wren, True)",
+      "and_or": "1. - \\left(Wumpus(x, False) \\lor Besar(x, True)\\right)\n2. - \\left(Wumpus(x, False) \\lor Numpus(x, True)\\right)\n3. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)\n4. - \\left(Numpus(x, False) \\lor Yumpus(x, True)\\right)\n5. - \\left(Yumpus(x, False) \\lor Cerah(x, True)\\right)\n6. - \\left(Yumpus(x, False) \\lor Jompus(x, True)\\right)\n7. - \\left(Jompus(x, False) \\lor Pahit(x, False)\\right)\n8. - \\left(Jompus(x, False) \\lor Zumpus(x, True)\\right)\n9. - \\left(Zumpus(x, False) \\lor Transparan(x, True)\\right)\n10. - \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\n11. - \\left(Rompus(x, False) \\lor Tanah(x, True)\\right)\n12. - \\left(Rompus(x, False) \\lor Impus(x, True)\\right)\n13. - \\left(Impus(x, False) \\lor Baik(x, True)\\right)\n14. - \\left(Impus(x, False) \\lor Dumpus(x, True)\\right)\n15. - \\left(Dumpus(x, False) \\lor Panas(x, False)\\right)\n16. - \\left(Dumpus(x, False) \\lor Vumpus(x, True)\\right)\n17. - \\left(Tumpus(x, False) \\lor Transparan(x, False)\\right)",
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "Transparan(Wren, True)",
+    "negated_label": "false",
+    "reasoning_step": "1. ['Transparan(Wren, True)', '17.  (Tumpus(x, False) \\\\lor Transparan(x, False))', 'D']",
+    "ground_truth": "A",
+    "final_answer": "No complement found in the context.",
+    "final_choice": "No final answer found in the text.",
+    "search_round": 1
+  }
+]

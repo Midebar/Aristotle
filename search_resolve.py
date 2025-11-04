@@ -15,7 +15,7 @@ class Reasoning_Graph_Baseline:
         self.args = args
         self.data_path = args.data_path
         self.dataset_name = args.dataset_name
-        self.split = args.split
+        self.sample_pct = args.sample_pct
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.negation = args.negation
@@ -23,6 +23,7 @@ class Reasoning_Graph_Baseline:
         self.max_new_tokens = args.max_new_tokens
         self.stop_words = args.stop_words
         self.prompts_folder = args.prompts_folder
+        self.prompts_file = args.prompts_file
         self.search_round = args.search_round
         self.file_lock = threading.Lock()
         self.batch_num = args.batch_num
@@ -37,15 +38,16 @@ class Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_in_context_examples_logic_resolver(self):
-        file_path = os.path.join(self.prompts_folder, self.dataset_name, 'logic_resolver.txt')
+    def load_in_context_examples_logic_resolver(self, prompts_folder='./prompts', prompts_file='logic_resolver'):
+        file_path = os.path.join(prompts_folder, self.dataset_name, f'{prompts_file}.txt')
+        print("Loading logic resolver file: ", file_path)
         with open(file_path) as f:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_raw_dataset(self, split):
+    def load_raw_dataset(self, sample_pct):
         model_name = sanitize_filename(self.model_name)
-        results_dir = args.save_path or './results/'
+        results_dir = self.data_path
         if self.negation == 'True':
             file_path = f"{results_dir}/{self.dataset_name}/{model_name}_trans_decompose_negated_data.json"
         else:
@@ -53,6 +55,7 @@ class Reasoning_Graph_Baseline:
         print(f"Loading raw dataset from {file_path}")
         with open(file_path) as f:
             raw_dataset = json.load(f)
+            raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
     
     def index_context(self, context):
@@ -123,11 +126,35 @@ class Reasoning_Graph_Baseline:
         return str_negated_label, str_sos_list
     
     def post_process_logic_solver(self, response_d):
-        sufficiency_label_match = re.search(r'\[(.*?)\]', response_d)
-        new_clause_match = re.search(r'\{(.*?)\}', response_d)
+        content = response_d
+        marker_pattern = r'(.*?)Dibawah ini tugas yang perlu Anda lakukan(.*?)'
+        marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
+        search_area = content[marker_match.end():] if marker_match else content
+
+        # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
+        final_block_pattern = (
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*'    # opening final-block header
+            r'(.*?)'                                         # capture content (non-greedy)
+            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|'    # stop before akhir blok if exists
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*|'      # or before another final-form header
+            r'$)'                                            # or end of string
+        )
+
+        final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
+
+        if not final_block_match:
+            return [], None
+
+        block = final_block_match.group(1)
+
+        print(f"\n\nCHOSEN BLOCK: \n\n{block}\n")
+        print("END OF CHOSEN BLOCK\n\n")
+
+        m_new = re.search(r'Klausa\s*Baru\s*:\s*\{(.*?)\}', block, flags=re.DOTALL | re.IGNORECASE)
+        new_clause = m_new.group(1) if m_new else "New Clause not found."
         
-        new_clause = new_clause_match.group(1).strip() if new_clause_match else "New Clause not found."
-        sufficiency_label = sufficiency_label_match.group(1).strip() if sufficiency_label_match else "Sufficiency Label not found."
+        m_label = re.search(r'Label\s*Cukup\s*:\s*\[([^\]]*?)\]', block, flags=re.DOTALL | re.IGNORECASE)
+        sufficiency_label = m_label.group(1) if m_label else "Sufficiency Label not found."
         
         return {
             "new_clause": new_clause,
@@ -295,10 +322,10 @@ class Reasoning_Graph_Baseline:
         return context
     
     def reasoning_graph_generation(self):
-        raw_dataset = self.load_raw_dataset(self.split)
-        print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
+        raw_dataset = self.load_raw_dataset(self.sample_pct)
+        print(f"Loaded {len(raw_dataset)} examples")
         
-        in_context_examples_logic_resolver = self.load_in_context_examples_logic_resolver()
+        in_context_examples_logic_resolver = self.load_in_context_examples_logic_resolver(self.prompts_folder, self.prompts_file)
         
         counter = 0
     
@@ -447,8 +474,9 @@ class Reasoning_Graph_Baseline:
                         print("Search round: ", search_round)
                         
                     prompts_e = self.construct_prompt_e(negated_label, normalized_conjecture, sos_list, selected_clause, in_context_examples_logic_resolver)
-                    print("Prompt to Logic Solver: ", prompts_e)
+                    print(f"\n\nPrompt to Logic Solver: {prompts_e}\n\n", )
                     responses_e, _ = self.openai_api.generate(prompts_e)
+                    print(f"\n\nResponse from Logic Solver: {responses_e}\n\n", )
                     
                     logic_solver_result = self.post_process_logic_solver(responses_e)
                     new_clause = logic_solver_result['new_clause']
@@ -533,7 +561,7 @@ class Reasoning_Graph_Baseline:
         
             except Exception as e:
                 print('Error in generating example: ', example['id'])
-                print(e)
+                traceback.print_exc() 
                 error = {'id': example['id']}
                 return error
 
@@ -541,8 +569,10 @@ class Reasoning_Graph_Baseline:
             model_name = sanitize_filename(self.model_name)
             file_name = f'{model_name}_search_negation_{self.negation}.json'
             file_path = os.path.join(self.save_path, self.dataset_name, file_name)
+
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
             print("Saving result with thread lock in path: ", file_path)
-            
             with self.file_lock:
                 try:
                     if os.path.exists(file_path):
@@ -580,15 +610,12 @@ class Reasoning_Graph_Baseline:
                     traceback.print_exc()
                 counter += 1
                             
-
-
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='./data')
+    parser.add_argument('--data_path', type=str, default='./results_translated')
     parser.add_argument('--dataset_name', type=str)
-    parser.add_argument('--split', type=str, default='dev')
-    parser.add_argument('--split-percent', type=int, default=100)
-    parser.add_argument('--save_path', type=str, default='./results')
+    parser.add_argument('--sample_pct', type=int, default=100)
+    parser.add_argument('--save_path', type=str, default='./results_translated_resolve')
     parser.add_argument('--demonstration_path', type=str, default='./icl_examples')
     parser.add_argument('--api_key', type=str)
     parser.add_argument('--model_name', type=str)
@@ -600,6 +627,7 @@ def parse_args():
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--search_round', type=int, default=10)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--prompts_file', default='logic_resolver')
     args = parser.parse_args()
     return args
 
