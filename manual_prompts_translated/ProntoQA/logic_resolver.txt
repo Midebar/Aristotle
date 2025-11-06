@@ -5,7 +5,7 @@ Tugas: Diberikan dua klausa, tugas Anda adalah:
 1. **Cek Istilah yang saling Melengkapi / Bertentangan:**
    - Tentukan apakah suatu istilah dalam klausa 1 bertentangan dengan istilah dalam klausa 2.
 
-**Istilah Pelengkap/Bertentangan:** Dua istilah bertentangan jika mereka mempunyai predikat dan argumen yang sama tetapi berbeda dalam polaritas (salah satu dinnegasi) atau nilai boolean (True vs. False).
+**Istilah Pelengkap/Bertentangan:** Dua istilah bertentangan jika mereka mempunyai predikat dan argumen yang sama tetapi berbeda dalam polaritas (salah satu dinegasi) atau nilai boolean (True vs. False).
 
 **Contoh:**
 1. \( P(x, False) \) bertentangan dengan:
