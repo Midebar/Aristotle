@@ -28,6 +28,7 @@ def evaluate_instance(id_, instance1, instance2, ground_truth):
         
     answer1 = normalize_answer(answer1)
     answer2 = normalize_answer(answer2)
+    print(f"ID: {id_}, GT: {ground_truth}, Ans1: {answer1}, Ans2: {answer2}")
                 
     if ground_truth == 'A':
         if {answer1, answer2} in [{'A', 'C'}, {'A'}]:
