@@ -274,18 +274,18 @@ class Reasoning_Graph_Baseline:
 
         content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
-        marker_pattern = r'(.*?)Di bawah ini adalah yang perlu Anda pecahkan(.*?)'
+        marker_pattern = r'(.*?)Di bawah ini adalah yang perlu Anda(.*?)'
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
 
         search_area = content[marker_match.end():] if marker_match else content
 
         # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
         final_block_pattern = (
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*'    # opening final-block header
-            r'(.*?)'                                         # capture content (non-greedy)
-            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|'    # stop before akhir blok if exists
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*|'      # or before another final-form header
-            r'$)'                                            # or end of string
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*' # opening final-block header
+            r'(.*?)' # capture content (non-greedy)
+            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|' # stop before akhir blok if exists
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*|' # or before another final-form header
+            r'$)' # or end of string
         )
 
         final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)

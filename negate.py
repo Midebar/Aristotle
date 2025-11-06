@@ -22,7 +22,7 @@ def main(args):
     model_name = sanitize_filename(args.model_name)
     input_path = f'{model_name}_trans_decompose_no_negation.json'
     input_path = os.path.join(args.save_path, args.dataset_name, input_path)
-    with open(input_path, 'r') as f:
+    with open(input_path, 'r', encoding="utf8") as f:
         data = json.load(f)
     
     for item in data:
