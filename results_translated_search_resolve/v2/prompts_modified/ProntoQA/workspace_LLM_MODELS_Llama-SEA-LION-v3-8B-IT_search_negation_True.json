@@ -16,10 +16,10 @@
     },
     "normalized_conjecture": "Transparan(Wren, True)",
     "negated_label": "True",
-    "reasoning_step": "1. ['Transparan(Wren, False)', '9.  (Zumpus(x, False) \\\\lor Transparan(x, True))', 'D']",
+    "reasoning_step": "1. ['Transparan(Wren, False)', '9.  (Zumpus(x, False) \\\\lor Transparan(x, True))', '\\\\( Zumpus(Wren, False) \\\\)']\n2. ['\\\\( Zumpus(Wren, False) \\\\)', '8.  (Jompus(x, False) \\\\lor Zumpus(x, True))', '\\\\( Jompus(Wren, False) \\\\)']\n3. ['\\\\( Jompus(Wren, False) \\\\)', '6.  (Yumpus(x, False) \\\\lor Jompus(x, True))', '\\\\( Yumpus(Wren, False) \\\\)']\n4. ['\\\\( Yumpus(Wren, False) \\\\)', '4.  (Numpus(x, False) \\\\lor Yumpus(x, True))', '\\\\( Numpus(Wren, False) \\\\)']\n5. ['\\\\( Numpus(Wren, False) \\\\)', '2.  (Wumpus(x, False) \\\\lor Numpus(x, True))', '\\\\( Wumpus(x, False) \\\\)']\n6. ['\\\\( Wumpus(x, False) \\\\)', 'Wumpus(Wren, True)', 'Kontradiksi']",
     "ground_truth": "A",
-    "final_answer": "No complement found in the context.",
-    "final_choice": "No final answer found in the text.",
-    "search_round": 1
+    "final_answer": "True",
+    "final_choice": "A",
+    "search_round": 6
   }
 ]

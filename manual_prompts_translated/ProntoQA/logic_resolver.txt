@@ -5,7 +5,7 @@ Tugas: Diberikan dua klausa, tugas Anda adalah:
 1. **Cek Istilah yang saling Melengkapi / Bertentangan:**
    - Tentukan apakah suatu istilah dalam klausa 1 bertentangan dengan istilah dalam klausa 2.
 
-**Istilah Pelengkap/Bertentangan:** Dua istilah bertentangan jika mereka berbagi predikat dan argumen yang sama tetapi berbeda dalam polaritas (satu dinnegasi) atau nilai boolean (True vs. False).
+**Istilah Pelengkap/Bertentangan:** Dua istilah bertentangan jika mereka mempunyai predikat dan argumen yang sama tetapi berbeda dalam polaritas (salah satu dinnegasi) atau nilai boolean (True vs. False).
 
 **Contoh:**
 1. \( P(x, False) \) bertentangan dengan:
@@ -18,7 +18,7 @@ Tugas: Diberikan dua klausa, tugas Anda adalah:
 
 **Jika istilah bertentangan ditemukan:** Selesaikan klausa menggunakan aturan di bawah ini.
 
-2. **Selesaikan Klausa:**
+2. **Penyelesaian Klausa:**
 
 ### **Aturan Penyelesaian:**
 **Operator OR (∨):**
@@ -35,18 +35,19 @@ Tugas: Diberikan dua klausa, tugas Anda adalah:
 - Jika tidak ditemukan kontradiksi:
   - Simpulkan dengan "Label Cukup: [False]".
 
-Output: Simpulkan label cukup dan klausa baru dalam format:
+Hasil keluaran: Simpulkan label cukup dan klausa baru dalam format:
 
+***Bentuk Akhir***
 Klausa Baru: {new_clause}
-
 Label Cukup: [True/False]
+***Akhir Blok***
 
 ---
 
 Contoh:
 
 Klausa 1: Tanah(Stella, True)
-Klausa 2: Numpus(x, False) \\lor Tanah(x, False)
+Klausa 2: Numpus(x, False) \lor Tanah(x, False)
 
 Mari kita uraikan proses penyelesaian untuk klausa yang diberikan:
 
@@ -84,11 +85,15 @@ Mari kita uraikan proses penyelesaian untuk klausa yang diberikan:
 - **Cek Kontradiksi:**
   - Klausa hasil \( Numpus(Stella, False) \) tidak menghasilkan kontradiksi. Penyidikan lebih lanjut diperlukan untuk menentukan kesimpulan akhir, jadi label cukup harus False.
 
+***Bentuk Akhir***
 **Klausa Baru:** { \( Numpus(Stella, False) \)}
-
 **Label Cukup:** [False]
+***Akhir Blok***
+
 ---
+
 Contoh:
+
 Klausa 1: Vumpus(Wren, True)
 Klausa 2: Vumpus(Wren, False)
 
@@ -114,13 +119,17 @@ Langkah 1: Cek Istilah Pelengkap/Bertentangan
 - **Cek Kontradiksi:**
   - Penyelesaian menghasilkan kontradiksi, sehingga cukup tercapai.
 
+***Bentuk Akhir***
 **Klausa Baru:** {Kontradiksi}
-
 **Label Cukup:** [True]
+***Akhir Blok***
+
 ---
+
 Contoh:
+
 Klausa 1: Kecil(Alex, False)
-Klausa 2: \\(\\forall x \\left(Vumpus(x, False) \\lor Numpus(x, True)\\right)\\)
+Klausa 2: \(\forall x \left(Vumpus(x, False) \lor Numpus(x, True)\right)\)
 
 Langkah 1: Cek Istilah Pelengkap/Bertentangan
 
@@ -141,17 +150,24 @@ Langkah 1: Cek Istilah Pelengkap/Bertentangan
 - **Cek Kontradiksi:**
   - Karena tidak ada istilah yang pelengkap atau bertentangan dan tidak ada penyelesaian yang dapat diterapkan, tidak ada kontradiksi. Penyidikan lebih lanjut diperlukan untuk mengevaluasi nilai kebenaran klausa, jadi label cukup harus False.
 
+***Bentuk Akhir***
 **Label Cukup:** [False]
+***Akhir Blok***
+
 ---
+
 Silakan simpulkan informasi tersebut dengan format berikut:
+
+***Bentuk Akhir***
 Klausa Baru: {placeholder_for_new_clause}
 Label Cukup: [placeholder_for_sufficiency_label]
+***Bentuk Akhir***
+
 ---
 
 **Dibawah ini tugas yang perlu Anda lakukan:**
 
 Klausa 1:
 [[SOS]]
-
 Klausa 2: 
 [[SELECTED-CLAUSE]]

@@ -133,11 +133,10 @@ class Reasoning_Graph_Baseline:
 
         # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
         final_block_pattern = (
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*'    # opening final-block header
-            r'(.*?)'                                         # capture content (non-greedy)
-            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|'    # stop before akhir blok if exists
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*|'      # or before another final-form header
-            r'$)'                                            # or end of string
+            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*' # opening final-block header
+            r'(.*?)'
+            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|' # stop before akhir blok if exists
+            r'$)' # or end of string
         )
 
         final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
@@ -147,14 +146,26 @@ class Reasoning_Graph_Baseline:
 
         block = final_block_match.group(1)
 
-        print(f"\n\nCHOSEN BLOCK: \n\n{block}\n")
+        block_clean = block.strip()
+        print(f"\n\nCHOSEN BLOCK:\n\n{block_clean}\n")
         print("END OF CHOSEN BLOCK\n\n")
 
-        m_new = re.search(r'Klausa\s*Baru\s*:\s*\{(.*?)\}', block, flags=re.DOTALL | re.IGNORECASE)
-        new_clause = m_new.group(1) if m_new else "New Clause not found."
-        
-        m_label = re.search(r'Label\s*Cukup\s*:\s*\[([^\]]*?)\]', block, flags=re.DOTALL | re.IGNORECASE)
-        sufficiency_label = m_label.group(1) if m_label else "Sufficiency Label not found."
+        clause_pos = re.search(r'Klausa\s*Baru', block_clean, flags=re.IGNORECASE)
+        clause_after = block_clean[clause_pos.end():]
+        m_new = re.search(r'\{(.*?)\}', clause_after, flags=re.DOTALL)
+
+        if not m_new:
+            raise ValueError(f"'Klausa Baru:' with '{{...}}' not found in expected form.")
+
+        new_clause = m_new.group(1).strip()
+
+        label_pos = re.search(r'Label\s*Cukup', block_clean, flags=re.IGNORECASE)
+        label_after = block_clean[label_pos.end():]
+        m_label = re.search(r'\[(.*?)\]', label_after, flags=re.DOTALL)
+        if not m_label:
+            raise ValueError(f"'Label Cukup' with '[...]' not found in expected form [True|False].")
+
+        sufficiency_label = m_label.group(1).strip()
         
         return {
             "new_clause": new_clause,
@@ -328,8 +339,21 @@ class Reasoning_Graph_Baseline:
         in_context_examples_logic_resolver = self.load_in_context_examples_logic_resolver(self.prompts_folder, self.prompts_file)
         
         counter = 0
-    
-        def process_example(example, counter):
+        
+        # helper to normalize clause strings for reliable comparisons
+        def normalize_clause_for_compare(s):
+            if not isinstance(s, str):
+                return ''
+            t = s
+            t = t.replace('\\(', '(').replace('\\)', ')').replace('\\\\', '\\').replace('\\', '')
+            t = re.sub(r'^\s*\d+\.\s*', '', t)
+            t = t.strip()
+            if t.startswith('(') and t.endswith(')'):
+                t = t[1:-1].strip()
+            t = re.sub(r'\s+', ' ', t)
+            return t
+        
+        def process_example(example, counter):               
             try:
                 print(f"Running example: {example['id']}")
 
@@ -351,7 +375,7 @@ class Reasoning_Graph_Baseline:
                 normalized_conjecture = self.clean_conjecture(example['normalized_conjecture'])
                 negated_label = example['negated_label']
                 sos_list = self.clean_conjecture(example['sos_list'])
-                if '(' and ')' not in sos_list:
+                if '(' not in sos_list and ')' not in sos_list:
                     sos_list = normalized_conjecture
                     sos_list = self.remove_negations(sos_list)
                     if example['negated_label'] == 'True':
@@ -394,11 +418,26 @@ class Reasoning_Graph_Baseline:
                         print("Ground truth: ", example['ground_truth'])
                         
                         complement_indices = self.filter_complementary_context(normalized_context_list, sos_list)
+                        print("Complement Indices: ", complement_indices)
                         
                         if complement_indices:
                             potential_clauses = [normalized_context_list[index] for index in complement_indices]
+
+                            # Normalize sos_list and reasoning_step entries for robust duplicate checking
+                            norm_sos = normalize_clause_for_compare(sos_list)
+                            used_pairs = set()
+                            for step in reasoning_step:
+                                # step is [sos, selected_clause, new_clause]
+                                used_sos = normalize_clause_for_compare(step[0])
+                                used_selected = normalize_clause_for_compare(step[1])
+                                used_pairs.add((used_sos, used_selected))
+
+                            # Keep clauses that are not present in used_pairs for (sos, clause)
                             valid_clauses = sorted(
-                                [clause for clause in potential_clauses if not any(step[0] == sos_list and step[1] == clause for step in reasoning_step)],
+                                [
+                                    clause for clause in potential_clauses
+                                    if (norm_sos, normalize_clause_for_compare(clause)) not in used_pairs
+                                ],
                                 key=len
                             )
                             print("Potential Clauses: ", potential_clauses)
@@ -415,6 +454,7 @@ class Reasoning_Graph_Baseline:
                             else:
                                 print("All potential clauses have been used before with this SOS list.")
                                 print("Checking cached SOS and complement pairs.")
+                                print(f"List of Complements in Cache: {list_of_compelment} with length: {len(list_of_compelment)}" )
                                 found_new_pair = False
                                 if len(list_of_compelment) > 0:
                                     for i, complement_clauses in enumerate(list_of_compelment):
@@ -428,7 +468,6 @@ class Reasoning_Graph_Baseline:
                                         final_answer = "cannot find sos with complement"
                                         break
 
-                        
                         if not complement_indices:
                             if len(list_of_compelment) > 0:
                                 all_empty = True
@@ -451,7 +490,10 @@ class Reasoning_Graph_Baseline:
                                 final_answer = "No complement found in the context."
                                 break
 
-                    if any(step[0].strip() == sos_list.strip() and step[1].strip() == selected_clause.strip() for step in reasoning_step):
+                    if any(                        
+                        normalize_clause_for_compare(step[0]) == normalize_clause_for_compare(sos_list) and
+                        normalize_clause_for_compare(step[1]) == normalize_clause_for_compare(selected_clause)
+                        for step in reasoning_step):
                         print("Skipping this search round as it has appeared before.")
                         found_new_pair = False
                         for i, complement_clauses in enumerate(list_of_compelment):
@@ -472,7 +514,13 @@ class Reasoning_Graph_Baseline:
                         print("SOS: ", sos_list)
                         print("Selected Clause: ", selected_clause)
                         print("Search round: ", search_round)
-                        
+                    
+                    # If after all selection attempts we still have no selected_clause, abort gracefully
+                    if selected_clause is None:
+                        print("No selected_clause available after checking context and cache. Aborting example as Unknown.")
+                        final_answer = "Unknown"
+                        flag = 'false'
+                        break
                     prompts_e = self.construct_prompt_e(negated_label, normalized_conjecture, sos_list, selected_clause, in_context_examples_logic_resolver)
                     print(f"\n\nPrompt to Logic Solver: {prompts_e}\n\n", )
                     responses_e, _ = self.openai_api.generate(prompts_e)
@@ -491,8 +539,8 @@ class Reasoning_Graph_Baseline:
                         solving_step = f"SOS clause: {sos_list}. Selected Clause: {selected_clause}. New Clause: {new_clause}"
                         print(solving_step)
                     
-                    if not new_clause.strip() or new_clause == "New Clause not found.":
-                        print("No new clause found. Searhing from the cache.")
+                    if not new_clause.strip():
+                        print("No new clause found. Searching from the cache.")
                         all_empty = "True"
                         for i, clause in enumerate(list_of_compelment):
                             if len(clause) > 0:
@@ -514,12 +562,12 @@ class Reasoning_Graph_Baseline:
                         selected_clause = None
                     
                     if sufficiency_label == "True":
-                        if new_clause.lower() == "kontradiksi" or "false":
+                        if new_clause and (new_clause.lower() == "kontradiksi" or new_clause.lower() == "false"):
                             if negated_label.lower() == "true":
                                 final_answer = "True"
                             elif negated_label.lower() == "false":
                                 final_answer = "False"
-                        
+
                             flag = 'false'
                         
                         else: 
@@ -596,7 +644,7 @@ class Reasoning_Graph_Baseline:
         counter = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.batch_num) as executor:
             future_to_example = {executor.submit(process_example, example, counter): example for example in raw_dataset}
-            for future in concurrent.futures.as_completed(future_to_example):
+            for future in tqdm(concurrent.futures.as_completed(future_to_example), total=len(raw_dataset)):
                 example = future_to_example[future]
                 try:
                     output = future.result()
