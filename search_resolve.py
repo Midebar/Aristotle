@@ -150,12 +150,12 @@ class Reasoning_Graph_Baseline:
         print(f"\n\nCHOSEN BLOCK:\n\n{block_clean}\n")
         print("END OF CHOSEN BLOCK\n\n")
 
-        clause_pos = re.search(r'Klausa\s*Baru', block_clean, flags=re.IGNORECASE)
+        clause_pos = re.search(r'Clause\s*Baru', block_clean, flags=re.IGNORECASE)
         clause_after = block_clean[clause_pos.end():]
         m_new = re.search(r'\{(.*?)\}', clause_after, flags=re.DOTALL)
 
         if not m_new:
-            raise ValueError(f"'Klausa Baru:' with '{{...}}' not found in expected form.")
+            raise ValueError(f"'Clause Baru:' with '{{...}}' not found in expected form.")
 
         new_clause = m_new.group(1).strip()
 
