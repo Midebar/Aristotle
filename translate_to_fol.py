@@ -24,7 +24,7 @@ class Reasoning_Graph_Baseline:
         self.prompts_folder = args.prompts_folder
         self.prompts_file = args.prompts_file
         self.file_lock = threading.Lock()
-        self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
+        self.model_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
             
     def load_in_context_examples_trans(self, prompts_folder='./prompts', prompts_file='translation'):
         file_path = os.path.join(prompts_folder, self.dataset_name, f"{prompts_file}.txt")
@@ -298,7 +298,7 @@ class Reasoning_Graph_Baseline:
         print("Translating...")
         prompts_a = self.construct_prompt_a(example, in_context_examples_trans)
         print("Translation prompt_a: ", prompts_a)
-        responses_a = self.openai_api.generate(prompts_a)
+        responses_a = self.model_api.generate(prompts_a)
         # responses_a might be (text, finish_reason) or a string; normalize to string
         if isinstance(responses_a, (list, tuple)):
             responses_a_text = responses_a[0]
@@ -400,7 +400,6 @@ def parse_args():
     parser.add_argument('--stop_words', type=str, default='------')
     parser.add_argument('--mode', type=str)
     parser.add_argument('--max_new_tokens', type=int)
-    parser.add_argument('--base_url', type=str)
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
     parser.add_argument('--prompts_file', default='translation_modified.txt')
@@ -409,5 +408,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
-    gpt3_problem_reduction.reasoning_graph_generation()
+    model_problem_reduction = Reasoning_Graph_Baseline(args)
+    model_problem_reduction.reasoning_graph_generation()

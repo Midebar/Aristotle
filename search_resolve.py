@@ -27,10 +27,7 @@ class Reasoning_Graph_Baseline:
         self.search_round = args.search_round
         self.file_lock = threading.Lock()
         self.batch_num = args.batch_num
-        if args.base_url:
-            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens, base_url=args.base_url)
-        else:
-            self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
+        self.model_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
     
     def load_in_context_examples_complement(self):
         file_path = os.path.join(self.prompts_folder, self.dataset_name, 'complement_search.txt')
@@ -523,7 +520,7 @@ class Reasoning_Graph_Baseline:
                         break
                     prompts_e = self.construct_prompt_e(negated_label, normalized_conjecture, sos_list, selected_clause, in_context_examples_logic_resolver)
                     print(f"\n\nPrompt to Logic Solver: {prompts_e}\n\n", )
-                    responses_e, _ = self.openai_api.generate(prompts_e)
+                    responses_e, _ = self.model_api.generate(prompts_e)
                     print(f"\n\nResponse from Logic Solver: {responses_e}\n\n", )
                     
                     logic_solver_result = self.post_process_logic_solver(responses_e)
@@ -681,5 +678,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
-    gpt3_problem_reduction.reasoning_graph_generation()
+    model_problem_reduction = Reasoning_Graph_Baseline(args)
+    model_problem_reduction.reasoning_graph_generation()

@@ -52,8 +52,13 @@ def evaluate_files(dataset_name, model_name):
     """Evaluates all matching instances from two JSON files."""
     results_dir = args.save_path or './results/'
     model_name = sanitize_filename(args.model_name)
-    file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
-    file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
+    if args.evaluation_method == 'naive_prompting':
+        print("Evaluating using the naive prompting method.")
+        file1_path = f'{results_dir}/{dataset_name}/{model_name}_naive_prompting.json'
+        file2_path = f'{results_dir}/{dataset_name}/{model_name}_naive_prompting.json'
+    else:
+        file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
+        file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
     
     file1 = load_json_file(file1_path)
     file2 = load_json_file(file2_path)
@@ -108,6 +113,7 @@ def parse_args():
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--save_path', type=str)
+    parser.add_argument('--evaluation_method', type=str, default='framework')
     args = parser.parse_args()
     return args
     

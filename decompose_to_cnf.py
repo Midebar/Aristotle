@@ -23,7 +23,7 @@ class Reasoning_Graph_Baseline:
         self.prompts_folder = args.prompts_folder
         self.prompts_file = args.prompts_file
         self.file_lock = threading.Lock()
-        self.openai_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
+        self.model_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
     
     def load_in_context_and_or_decomposer(self, prompts_folder='./prompts', prompts_file='and_or_decomposer'):
         file_path = os.path.join(prompts_folder, self.dataset_name, f'{prompts_file}.txt')
@@ -413,18 +413,18 @@ class Reasoning_Graph_Baseline:
         if and_or:
             prompts_b = self.construct_prompt_b(and_or, icl_and_or_decomposer)
             print(f"Decomposition prompt_b with and_or len {len(and_or)} and with prompts_len{len(prompts_b)}: {prompts_b} ", )
-            responses_and_or_process = self.openai_api.generate(prompts_b)
+            responses_and_or_process = self.model_api.generate(prompts_b)
             responses_and_or_text = responses_and_or_process[0] if isinstance(responses_and_or_process, (list,tuple)) else responses_and_or_process
             print("Decomposition response: ", responses_and_or_text)
             cnf_lines, skolem_lines = self.post_process_decompose(responses_and_or_text, len(and_or))
             responses_and_or = self.clean_irrelevant_lines("\n".join(cnf_lines))
         if either_or:
-            responses_either_or_process = self.openai_api.generate(self.construct_prompt_b(either_or, icl_either_or_decomposer))
+            responses_either_or_process = self.model_api.generate(self.construct_prompt_b(either_or, icl_either_or_decomposer))
             responses_either_or_text = responses_either_or_process[0] if isinstance(responses_either_or_process, (list,tuple)) else responses_either_or_process
             responses_either_or = self.post_process_decompose(responses_either_or_text)
             responses_either_or = self.clean_irrelevant_lines(responses_either_or)
         if biconditional:
-            responses_biconditional_process = self.openai_api.generate(self.construct_prompt_b(biconditional, icl_biconditional_decomposer))
+            responses_biconditional_process = self.model_api.generate(self.construct_prompt_b(biconditional, icl_biconditional_decomposer))
             responses_biconditional_text = responses_biconditional_process[0] if isinstance(responses_biconditional_process, (list,tuple)) else responses_biconditional_process
             responses_biconditional = self.post_process_decompose(responses_biconditional_text)
             responses_biconditional = self.clean_irrelevant_lines(responses_biconditional)
@@ -539,5 +539,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    gpt3_problem_reduction = Reasoning_Graph_Baseline(args)
-    gpt3_problem_reduction.reasoning_graph_generation()
+    model_problem_reduction = Reasoning_Graph_Baseline(args)
+    model_problem_reduction.reasoning_graph_generation()
