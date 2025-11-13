@@ -22,6 +22,7 @@ class Naive_Prompting:
         self.batch_num = args.batch_num
         self.prompts_folder = args.prompts_folder
         self.prompts_file = args.prompts_file
+        self.prompts_mode = args.prompts_mode
         self.file_lock = threading.Lock()
         self.model_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
 
@@ -46,25 +47,29 @@ class Naive_Prompting:
             question = record['conjecture']
         else:
             context = record['context']
-            question = re.search(r'\?(.*)', record['question'].strip()).group(1).strip()
+            if self.prompts_mode == 'full':
+                question = record['question'].strip()
+            else:
+                question = re.search(r'\?(.*)', record['question'].strip()).group(1).strip()
         full_prompt = full_prompt.replace('[[PREMISES]]', context)
         full_prompt = full_prompt.replace('[[CONJECTURE]]', question)
         return full_prompt
     
     def extract_answers(self, content):
-        marker_pattern = r'Sekarang jalankan untuk data berikut:'
+        marker_pattern = r'Di bawah ini yang perlu Anda cari nilai kebenarannya:'
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
         search_area = content[marker_match.end():] if marker_match else content
 
         #print(f"\n\nSEARCH AREA:\n\n{search_area}\n")
 
-        answer_block_pattern = (r'(?:\**Nilai\s*Kebenaran\**:)(.*?)(?=(\n)|$)')
+        answer_block_pattern = (r'\*{0,3}\s*(?:Nilai\s*Kebenaran|Jawaban)\s*\*{0,3}\s*:\s*(.*?)(?=\n|$)')
 
         answer_block = re.search(answer_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
 
         print(f"\n\nCHOSEN BLOCK:\n\n{answer_block}\n")
         print("END OF CHOSEN BLOCK\n\n")
-
+        print(f"Group 0: {answer_block.group(0).strip()}")
+        print(f"Group 1: {answer_block.group(1).strip()}")
         answer = answer_block.group(1).strip() if answer_block else "No answer found"
 
         return answer
@@ -181,6 +186,7 @@ def parse_args():
     parser.add_argument('--batch_num', type=int, default=1)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
     parser.add_argument('--prompts_file', default='naive_prompting.txt')
+    parser.add_argument('--prompts_mode', default='filtered')
     args = parser.parse_args()
     return args
 
