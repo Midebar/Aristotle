@@ -1,6 +1,7 @@
 import json
 import argparse
 import os
+import matplotlib.pyplot as plt
 from utils import sanitize_filename
 
 def load_json_file(file_path):
@@ -48,6 +49,48 @@ def evaluate_instance(id_, instance1, instance2, ground_truth):
     
     return False
 
+def show_table(rows, out_image_path='evaluation_table.png'):
+    """rows: list of dicts with keys: id, gt, ans1, ans2, correct"""
+    if not rows:
+        print("No rows to display.")
+        return
+
+    cols = ["ID", "Ground Truth", "Negated", "Non-negated"]
+    cell_text = []
+    cell_colours = []
+    for r in rows:
+        cell_text.append([r['id'], r['gt'], r['ans1'], r['ans2']])
+        color = "#d7f4dd" if r['correct'] else "#ffd6d6"
+        # replicate color across columns for that row
+        cell_colours.append([color] * len(cols))
+
+    # adjust figure size based on number of rows (cap height)
+    n = len(rows)
+    row_height = 0.35
+    height = max(2.5, min(20, n * row_height))
+    fig, ax = plt.subplots(figsize=(9, height))
+    ax.axis('off')
+
+    table = ax.table(cellText=cell_text,
+                     colLabels=cols,
+                     cellColours=cell_colours,
+                     cellLoc='center',
+                     loc='center')
+
+    table.auto_set_font_size(False)
+    table.set_fontsize(9)
+    table.scale(1, 1.1)
+
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_text_props(weight='bold')
+    os.makedirs(os.path.dirname(out_image_path), exist_ok=True)
+    fig.tight_layout()
+    fig.savefig(out_image_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    return out_image_path
+
+
 def evaluate_files(dataset_name, model_name):
     """Evaluates all matching instances from two JSON files."""
     results_dir = args.save_path or './results/'
@@ -60,6 +103,7 @@ def evaluate_files(dataset_name, model_name):
         file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
         file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
     
+    # 1 is negated, 2 is non-negated
     file1 = load_json_file(file1_path)
     file2 = load_json_file(file2_path)
     
@@ -81,32 +125,64 @@ def evaluate_files(dataset_name, model_name):
     
     common_ids = set(file1_map.keys()).union(set(file2_map.keys()))
     valid_ids = [id_ for id_ in common_ids if file1_map.get(id_) is not None and file2_map.get(id_) is not None]
+
+    rows = []
+    total_instances = 0
+    correct_instances = 0
     error_id = []
     correct_id = []
 
-    for id_ in valid_ids:
+    for id_ in sorted(valid_ids):
         try:
             instance1 = file1_map.get(id_)
             instance2 = file2_map.get(id_)
-                        
+
             ground_truth = instance1.get('ground_truth')
-            
-            if ground_truth:
-                total_instances += 1
-                if evaluate_instance(id_, instance1, instance2, ground_truth):
-                    correct_instances += 1
-                    correct_id.append(id_)
-                else:
-                    error_id.append(id_)
+
+            fa1 = instance1.get('final_answer')
+            fc1 = instance1.get('final_choice', 'C' if fa1 and 'No final answer found in the text.' in fa1 else None)
+            fa2 = instance2.get('final_answer')
+            fc2 = instance2.get('final_choice', 'C' if fa2 and 'No final answer found in the text.' in fa2 else None)
+
+            n1 = normalize_answer(fc1)
+            n2 = normalize_answer(fc2)
+            print(f"ID: {id_}, GT: {ground_truth}, Negated: {n1}, Non-negated: {n2}")
+
+            total_instances += 1
+            correct = evaluate_instance(id_, instance1, instance2, ground_truth)
+            if correct:
+                correct_instances += 1
+                correct_id.append(id_)
+            else:
+                error_id.append(id_)
+
+            rows.append({
+                'id': id_,
+                'gt': ground_truth,
+                'ans1': n1,
+                'ans2': n2,
+                'correct': bool(correct)
+            })
         except Exception as e:
-            print(f"Error processing instance with ID {id_}: {str(e)}")
+            print(f"Error processing {id_}: {e}")
             error_id.append(id_)
-    
-    accuracy = correct_instances / total_instances if total_instances > 0 else 0
+
+    accuracy = (correct_instances / total_instances) if total_instances > 0 else 0
     print(f"Total instances: {total_instances}")
     print(f"Accuracy: {accuracy:.2%}")
     print("Error id: ", error_id)
     print("Correct id: ", correct_id)
+
+    # Save the table image so it can be displayed in the notebook
+    out_dir = os.path.join(results_dir, dataset_name)
+    os.makedirs(out_dir, exist_ok=True)
+    out_image_path = os.path.join(out_dir, f"{model_name}_results_table.png")
+    saved_path = show_table(rows, out_image_path)
+    if saved_path:
+        print(f"Saved table image to: {saved_path}")
+    else:
+        print("No image saved.")
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
