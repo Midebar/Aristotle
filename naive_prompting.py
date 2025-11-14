@@ -51,8 +51,10 @@ class Naive_Prompting:
                 question = record['question'].strip()
             else:
                 question = re.search(r'\?(.*)', record['question'].strip()).group(1).strip()
+
         full_prompt = full_prompt.replace('[[PREMISES]]', context)
         full_prompt = full_prompt.replace('[[CONJECTURE]]', question)
+
         return full_prompt
     
     def extract_answers(self, content):

@@ -1,307 +1,240 @@
-"""
-translate_dataset.py
-
-Usage example:
-  python translate_dataset.py --dataset_name <dataset> --split <split> --output_dir <output_folder> --model_name <model>
-"""
-
+#translate_dataset.py
 import os
 import json
 import argparse
-import random
 import re
-import copy
+import traceback
+import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
-
+from typing import Any, Dict, List, Optional
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-try:
-    from utils import ModelWrapper
-except Exception as e:
-    print("Error importing ModelWrapper from utils.py:", e)
-    raise
-
-try:
-    from dotenv import load_dotenv
-    DOTENV_AVAILABLE = True
-except Exception:
-    DOTENV_AVAILABLE = False
-
-def load_env_file(env_path: Path):
-    if env_path.exists():
-        if DOTENV_AVAILABLE:
-            load_dotenv(dotenv_path=str(env_path))
-        else:
-            with env_path.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith("#") or "=" not in line:
-                        continue
-                    k, v = line.split("=", 1)
-                    os.environ.setdefault(k.strip(), v.strip())
-
+from utils import ModelWrapper, sanitize_filename
 
 ROOT = Path(__file__).parent.resolve()
 
-def find_source_json(data_json_path: Optional[str], data_path: str, dataset_name: str, split: str) -> Path:
-    if data_json_path:
-        p = Path(data_json_path)
-        if p.exists() and p.is_file():
-            return p
-        raise FileNotFoundError(f"DATA_JSON_PATH provided but file not found: {p}")
 
-    root = Path(data_path)
-    candidates = [
-        root / dataset_name / split / f"{split}.json",
-        root / dataset_name / f"{split}.json",
-        root / split / f"{split}.json",
-        root / f"{split}.json",
-        root / dataset_name,
-        root
-    ]
-    for c in candidates:
-        if c.is_file() and c.suffix == ".json":
-            return c
-        if c.is_dir():
-            list_json = sorted(list(c.glob("*.json")))
-            if list_json:
-                return list_json[0]
-    raise FileNotFoundError(f"Could not find dataset JSON. Checked candidates under {root}")
+class Translator:
+    EXPECTED_KEYS = ["id", "context", "question", "options", "answer", "explanation"]
 
-def extract_examples_from_json(tree: Any) -> Tuple[List[Dict[str, Any]], str]:
-    if isinstance(tree, list):
-        return tree, ""
-    if isinstance(tree, dict):
-        for candidate_key in ("data", "examples", "items", "instances", "questions"):
-            if candidate_key in tree and isinstance(tree[candidate_key], list):
-                return tree[candidate_key], candidate_key
-        for k, v in tree.items():
-            if isinstance(v, list):
-                return v, k
-    raise ValueError("Unable to extract a list of examples from this JSON structure.")
+    def __init__(self, args):
+        self.args = args
+        self.data_path = args.data_path
+        self.dataset_name = args.dataset_name
+        self.split = args.split
+        self.sample_pct = args.sample_pct
+        self.model_name = args.model_name
+        self.save_path = args.save_path
+        self.batch_num = args.batch_num
+        self.prompts_folder = args.prompts_folder
+        self.prompts_file = args.prompts_file
+        self.stop_words = args.stop_words
+        self.max_new_tokens = args.max_new_tokens
+        self.file_lock = threading.Lock()
+        self.model_api = ModelWrapper(self.model_name, self.stop_words, self.max_new_tokens)
 
-def sample_examples(examples: List[Dict[str, Any]], pct: int, seed: int = 42) -> List[Dict[str, Any]]:
-    if pct >= 100:
-        return examples
-    random.seed(seed)
-    n = max(1, int(len(examples) * pct / 100.0))
-    if n >= len(examples):
-        return examples
-    return random.sample(examples, n)
+        os.makedirs(self.save_path, exist_ok=True)
+        os.makedirs(self.prompts_folder, exist_ok=True)
 
-# tokens considered option-values we want to preserve (case-sensitive)
-OPTION_TOKENS = ["True", "False", "Unknown", "Yes", "No", "None"]
+    def load_raw_dataset(self, split: str, sample_pct: int) -> List[Dict[str, Any]]:
+        path = os.path.join(self.data_path, self.dataset_name, f'{split}.json')
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Dataset file not found: {path}")
+        with open(path, 'r', encoding='utf-8') as f:
+            raw_dataset = json.load(f)
+        if not isinstance(raw_dataset, list):
+            raise ValueError("Expected dataset JSON to be a list of datapoints")
+        n_keep = max(1, int(len(raw_dataset) * sample_pct / 100))
+        return raw_dataset[:n_keep]
 
-def default_translation_prompt(example: Dict[str, Any]) -> str:
-    example_json = json.dumps(example, indent=2, ensure_ascii=False)
-    prompt = f"""
-        You are a professional translator. Translate only the *values* (natural-language text)
-        inside the JSON example below into Indonesian (Bahasa Indonesia). DO NOT change, rename,
-        or translate any JSON key names.
+    def load_prompt_template(self) -> str:
+        dataset_folder = os.path.join(self.prompts_folder, self.dataset_name)
+        os.makedirs(dataset_folder, exist_ok=True)
+        file_path = os.path.join(dataset_folder, f"{self.prompts_file}.txt")
+        if os.path.exists(file_path):
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read()
 
-        CRITICAL REQUIREMENTS:
-        1) Output ONLY one valid JSON object (nothing else) that is the translated example.
-        2) The output JSON MUST contain the exact keys: id, context, question, options, answer, explanation
-           (and any other keys present in the input must be preserved).
-        3) Preserve data types and structure (strings remain strings, lists remain lists).
-        4) DO NOT modify the 'id' value.
-        5) IMPORTANT: Do NOT translate option-values. If any option contains tokens like
-           True, False, Unknown, Yes, No, None, keep those tokens exactly as they appear in the input.
-           Also preserve letter labels like "A)", "B)" unchanged. If you cannot follow these rules,
-           return the single token: ERROR
-        6) Start the response with '{{' and end with '}}' — nothing before or after.
+    def construct_prompt(self, record: Dict[str, Any], template: str) -> str:
+        explanations_str = "\n".join(record.get("explanation", []))
+        t = template
+        t = t.replace('[[CONTEXT]]', record.get("context", ""))
+        t = t.replace('[[QUESTION]]', record.get("question", ""))
+        t = t.replace('[[EXPLANATIONS]]', explanations_str)
+        return t
 
-        Below is the one you need to translate (translate only the language in values; keep option-values EXACT):
-        {example_json}
+    def _call_model_single(self, prompt: str) -> str:
+        out = self.model_api.generate(prompt, task="translation")
+        if isinstance(out, (list, tuple)):
+            out = out[0]
+        return out if isinstance(out, str) else str(out)
 
-        And this is the translated example in JSON format.
+    def _normalize_output(self, raw_text: Optional[str]) -> Dict[str, Any]:
+        """
+        Extract 'context', 'question', and 'explanation(s)' from raw plain-text output.
+        Returns dict: {"context": str, "question": str, "explanation": List[str]}
+        """
+        text = (raw_text or "").strip()
+        out = {"context": "", "question": "", "explanation": []}
+
+        marker_pattern = r'Now translate them!'
+        marker_match = re.search(marker_pattern, text, flags=re.IGNORECASE)
+        search_area = text[marker_match.end():].strip() if marker_match else text
+
+        ctx_match = re.search(r'context\s*:\s*(.*?)(?=\n(?:question|explanation|explanations|context)\s*:|\Z)',
+                            search_area, flags=re.IGNORECASE | re.DOTALL)
+        q_match = re.search(r'question\s*:\s*(.*?)(?=\n(?:context|explanation|explanations|question)\s*:|\Z)',
+                            search_area, flags=re.IGNORECASE | re.DOTALL)
+        expl_match = re.search(r'(?:explanations?|explanation)\s*:\s*(.*?)(?=\n(?:context|question|explanation|explanations)\s*:|\Z)',
+                            search_area, flags=re.IGNORECASE | re.DOTALL)
+
+        if ctx_match:
+            out["context"] = ctx_match.group(1).strip()
+        if q_match:
+            out["question"] = q_match.group(1).strip()
+
+        if expl_match:
+            expl_text = expl_match.group(1).strip()
+
+            parts = []
+            #Split by newlines first
+            lines = [ln.strip() for ln in re.split(r'[\r\n]+', expl_text) if ln.strip()]
+
+            if len(lines) == 0:
+                # nothing found by newline splitting; try splitting by numbered patterns inline
+                cand = expl_text
+                lines = [s.strip() for s in re.split(r'(?:\d+\.\s+|\d+\)\s+|[•\-\u2022]\s+)', cand) if s and s.strip()]
+
+            # Process each line: remove leading bullets/nums, then further split multi-sentence lines
+            for line in lines:
+                line = re.sub(r'^[\s]*[-\u2022\•\*]+\s*', '', line)
+                line = re.sub(r'^\d+[\.\)]\s*', '', line)
+                line = line.strip()
+                if not line:
+                    continue
+
+                # If the line contains multiple sentences, split on sentence boundaries
+                subparts = re.split(r'(?<=[\.\?\!])\s+|\s*\|\s*', line)
+                if len(subparts) == 1:
+                    # also attempt splitting by ";", or " - " connecting clauses if it's long
+                    if len(line) > 200:
+                        subparts = re.split(r'[;]\s+|\s*-\s*', line)
+                for sp in subparts:
+                    sp = sp.strip()
+                    if not sp:
+                        continue
+                    # strip any leftover leading numbering
+                    sp = re.sub(r'^\d+[\.\)]\s*', '', sp).strip()
+                    # ensure punctuation at end
+                    if not re.search(r'[\.!\?]$', sp):
+                        sp = sp + "."
+                    parts.append(sp)
+
+            # remove duplicates and empty strings while preserving order
+            seen = set()
+            cleaned = []
+            for p in parts:
+                p_norm = p.strip()
+                if not p_norm:
+                    continue
+                if p_norm in seen:
+                    continue
+                seen.add(p_norm)
+                cleaned.append(p_norm)
+
+            out["explanation"] = cleaned
+
+        return out
         
+    def save_output(self, outputs: Any, file_suffix: Optional[str] = None):
+        model_name = sanitize_filename(self.model_name)
+        file_name = f'{model_name}_translation.json' if file_suffix is None else f'{model_name}_translation_{file_suffix}.json'
+        file_path = os.path.join(self.save_path, self.dataset_name, file_name)
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        Now produce the translated JSON object (and nothing else).
-    """
-    return prompt.strip()
-
-def apply_template(template: str, example: Dict[str, Any]) -> str:
-    example_json = json.dumps(example, indent=2, ensure_ascii=False)
-    if "{example_json}" in template:
-        return template.replace("{example_json}", example_json)
-    else:
-        return template + "\n\nExample:\n" + example_json
-
-def safe_parse_json(text: str) -> Optional[Dict[str, Any]]:
-    if not text:
-        return None
-    text = re.sub(r'^\s*(\[USER\]|\[ASSISTANT\]|user:|assistant:)', '', text, flags=re.IGNORECASE).strip()
-    starts = [m.start() for m in re.finditer(r'\{', text)]
-    ends = [m.start() for m in re.finditer(r'\}', text)]
-    if not starts or not ends:
-        try:
-            return json.loads(text)
-        except Exception:
-            return None
-    candidates = []
-    for s_idx in range(len(starts)-1, -1, -1):
-        s = starts[s_idx]
-        depth = 0
-        for i in range(s, len(text)):
-            ch = text[i]
-            if ch == '{':
-                depth += 1
-            elif ch == '}':
-                depth -= 1
-                if depth == 0:
-                    candidate = text[s:i+1]
-                    candidates.append(candidate)
-                    break
-    for cand in candidates:
-        try:
-            parsed = json.loads(cand)
-            return parsed
-        except Exception:
-            continue
-    try:
-        return json.loads(text)
-    except Exception:
-        return None
-
-def write_translated_output(output_path: Path, original_tree: Any, examples_translated: List[Dict[str, Any]], container_key: str):
-    ensure_parent = output_path.parent
-    ensure_parent.mkdir(parents=True, exist_ok=True)
-    if container_key == "":
-        with output_path.open("w", encoding="utf-8") as f:
-            json.dump(examples_translated, f, indent=2, ensure_ascii=False)
-        return
-    if isinstance(original_tree, dict):
-        new_tree = dict(original_tree)
-        new_tree[container_key] = examples_translated
-        with output_path.open("w", encoding="utf-8") as f:
-            json.dump(new_tree, f, indent=2, ensure_ascii=False)
-        return
-    with output_path.open("w", encoding="utf-8") as f:
-        json.dump(examples_translated, f, indent=2, ensure_ascii=False)
-
-def options_need_restoration(original_options: List[Any], parsed_options: List[Any]) -> bool:
-    """
-    - If lengths differ -> restore.
-    - If any original option contains an OPTION_TOKEN but the corresponding parsed option
-      does not contain the same token -> restore.
-    """
-    if not isinstance(original_options, list):
-        return False
-    if not isinstance(parsed_options, list):
-        return True
-    if len(original_options) != len(parsed_options):
-        return True
-
-    for orig_opt, parsed_opt in zip(original_options, parsed_options):
-        if not isinstance(orig_opt, str) or not isinstance(parsed_opt, str):
-            # if not strings, skip strict checking
-            continue
-        # find tokens in original option
-        orig_tokens = [t for t in OPTION_TOKENS if re.search(r'\b' + re.escape(t) + r'\b', orig_opt)]
-        if orig_tokens:
-            # require that at least one of those tokens appears verbatim in parsed_opt
-            if not any(re.search(r'\b' + re.escape(t) + r'\b', parsed_opt) for t in orig_tokens):
-                return True
-    return False
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env", type=str, default=".env")
-    parser.add_argument("--data_json_path", type=str, default="", help="Optional single JSON file input")
-    parser.add_argument("--data_path", type=str, default="./data", help="Data root or dataset folder")
-    parser.add_argument("--dataset_name", type=str, required=True)
-    parser.add_argument("--split", type=str, default="dev")
-    parser.add_argument("--output_dir", type=str, default="./data_translated")
-    parser.add_argument("--sample-pct", type=int, default=100, help="Percent of examples to translate (0-100)")
-    parser.add_argument("--model_name", type=str, help="model name passed to ModelWrapper wrapper")
-    parser.add_argument("--max_new_tokens", type=int, default=512)
-    parser.add_argument("--temperature", type=float, default=0.0)
-    parser.add_argument("--batch_size", type=int, default=1)
-    args = parser.parse_args()
-
-    env_path = ROOT / args.env
-    load_env_file(env_path)
-
-    source_json = find_source_json(args.data_json_path or None, args.data_path, args.dataset_name, args.split)
-    print("[translate_dataset] Source JSON found:", source_json)
-
-    with source_json.open("r", encoding="utf-8") as f:
-        original_tree = json.load(f)
-
-    examples, container_key = extract_examples_from_json(original_tree)
-    print(f"[translate_dataset] Found {len(examples)} examples (container_key='{container_key}')")
-
-    sample_pct = max(0, min(100, int(args.sample_pct)))
-    examples_to_translate = sample_examples(examples, sample_pct)
-    print(f"[translate_dataset] Translating {len(examples_to_translate)} examples ({sample_pct}%)")
-
-    print("[translate_dataset] Using default translation prompt template (built-in).")
-
-    stop_words = os.environ.get("STOP_WORDS", "------")
-    model_name_env = os.environ.get("LLM_MODEL", "")
-    print(model_name_env)
-    openai_model = ModelWrapper(model_name=model_name_env, stop_words=stop_words, max_new_tokens=args.max_new_tokens)
-
-    prompts = []
-    # keep original examples for option restoration
-    for ex in examples_to_translate:
-        prompts.append(default_translation_prompt(ex))
-
-    translated_examples = []
-    failed_count = 0
-    batch_size = max(1, int(args.batch_size))
-
-    for i in tqdm(range(0, len(prompts), batch_size), desc="Translating", unit="batch"):
-        chunk_prompts = prompts[i:i+batch_size]
-        try:
-            outputs = openai_model.batch_prompt_generate(chunk_prompts, temperature=args.temperature)
-        except Exception as e:
-            print(f"[translate_dataset] Error calling model on batch starting at {i}: {e}")
-            outputs = []
-            for p in chunk_prompts:
-                try:
-                    out = openai_model.prompt_generate(p, temperature=args.temperature)
-                    outputs.append(out)
-                except Exception as e2:
-                    print(f"  single-call failed: {e2}")
-                    outputs.append("")
-
-        batch_examples = examples_to_translate[i:i+batch_size]
-        for out_text, original_ex in zip(outputs, batch_examples):
-            if not out_text or out_text.strip() == "":
-                translated_examples.append(original_ex)
-                failed_count += 1
-                continue
-
-            parsed = safe_parse_json(out_text)
-            if parsed is None:
-                fallback = dict(original_ex)
-                fallback["__translated_text_raw__"] = out_text.strip()
-                translated_examples.append(fallback)
-                failed_count += 1
-                continue
-
-            # ensure options preserved: if the model changed option-values, restore original options
+        with self.file_lock:
             try:
-                orig_opts = original_ex.get("options")
-                parsed_opts = parsed.get("options")
-                if orig_opts is not None and options_need_restoration(orig_opts, parsed_opts):
-                    # restore the original options list unchanged
-                    parsed["options"] = copy.deepcopy(orig_opts)
-                # done: append parsed (possibly with restored options)
-                translated_examples.append(parsed)
+                if os.path.exists(file_path):
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read().strip()
+                        existing = json.loads(content) if content else []
+                else:
+                    existing = []
+
+                if isinstance(outputs, list):
+                    existing.extend(outputs)
+                else:
+                    existing.append(outputs)
+
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(existing, f, indent=2, ensure_ascii=False)
             except Exception as e:
-                print("[translate_dataset] Warning during options validation/restoration:", e)
-                translated_examples.append(parsed)
+                print(f"Error saving output to {file_path}: {e}")
+                traceback.print_exc()
 
-    print(f"[translate_dataset] Translation completed. Failed/parsing issues: {failed_count}")
+    def process_record(self, record: Dict[str, Any], template: str) -> Dict[str, Any]:
+        try:
+            prompt = self.construct_prompt(record, template)
+            print(f"Processing record ID: {record.get('id')} with prompt:\n{prompt}\n")
 
-    out_path = Path(args.output_dir) / args.dataset_name / f"{args.split}.json"
-    write_translated_output(out_path, original_tree, translated_examples, container_key)
-    print("[translate_dataset] Written translated dataset to:", out_path)
-    print("Done.")
+            raw_model_out = self._call_model_single(prompt)
+            print(f"Raw model output for record ID {record.get('id')}:\n{raw_model_out}\n")
+
+            normalized = self._normalize_output(raw_model_out)
+            print(f"Normalized output for record ID {record.get('id')}:\n{normalized}\n")
+
+            result = {
+                "id": record.get("id"),
+                "context": normalized.get("context"),
+                "question": normalized.get("question"),
+                "options": record.get("options", []),
+                "explanation": normalized.get("explanation", []),
+                "answer": record.get("answer"),
+                "process": raw_model_out,
+            }
+            return result
+        except Exception as e:
+            print(f"Error processing record {record.get('id')}: {e}")
+            traceback.print_exc()
+
+    def generate_translations(self):
+        template = self.load_prompt_template()
+        raw_dataset = self.load_raw_dataset(self.split, self.sample_pct)
+        print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
+
+        results = []
+        with ThreadPoolExecutor(max_workers=self.batch_num) as executor:
+            future_to_record = {executor.submit(self.process_record, record, template): record for record in raw_dataset}
+            for future in tqdm(as_completed(future_to_record), total=len(future_to_record), desc="Translating"):
+                rec = future_to_record[future]
+                try:
+                    result = future.result()
+                    print(f"Saving output for record: {result}")
+                    self.save_output(result)
+                    results.append(result)
+                except Exception as e:
+                    print(f"Exception for record {rec.get('id')}: {e}")
+                    traceback.print_exc()
+
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data_path', type=str, default='./data')
+    parser.add_argument('--dataset_name', type=str, required=True)
+    parser.add_argument('--split', type=str, default='dev')
+    parser.add_argument('--sample_pct', type=int, default=100)
+    parser.add_argument('--save_path', type=str, default='./results_bahasa_translation')
+    parser.add_argument('--model_name', type=str, required=True)
+    parser.add_argument('--stop_words', type=str, default='------')
+    parser.add_argument('--max_new_tokens', type=int, default=512)
+    parser.add_argument('--batch_num', type=int, default=1)
+    parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
+    parser.add_argument('--prompts_file', default='bahasa_translation')
+    args = parser.parse_args()
+    return args
+
 
 if __name__ == "__main__":
-    main()
+    args = parse_args()
+    translator = Translator(args)
+    translator.generate_translations()

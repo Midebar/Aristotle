@@ -150,9 +150,9 @@ Mari kita uraikan proses resolusi untuk clause yang diberikan:
     \]
   - **Instansiasi Literal:** Instansiasikan literal dari Clause 1 dan Clause 2 kedalam formula yang sudah diberikan
     \[
-    (Jompus(Alex, False) \lor TembusPandang(Alex, True)), \, (Jompus(Alex, True) \lor Dumpus(Alex, False)) \quad \Rightarrow \quad (TembusPandang(Alex, True) \ lor Dumpus(Alex, False))
+    (Jompus(Alex, False) \lor TembusPandang(x, True)), \, (Jompus(Alex, True) \lor Dumpus(Alex, False)) \quad \Rightarrow \quad (TembusPandang(x, True) \ lor Dumpus(Alex, False))
     \]
-  - **Clause Hasil:** \( TembusPandang(Alex, True) \ lor Dumpus(Alex, False) \)
+  - **Clause Hasil:** \( TembusPandang(x, True) \ lor Dumpus(Alex, False) \)
 
 ### **Langkah 3: Pemeriksaan Setelah Resolusi**
 

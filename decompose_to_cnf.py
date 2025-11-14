@@ -274,10 +274,10 @@ class Reasoning_Graph_Baseline:
 
         content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
-        marker_pattern = r'(.*?)Di bawah ini adalah yang perlu Anda(.*?)'
+        marker_pattern = r'Di bawah ini adalah yang perlu Anda konversikan menggunakan normalisasi.'
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
 
-        search_area = content[marker_match.end():] if marker_match else content
+        search_area = content[marker_match.end():]
 
         # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
         final_block_pattern = (
@@ -311,32 +311,18 @@ class Reasoning_Graph_Baseline:
 
         cnf_headers = ['Aturan dalam CNF', 'Aturan CNF', 'Aturan', 'Rules', 'Aturan (CNF)']
         skolem_headers = ['Skolemisasi', 'Skolem', 'Bentuk Akhir Setelah Skolemisasi', 'Skolemization']
-        fakta_headers = ['Fakta', 'Facts', 'Fact']
-        konj_headers = ['Konjektur', 'Konjecture', 'Conjecture', 'Konjektur:']
+        stop_headers = ['Final Form', 'Akhir Blok']
 
         cnf_raw = ""
         for h in cnf_headers:
-            cnf_raw = _extract_section_raw(block, h, skolem_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form', 'Akhir Blok'])
+            cnf_raw = _extract_section_raw(block, h, skolem_headers + stop_headers)
             if cnf_raw:
                 break
 
         skolem_raw = ""
         for h in skolem_headers:
-            skolem_raw = _extract_section_raw(block, h, cnf_headers + konj_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Final Form', 'Akhir Blok'])
+            skolem_raw = _extract_section_raw(block, h, cnf_headers + stop_headers)
             if skolem_raw:
-                break
-
-        # extract fakta/konjektur not returned directly
-        fakta_raw = ""
-        for h in fakta_headers:
-            fakta_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + konj_headers + ['Pemecahan', 'Bentuk Akhir', 'Akhir Blok'])
-            if fakta_raw:
-                break
-
-        konj_raw = ""
-        for h in konj_headers:
-            konj_raw = _extract_section_raw(block, h, cnf_headers + skolem_headers + fakta_headers + ['Pemecahan', 'Bentuk Akhir', 'Akhir Blok'])
-            if konj_raw:
                 break
 
         cnf_lines = _nonempty_raw_lines(cnf_raw) if cnf_raw else []
@@ -344,7 +330,6 @@ class Reasoning_Graph_Baseline:
 
         skolem_return = skolem_lines if skolem_lines else None
         return cnf_lines, skolem_return
-
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):

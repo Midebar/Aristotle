@@ -24,7 +24,7 @@ def sanitize_filename(name: str) -> str:
 
 def format_messages_to_prompt(messages: List[Dict[str, str]]) -> str:
     """
-    Convert a list of messages (OpenAI style: {'role':..,'content':..})
+    Convert a list of messages (style: {'role':..,'content':..})
     into a single prompt string for local HF models.
     Preserve role markers to make outputs more predictable.
     """
@@ -180,11 +180,16 @@ class ModelWrapper:
         self.load_in_4bit = os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
-    def chat_generate(self, input_string: str, temperature: float = 0.0):
-        messages = [
-            {"role": "system", "content": "Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna."},
-            {"role": "user", "content": input_string}
-        ]
+    def chat_generate(self, input_string: str, temperature: float = 0.0, task: Optional[str] = None):
+        if task == "translation":
+            messages = [
+                {"role": "user", "content": input_string}
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": "Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna."},
+                {"role": "user", "content": input_string}
+            ]
         resp = chat_completions_with_backoff(
             model=self.model_name,
             messages=messages,
@@ -213,7 +218,7 @@ class ModelWrapper:
         return generated_text
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
-    def generate(self, input_string: str, temperature: float = 0.0):
+    def generate(self, input_string: str, temperature: float = 0.0, task: Optional[str] = None):
         """
         Keep decision behavior similar to original repo:
          - For chat-like models, return (text, finish_reason)
@@ -221,7 +226,7 @@ class ModelWrapper:
         We prefer to call chat_generate for robustness.
         """
         try:
-            return self.chat_generate(input_string, temperature)
+            return self.chat_generate(input_string, temperature, task)
         except Exception:
             text = self.prompt_generate(input_string, temperature)
             return text, None
