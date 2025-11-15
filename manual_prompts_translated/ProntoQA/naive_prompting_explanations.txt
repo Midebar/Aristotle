@@ -5,6 +5,45 @@ Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis dan
 Contoh:
 
 Konteks:
+Impuses adalah besar. Alex adalah impus.
+
+Pertanyaan:
+Alex besar
+
+Penjelasan:
+Alex adalah impus.
+Impuses adalah besar.
+Alex adalah besar.
+
+###
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Setiap numpus adalah tembus pandang. Fae adalah numpus.
+
+Pertanyaan:
+Fae tidak tembus pandang
+
+Penjelasan:
+Fae adalah numpus.
+Setiap numpus berwarna merah.
+Fae adalah tembus pandang
+
+###
+**Jawaban**: False 
+###
+
+------
+
+
+Contoh:
+
+Konteks:
 Wumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.
 
 Pertanyaan:

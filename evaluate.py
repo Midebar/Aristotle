@@ -98,7 +98,7 @@ def evaluate_files(dataset_name, model_name):
     if args.evaluation_method == 'naive_prompting':
         print("Evaluating using the naive prompting method.")
         file1_path = f'{results_dir}/{dataset_name}/{model_name}_naive_prompting.json'
-        file2_path = f'{results_dir}/{dataset_name}/{model_name}_naive_prompting.json'
+        file2_path = file1_path
     else:
         file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
         file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
@@ -109,16 +109,21 @@ def evaluate_files(dataset_name, model_name):
     
     file1_map = {}
     file2_map = {}
+    counter = 0
     for item in file1:
         try:
             file1_map[item['id']] = item
-        except TypeError:
+        except:
             print(f"Error: 'id' not found or invalid in file1 item: {item}")
+            print(f"Error item: {item}")
     for item in file2:
         try:
             file2_map[item['id']] = item
-        except TypeError:
+        except:
             print(f"Error: 'id' not found or invalid in file2 item: {item}")
+        counter += 1
+    
+    print(f"Counter: {counter}")
     
     total_instances = 0
     correct_instances = 0

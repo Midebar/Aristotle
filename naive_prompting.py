@@ -58,23 +58,35 @@ class Naive_Prompting:
         return full_prompt
     
     def extract_answers(self, content):
-        marker_pattern = r'Di bawah ini yang perlu Anda cari nilai kebenarannya:'
-        marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
-        search_area = content[marker_match.end():] if marker_match else content
 
-        #print(f"\n\nSEARCH AREA:\n\n{search_area}\n")
+        marker = r'Di bawah ini yang perlu Anda cari nilai kebenarannya:'
+        m = re.search(marker, content, flags=re.IGNORECASE)
 
-        answer_block_pattern = (r'\*{0,3}\s*(?:Nilai\s*Kebenaran|Jawaban)\s*\*{0,3}\s*:\s*(.*?)(?=\n|$)')
+        # Only search AFTER the marker
+        area = content[m.end():]
 
-        answer_block = re.search(answer_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
+        #print(f"\n---EXTRACTION AREA---: {area}\n" )
 
-        print(f"\n\nCHOSEN BLOCK:\n\n{answer_block}\n")
-        print("END OF CHOSEN BLOCK\n\n")
-        print(f"Group 0: {answer_block.group(0).strip()}")
-        print(f"Group 1: {answer_block.group(1).strip()}")
-        answer = answer_block.group(1).strip() if answer_block else "No answer found"
+        # Match forms:
+        # **Jawaban**: True
+        # Jawaban: True
+        # Jawaban True
+        pattern = re.compile(
+            r'(?:\*\*Jawaban\*\*|Jawaban)\s*[:\-]?\s*(.+)',
+            flags=re.IGNORECASE
+        )
 
-        return answer
+        match = pattern.search(area)
+        print(f"\n---EXTRACTION MATCH---: {match}\n" )
+
+        if not match:
+            return "No answer found"
+
+        ans = match.group(1).strip()
+
+        ans = ans.strip()
+
+        return ans
     
     def final_process(self, final_answer):
         final_answer = final_answer.lower()
@@ -141,12 +153,11 @@ class Naive_Prompting:
             final_choice = self.final_process(answer)
             
             result = {
-                'id': record.get('id', None),
-                'prompt': prompt,
-                'response': response,
+                'id': record['id'],
                 'answer': answer,
                 'final_choice': final_choice,
-                'ground_truth': record['answer']
+                'ground_truth': record['answer'],
+                'response': response,
             }
             return result
         except Exception as e:
