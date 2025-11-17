@@ -8,7 +8,7 @@ import re
 import concurrent.futures
 import traceback
 import threading
-from typing import List
+from typing import Dict, Any, Optional
 
 class Naive_Prompting:
     def __init__(self, args):
@@ -17,6 +17,7 @@ class Naive_Prompting:
         self.dataset_name = args.dataset_name
         self.split = args.split
         self.sample_pct = args.sample_pct
+        self.start_index = args.start_index
         self.model_name = args.model_name
         self.save_path = args.save_path
         self.batch_num = args.batch_num
@@ -33,10 +34,15 @@ class Naive_Prompting:
             naive_prompts = f.read()
         return naive_prompts
 
-    def load_raw_dataset(self, split, sample_pct):
+    def load_raw_dataset(self, split, sample_pct, start_index: Optional[int] = None):
         print(f"SAMPLE PCT: {sample_pct}")
+        print(f"START INDEX: {start_index} type: {type(start_index)}")
+        if start_index is not None:
+            start_index = int(start_index)
         with open(os.path.join(self.data_path, self.dataset_name, f'{split}.json')) as f:
             raw_dataset = json.load(f)
+            if isinstance(start_index, int) and start_index >= 0:
+                raw_dataset = raw_dataset[start_index-1:]
             raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
     
@@ -57,37 +63,69 @@ class Naive_Prompting:
 
         return full_prompt
     
-    def extract_answers(self, content):
+    def extract_answers(self, content: str) -> Dict[str, Any]:
+        result = {"answer": None, "explanations": []}
 
         marker = r'Di bawah ini yang perlu Anda cari nilai kebenarannya:'
         m = re.search(marker, content, flags=re.IGNORECASE)
+        area = content[m.end():] if m else content
 
-        # Only search AFTER the marker
-        area = content[m.end():]
+        ans_label_re = re.compile(r'(?:\*\*Jawaban\*\*|Jawaban)\s*[:\-]?\s*', flags=re.IGNORECASE)
+        exp_label_re = re.compile(r'(?:\*\*Penjelasan\*\*|Penjelasan)\s*[:\-]?\s*', flags=re.IGNORECASE)
 
-        #print(f"\n---EXTRACTION AREA---: {area}\n" )
-
-        # Match forms:
-        # **Jawaban**: True
-        # Jawaban: True
-        # Jawaban True
-        pattern = re.compile(
-            r'(?:\*\*Jawaban\*\*|Jawaban)\s*[:\-]?\s*(.+)',
+        # Boundary pattern to detect next label or section end (###)
+        boundary_re = re.compile(
+            r'\r?\n(?:\*\*Jawaban\*\*|Jawaban|\*\*Penjelasan\*\*|Penjelasan|###)\b',
             flags=re.IGNORECASE
         )
 
-        match = pattern.search(area)
-        print(f"\n---EXTRACTION MATCH---: {match}\n" )
+        def extract_after_label(label_re):
+            """Find first label match; return the substring after it up to next boundary or end, or None."""
+            lab_match = label_re.search(area)
+            if not lab_match:
+                return None
+            start = lab_match.end()
+            bound = boundary_re.search(area, pos=start)
+            end = bound.start() if bound else len(area)
+            return area[start:end].strip()
 
-        if not match:
-            return "No answer found"
+        raw_answer = extract_after_label(ans_label_re)
+        if raw_answer:
+            # take first non-empty line
+            for line in raw_answer.splitlines():
+                s = line.strip()
+                if s:
+                    # normalize spaces and trailing punctuation/newlines
+                    s = re.sub(r'\s{2,}', ' ', s)
+                    result["answer"] = s
+                    break
 
-        ans = match.group(1).strip()
+        raw_expl = extract_after_label(exp_label_re)
+        if raw_expl:
+            lines = []
+            for raw in raw_expl.splitlines():
+                line = raw.strip()
+                if not line:
+                    continue
+                # remove common bullet prefixes (dash, *, numbered, arrows)
+                line = re.sub(r'^[\-\*\u2022\>\s0-9\.\)]+', '', line).strip()
+                # collapse excessive spaces
+                line = re.sub(r'\s{2,}', ' ', line)
+                if line:
+                    lines.append(line)
+            result["explanations"] = lines
 
-        ans = ans.strip()
+        if raw_answer is None:
+            result["answer"] = "No final answer found in the text."
+        
+        if not result["explanations"]:
+            result["explanations"] = ["No explanations found in the text."]
+            
+        print("Extracted answer: ", result["answer"])
+        print("Extracted explanations: ", result["explanations"])
 
-        return ans
-    
+        return result
+
     def final_process(self, final_answer):
         final_answer = final_answer.lower()
         if final_answer == "true":
@@ -149,25 +187,28 @@ class Naive_Prompting:
                 response = response
 
             print(f"\nNaive prompting response: {response}\n")
-            answer = self.extract_answers(response)
+            extracted = self.extract_answers(response)
+            answer = extracted['answer']
+            explanations = extracted['explanations']
             final_choice = self.final_process(answer)
             
             result = {
                 'id': record['id'],
                 'answer': answer,
                 'final_choice': final_choice,
+                'explanations': explanations,
                 'ground_truth': record['answer'],
                 'response': response,
             }
             return result
         except Exception as e:
-            print(f"Error processing record {record.get('id', None)}: {e}")
+            print(f"Error processing record {record['id']}: {e}")
             traceback.print_exc()
             return None
     
     def naive_prompting_generation(self):
         naive_prompts = self.load_in_naive_prompts(self.prompts_folder, self.prompts_file)
-        raw_dataset = self.load_raw_dataset(self.split, self.sample_pct)
+        raw_dataset = self.load_raw_dataset(self.split, self.sample_pct, self.start_index)
         print(f"Loaded {len(raw_dataset)} examples from {self.split} split.")
         print("Number of batch: ", self.batch_num)
         
@@ -192,6 +233,7 @@ def parse_args():
     parser.add_argument('--dataset_name', type=str)
     parser.add_argument('--split', type=str, default='dev')
     parser.add_argument('--sample_pct', type=int, default=100)
+    parser.add_argument('--start_index', type=int, default=0) # Fix MY SANITY
     parser.add_argument('--save_path', type=str, default='./results')
     parser.add_argument('--model_name', type=str)
     parser.add_argument('--stop_words', type=str, default='------')

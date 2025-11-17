@@ -6,7 +6,7 @@ from utils import sanitize_filename
 
 def load_json_file(file_path):
     """Loads a JSON file and returns its content."""
-    with open(file_path, 'r') as file:
+    with open(file_path, 'r', encoding="utf8") as file:
         return json.load(file)
     
 def normalize_answer(answer):

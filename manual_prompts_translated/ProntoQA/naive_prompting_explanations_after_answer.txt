@@ -10,13 +10,13 @@ Impuses adalah besar. Alex adalah impus.
 Pertanyaan:
 Alex besar
 
-Penjelasan:
+###
+**Jawaban**: True 
+
+**Penjelasan**:
 Alex adalah impus.
 Impuses adalah besar.
 Alex adalah besar.
-
-###
-**Jawaban**: True 
 ###
 
 ------
@@ -29,13 +29,13 @@ Setiap numpus adalah tembus pandang. Fae adalah numpus.
 Pertanyaan:
 Fae tidak tembus pandang
 
-Penjelasan:
+###
+**Jawaban**: False 
+
+**Penjelasan**:
 Fae adalah numpus.
 Setiap numpus berwarna merah.
 Fae adalah tembus pandang
-
-###
-**Jawaban**: False 
 ###
 
 ------
@@ -49,15 +49,15 @@ Wumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye.
 Pertanyaan:
 Alex oranye
 
-Penjelasan:
+###
+**Jawaban**: True 
+
+**Penjelasan**:
 Alex adalah wumpus.
 Wumpuses adalah yumpuses.
 Alex adalah yumpus
 Setiap yumpus berwarnya oranye.
 Alex berwarna oranye.
-
-###
-**Jawaban**: True 
 ###
 
 ------
@@ -70,7 +70,10 @@ Setiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah tempera
 Pertanyaan:
 Rex tembus cahaya.
 
-Penjelasan:
+###
+**Jawaban**: True 
+
+**Penjelasan**:
 Rex adalah vumpus.
 Vumpuses adalah jompus.
 Jompus adalah wumpus.
@@ -83,9 +86,6 @@ Setiap dumpus adalah rompus.
 Rex adalah rompus.
 Setiap rompus bukan benda yang tidak tembus cahaya.
 Rex tembus cahaya.
-
-###
-**Jawaban**: True 
 ###
 
 ------
@@ -98,7 +98,10 @@ Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif.
 Pertanyaan:
 Max asam.
 
-Penjelasan:
+###
+**Jawaban**: False 
+
+**Penjelasan**:
 Max adalah yumpus.
 Setiap yumpus adalah dumpus.
 Max adalah dumpus.
@@ -112,9 +115,6 @@ Impuses adalah tumpuses.
 Max juga tumpus
 Tumpuses tidak asam.
 Max tidak asam.
-
-###
-**Jawaban**: False 
 ###
 
 ------
@@ -127,4 +127,5 @@ Konteks:
 Pertanyaan:
 [[CONJECTURE]]
 
-Penjelasan:
+###
+**Jawaban**:

@@ -25,8 +25,8 @@
   .badge.A{background:#ecfdf5;color:#065f46}
   .badge.B{background:#fffbeb;color:#92400e}
   .badge.C{background:#fff1f2;color:#9f1239}
-  .meta-field{font-weight:600;color:#111;margin-bottom:6px}
-  .controls-right{margin-left:auto;display:flex;gap:8px}
+  ol.explanations{padding-left:18px;margin:6px 0}
+  ol.explanations li{margin:6px 0}
   @media (max-width:900px){ .row{flex-direction:column} }
 </style>
 </head>
@@ -49,7 +49,7 @@
         <option value="25">25 / page</option>
       </select>
 
-      <div class="controls-right">
+      <div style="margin-left:auto;display:flex;gap:8px">
         <button id="export-all" class="btn primary">Export CSV</button>
         <button id="download-snapshot" class="btn">Snapshot</button>
       </div>
@@ -81,52 +81,48 @@
 </div>
 
 <script>
-/* -------------------------
-   State & utils
-   ------------------------- */
+/* State */
 let DATA = [], PAGE = 1, PAGE_SIZE = 10;
 const listNode = document.getElementById('list');
 const statusNode = document.getElementById('status');
 const pageInfo = document.getElementById('page-info');
 const rangeInfo = document.getElementById('range-info');
 
+/* Helpers */
 function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function downloadBlob(content, filename, type='text/plain;charset=utf-8'){ const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 function copyToClipboard(s){ if(!navigator.clipboard) return alert('Clipboard not available'); navigator.clipboard.writeText(s).catch(e=>alert('Copy failed: '+e.message)); }
 
-/* decode escapes: handle "\\n" and "\\\\n" and also normalize CRLF */
+/* decode escapes so any "\n" or "\\n" become real newlines */
 function decodeEscapes(s){
   if(typeof s !== 'string') return s || '';
   let out = s;
-  // handle double-escaped first
   out = out.replace(/\\\\r/g, '\r').replace(/\\\\n/g, '\n').replace(/\\\\t/g, '\t');
-  // then single-escaped
   out = out.replace(/\\r/g, '\r').replace(/\\n/g, '\n').replace(/\\t/g, '\t');
-  // normalize line endings
   out = out.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   return out;
 }
 
-/* extract Penjelasan block (last occurrence), stop at ### or ------ or "Contoh:" or end */
-function extractExplanations(responseText){
-  if(!responseText || typeof responseText !== 'string') return '';
+/* If explanations array missing, fallback to extracting last "Penjelasan" block from response */
+function extractExplanationsFromResponse(responseText){
+  if(!responseText || typeof responseText !== 'string') return [];
   const lower = responseText.toLowerCase();
   const needle = 'penjelasan';
   const idx = lower.lastIndexOf(needle);
-  if(idx === -1) return '';
+  if(idx === -1) return [];
   const tail = responseText.slice(idx);
   const re = /^(Penjelasan:?\s*\n[\s\S]*?)(?=\n\s*#{1,}|[\r\n]\s*-{2,}|[\r\n]\s*Contoh:|$)/i;
   const m = tail.match(re);
   let captured = m ? m[1] : tail;
   captured = captured.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  // prefix with two newlines (matches user's examples)
-  const prefixed = '\n\n' + captured;
-  return decodeEscapes(prefixed);
+  // remove leading "Penjelasan:" label
+  captured = captured.replace(/^[Pp]enjelasan:?\s*\n/, '');
+  // split into lines, filter empties
+  const decoded = decodeEscapes(captured);
+  return decoded.split(/\n+/).map(s=>s.trim()).filter(Boolean);
 }
 
-/* -------------------------
-   Render function — full response and explanations inside <details> collapsed by default
-   ------------------------- */
+/* Render page */
 function render(){
   listNode.innerHTML = '';
   PAGE_SIZE = Number(document.getElementById('pageSize').value || 10);
@@ -134,7 +130,14 @@ function render(){
 
   const filtered = DATA.filter(d=>{
     if(!q) return true;
-    const hay = [d.id, d.response, d.Explanations, d.answer, d.final_choice, d.ground_truth].filter(Boolean).join(' ').toLowerCase();
+    const hay = [
+      d.id,
+      d.response,
+      Array.isArray(d.explanations) ? d.explanations.join(' ') : (d.Explanations || ''),
+      d.answer,
+      d.final_choice,
+      d.ground_truth
+    ].filter(Boolean).join(' ').toLowerCase();
     return hay.indexOf(q) !== -1;
   });
 
@@ -165,39 +168,42 @@ function render(){
       </div>
     </div>`;
 
-    // Response: collapsed by default
-    const respDiv = document.createElement('div'); respDiv.style.marginTop = '10px';
-    const respDetails = document.createElement('details'); // collapsed by default
+    // Response (collapsed)
+    const respDetails = document.createElement('details'); respDetails.style.marginTop = '10px';
     const respSummary = document.createElement('summary'); respSummary.textContent = 'Response (click to expand)';
     respDetails.appendChild(respSummary);
-    const respPre = document.createElement('pre');
-    respPre.textContent = decodeEscapes(item.response || '');
+    const respPre = document.createElement('pre'); respPre.textContent = decodeEscapes(item.response || '');
     respDetails.appendChild(respPre);
-    const respButtons = document.createElement('div'); respButtons.style.marginTop='6px';
-    const copyResp = document.createElement('button'); copyResp.className='btn'; copyResp.textContent='Copy response'; copyResp.onclick = ()=>copyToClipboard(decodeEscapes(item.response || ''));
-    respButtons.appendChild(copyResp);
-    respDetails.appendChild(respButtons);
-    respDiv.appendChild(respDetails);
-    col.appendChild(respDiv);
+    const respBtns = document.createElement('div'); respBtns.style.marginTop='6px';
+    const copyResp = document.createElement('button'); copyResp.className='btn'; copyResp.textContent='Copy response';
+    copyResp.onclick = ()=>copyToClipboard(decodeEscapes(item.response || ''));
+    respBtns.appendChild(copyResp);
+    respDetails.appendChild(respBtns);
+    col.appendChild(respDetails);
 
-    // Explanations: collapsed by default
-    const exDiv = document.createElement('div'); exDiv.style.marginTop = '10px';
-    const exDetails = document.createElement('details');
+    // Explanations (collapsed) — prefer item.explanations array if available
+    const exDetails = document.createElement('details'); exDetails.style.marginTop='10px';
     const exSummary = document.createElement('summary'); exSummary.textContent = 'Explanations (click to expand)';
     exDetails.appendChild(exSummary);
-    const exPre = document.createElement('pre');
-    exPre.textContent = item.Explanations ? decodeEscapes(item.Explanations) : '';
-    exDetails.appendChild(exPre);
-    const exButtons = document.createElement('div'); exButtons.style.marginTop='6px';
-    const copyEx = document.createElement('button'); copyEx.className='btn'; copyEx.textContent='Copy Explanations'; copyEx.onclick = ()=>copyToClipboard(item.Explanations ? decodeEscapes(item.Explanations) : '');
-    exButtons.appendChild(copyEx);
-    exDetails.appendChild(exButtons);
-    exDiv.appendChild(exDetails);
-    col.appendChild(exDiv);
 
-    // Raw JSON details (also collapsed by default)
-    const rawDiv = document.createElement('div'); rawDiv.style.marginTop='10px';
-    const rawDetails = document.createElement('details');
+    const explanationsArray = Array.isArray(item.explanations) ? item.explanations : (item.Explanations ? (Array.isArray(item.Explanations) ? item.Explanations : [item.Explanations]) : extractExplanationsFromResponse(item.response || ''));
+    // render numbered list
+    const ol = document.createElement('ol'); ol.className = 'explanations';
+    for(const s of explanationsArray){
+      const li = document.createElement('li');
+      li.textContent = decodeEscapes(String(s));
+      ol.appendChild(li);
+    }
+    exDetails.appendChild(ol);
+    const exBtns = document.createElement('div'); exBtns.style.marginTop='6px';
+    const copyEx = document.createElement('button'); copyEx.className='btn'; copyEx.textContent='Copy Explanations (newline)';
+    copyEx.onclick = ()=>copyToClipboard(explanationsArray.map(x=>decodeEscapes(String(x))).join('\n'));
+    exBtns.appendChild(copyEx);
+    exDetails.appendChild(exBtns);
+    col.appendChild(exDetails);
+
+    // Raw JSON
+    const rawDetails = document.createElement('details'); rawDetails.style.marginTop='10px';
     const rawSummary = document.createElement('summary'); rawSummary.textContent = 'Raw JSON (click to expand)';
     rawDetails.appendChild(rawSummary);
     const rawPre = document.createElement('pre'); rawPre.textContent = JSON.stringify(item, null, 2);
@@ -205,8 +211,7 @@ function render(){
     const copyRawBtn = document.createElement('button'); copyRawBtn.className='btn'; copyRawBtn.textContent='Copy raw'; copyRawBtn.style.marginTop='6px';
     copyRawBtn.onclick = ()=>copyToClipboard(JSON.stringify(item, null, 2));
     rawDetails.appendChild(copyRawBtn);
-    rawDiv.appendChild(rawDetails);
-    col.appendChild(rawDiv);
+    col.appendChild(rawDetails);
 
     row.appendChild(col);
     card.appendChild(row);
@@ -214,49 +219,41 @@ function render(){
   }
 }
 
-/* -------------------------
-   Load data and auto-add Explanations
-   ------------------------- */
+/* Load JSON*/
 function loadData(parsed){
   if(!parsed) return;
   if(Array.isArray(parsed)) DATA = parsed;
   else if(typeof parsed === 'object') DATA = [parsed];
-  else { alert('JSON must be an array or object'); return; }
-
-  for(const rec of DATA){
-    const resp = rec.response || '';
-    rec.Explanations = extractExplanations(resp);
-  }
+  else { alert('JSON must be array or object'); return; }
   PAGE = 1;
   render();
 }
 
-/* -------------------------
-   CSV export (with decoded Explanations)
-   ------------------------- */
+/* CSV export: joins explanations with newline */
 function exportCSV(){
   if(DATA.length === 0) return alert('No data loaded');
-  const fields = ['id','answer','final_choice','ground_truth','Explanations'];
-  const rows = DATA.map(d=>({
-    id: d.id ?? '',
-    answer: d.answer ?? '',
-    final_choice: d.final_choice ?? '',
-    ground_truth: d.ground_truth ?? '',
-    Explanations: decodeEscapes(d.Explanations ?? '')
-  }));
+  const fields = ['id','answer','final_choice','ground_truth','explanations'];
+  const rows = DATA.map(d=>{
+    const exArr = Array.isArray(d.explanations) ? d.explanations : (Array.isArray(d.Explanations) ? d.Explanations : extractExplanationsFromResponse(d.response || ''));
+    return {
+      id: d.id ?? '',
+      answer: d.answer ?? '',
+      final_choice: d.final_choice ?? '',
+      ground_truth: d.ground_truth ?? '',
+      explanations: exArr.map(x=>decodeEscapes(String(x))).join('\\n')
+    };
+  });
   const esc = s => { if(s === null || s === undefined) return ''; const str = String(s).replace(/"/g,'""'); return `"${str}"`; };
   const lines = [fields.map(esc).join(',')];
   for(const r of rows) lines.push(fields.map(f=>esc(r[f])).join(','));
-  downloadBlob(lines.join('\n'), 'prontoqa_with_explanations.csv', 'text/csv;charset=utf-8');
+  downloadBlob(lines.join('\\n'), 'prontoqa_explanations_array.csv', 'text/csv;charset=utf-8');
 }
 
-/* -------------------------
-   File / paste / sample / controls
-   ------------------------- */
+/* File / paste / drag & drop handlers */
 document.getElementById('file-input').addEventListener('change', (ev)=>{
   const f = ev.target.files && ev.target.files[0]; if(!f) return;
   const reader = new FileReader(); reader.onload = (e) => {
-    try { const p = JSON.parse(e.target.result); loadData(p); } catch(err){ alert('Parse error: '+err.message); }
+    try{ const p = JSON.parse(e.target.result); loadData(p); } catch(err){ alert('Parse error: '+err.message); }
   };
   reader.readAsText(f,'utf-8');
 });
@@ -280,22 +277,33 @@ document.getElementById('search').addEventListener('input', ()=>{ PAGE=1; render
 document.addEventListener('dragover', (e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
 document.addEventListener('drop', (e)=>{ e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return; const r = new FileReader(); r.onload=(ev)=>{ try{ const p = JSON.parse(ev.target.result); loadData(p);}catch(ex){alert('Parse error: '+ex.message)} }; r.readAsText(f); });
 
-/* -------------------------
-   Sample record
-   ------------------------- */
+/* Sample data (your new structure) */
 function getSample(){
   return [{
-    "id":"ProntoQA_1",
-    "answer":"False",
-    "final_choice":"B",
-    "ground_truth":"B",
-    "response":"[SYSTEM] Anda adalah asisten ...\\n\\nDi bawah ini yang perlu Anda cari nilai kebenarannya:\\n\\nKonteks: \\nJompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus agresif. Setiap yumpus adalah dumpus. Dumpuses tidak kayu. Dumpuses adalah wumpuses. Wumpuses merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tanah. Setiap vumpus adalah zumpus. Zumpuses kecil. Zumpuses adalah rompuses. Max adalah yumpus.\\n\\nPertanyaan:\\nMax asam.\\n\\nPenjelasan: \\nMax adalah yumpus.\\nSetiap yumpus adalah dumpus.\\nMax adalah dumpus.\\nDumpuses adalah wumpus.\\nMax adalah wumpus.\\nSetiap wumpus adalah impus.\\nMax adalah impus.\\nSetiap impus tidak tembus pandang.\\nMax tidak tembus pandang.\\nImpuses adalah tumpus.\\nMax juga tumpus\\nTumpus tidak asam.\\nMax tidak asam.\\n\\n###\\n"
+    "id": "ProntoQA_1",
+    "answer": "False",
+    "final_choice": "B",
+    "explanations": [
+      "Max adalah yumpus.",
+      "Setiap yumpus adalah dumpus.",
+      "Max adalah dumpus.",
+      "Dumpuses adalah wumpus.",
+      "Max adalah wumpus.",
+      "Setiap wumpus adalah impus.",
+      "Max adalah impus.",
+      "Setiap impus tidak tembus pandang.",
+      "Max tidak tembus pandang.",
+      "Impuses adalah tumpus.",
+      "Max juga tumpus",
+      "Tumpuses tidak asam.",
+      "Max tidak asam."
+    ],
+    "ground_truth": "B",
+    "response": "[SYSTEM] ... \\n\\nPertanyaan:\\nMax asam.\\n\\nPenjelasan:\\nMax adalah yumpus.\\nSetiap yumpus adalah dumpus.\\nMax adalah dumpus.\\nDumpuses adalah wumpus.\\nMax adalah wumpus.\\nSetiap wumpus adalah impus.\\nMax adalah impus.\\nSetiap impus tidak tembus pandang.\\nMax tidak tembus pandang.\\nImpuses adalah tumpus.\\nMax juga tumpus\\nTumpuses tidak asam.\\nMax tidak asam.\\n###\\n"
   }];
 }
 
-/* -------------------------
-   Init with sample
-   ------------------------- */
+/* initialize with sample */
 loadData(getSample());
 </script>
 </body>

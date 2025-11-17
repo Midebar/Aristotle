@@ -1,0 +1,131 @@
+Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis dan pertanyaan mengenai konteks tersebut. Tugas Anda adalah menjawab pertanyaan tersebut dengan memilih salah satu nilai kebenaran True atau False berdasarkan konteks yang diberikan dengan memberikan penjelasan langkah-langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.
+
+------
+
+Contoh:
+
+Konteks:
+Impuses adalah besar. Alex adalah impus.
+
+Pertanyaan:
+Alex besar
+
+###
+**Penjelasan**:
+Alex adalah impus.
+Impuses adalah besar.
+Alex adalah besar.
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Setiap numpus adalah tembus pandang. Fae adalah numpus.
+
+Pertanyaan:
+Fae tidak tembus pandang
+
+###
+**Penjelasan**:
+Fae adalah numpus.
+Setiap numpus berwarna merah.
+Fae adalah tembus pandang
+
+**Jawaban**: False 
+###
+
+------
+
+
+Contoh:
+
+Konteks:
+Wumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.
+
+Pertanyaan:
+Alex oranye
+
+###
+**Penjelasan**:
+Alex adalah wumpus.
+Wumpuses adalah yumpuses.
+Alex adalah yumpus
+Setiap yumpus berwarnya oranye.
+Alex berwarna oranye.
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Setiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah temperamen. Wumpus adalah numpus. Zumpus adalah tidak bersifat agresif. Numpuses adalah bukan suku yang temperate. Setiap numpus adalah dumpus. Dumpuses adalah baik. Setiap dumpus adalah rompus. Setiap rompus bukan benda yang tidak tembus cahaya. Setiap rompus adalah vumpuses. Vumpuses bukanlah yang mudah dikelola. Vumpuses adalah jompus. Jompuses bukanlah pedas. Jompus adalah wumpus. Rex adalah vumpus.
+
+Pertanyaan:
+Rex tembus cahaya.
+
+###
+**Penjelasan**:
+Rex adalah vumpus.
+Vumpuses adalah jompus.
+Jompus adalah wumpus.
+Rex adalah wumpus.
+Wumpus adalah numpus.
+Rex adalah numpus.
+Setiap numpus adalah dumpus.
+Rex adalah dumpus.
+Setiap dumpus adalah rompus.
+Rex adalah rompus.
+Setiap rompus bukan benda yang tidak tembus cahaya.
+Rex tembus cahaya.
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Pertanyaan:
+Max asam.
+
+###
+**Penjelasan**:
+Max adalah yumpus.
+Setiap yumpus adalah dumpus.
+Max adalah dumpus.
+Dumpuses adalah wumpuses.
+Max adalah wumpus.
+Setiap wumpus adalah impus.
+Max adalah impus.
+Setiap impus tidak tembus pandang.
+Max tidak tembus pandang.
+Impuses adalah tumpuses.
+Max juga tumpus
+Tumpuses tidak asam.
+Max tidak asam.
+
+**Jawaban**: False 
+###
+
+------
+
+Di bawah ini yang perlu Anda cari nilai kebenarannya:
+
+Konteks: 
+[[PREMISES]]
+
+Pertanyaan:
+[[CONJECTURE]]
+
+###
+**Penjelasan**:
