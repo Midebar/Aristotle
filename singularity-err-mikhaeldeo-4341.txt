@@ -1,0 +1,49 @@
+WARNING: nv files may not be bound with --writable
+INFO:    Instance stats will not be available - system configuration does not support cgroup management.
+WARNING: --writable applies to temporary sandbox only, changes will not be written to the original image.
+INFO:    Converting SIF file to temporary sandbox...
+INFO:    instance started successfully
+[I 2025-11-17 18:46:31.078 ServerApp] jupyter_lsp | extension was successfully linked.
+[I 2025-11-17 18:46:31.083 ServerApp] jupyter_server_terminals | extension was successfully linked.
+[I 2025-11-17 18:46:31.087 ServerApp] jupyterlab | extension was successfully linked.
+[I 2025-11-17 18:46:31.091 ServerApp] notebook | extension was successfully linked.
+[I 2025-11-17 18:46:31.473 ServerApp] notebook_shim | extension was successfully linked.
+[I 2025-11-17 18:46:31.490 ServerApp] notebook_shim | extension was successfully loaded.
+[I 2025-11-17 18:46:31.565 ServerApp] jupyter_lsp | extension was successfully loaded.
+[I 2025-11-17 18:46:31.566 ServerApp] jupyter_server_terminals | extension was successfully loaded.
+[I 2025-11-17 18:46:31.569 LabApp] JupyterLab extension loaded from /root/venv/lib/python3.12/site-packages/jupyterlab
+[I 2025-11-17 18:46:31.569 LabApp] JupyterLab application directory is /root/venv/share/jupyter/lab
+[I 2025-11-17 18:46:31.569 LabApp] Extension Manager is 'pypi'.
+[I 2025-11-17 18:46:31.633 ServerApp] jupyterlab | extension was successfully loaded.
+[I 2025-11-17 18:46:31.636 ServerApp] notebook | extension was successfully loaded.
+[I 2025-11-17 18:46:31.637 ServerApp] The port 8888 is already in use, trying another port.
+[I 2025-11-17 18:46:31.637 ServerApp] The port 8889 is already in use, trying another port.
+[I 2025-11-17 18:46:31.637 ServerApp] The port 8890 is already in use, trying another port.
+[I 2025-11-17 18:46:31.637 ServerApp] The port 8891 is already in use, trying another port.
+[I 2025-11-17 18:46:31.637 ServerApp] Serving notebooks from local directory: /root
+[I 2025-11-17 18:46:31.637 ServerApp] Jupyter Server 2.17.0 is running at:
+[I 2025-11-17 18:46:31.638 ServerApp] http://dgx1:8892/tree?token=cb73ca3fc4d6011d15c94e48e24c10b654253b12236d3510
+[I 2025-11-17 18:46:31.638 ServerApp]     http://127.0.0.1:8892/tree?token=cb73ca3fc4d6011d15c94e48e24c10b654253b12236d3510
+[I 2025-11-17 18:46:31.638 ServerApp] Use Control-C to stop this server and shut down all kernels (twice to skip confirmation).
+[W 2025-11-17 18:46:31.646 ServerApp] No web browser found: Error('could not locate runnable browser').
+[C 2025-11-17 18:46:31.646 ServerApp] 
+    
+    To access the server, open this file in a browser:
+        file:///root/.local/share/jupyter/runtime/jpserver-27-open.html
+    Or copy and paste one of these URLs:
+        http://dgx1:8892/tree?token=cb73ca3fc4d6011d15c94e48e24c10b654253b12236d3510
+        http://127.0.0.1:8892/tree?token=cb73ca3fc4d6011d15c94e48e24c10b654253b12236d3510
+[I 2025-11-17 18:46:31.664 ServerApp] Skipped non-installed server(s): basedpyright, bash-language-server, dockerfile-language-server-nodejs, javascript-typescript-langserver, jedi-language-server, julia-language-server, pyrefly, pyright, python-language-server, python-lsp-server, r-languageserver, sql-language-server, texlab, typescript-language-server, unified-language-server, vscode-css-languageserver-bin, vscode-html-languageserver-bin, vscode-json-languageserver-bin, yaml-language-server
+[W 2025-11-17 18:47:00.126 ServerApp] Clearing invalid/expired login cookie username-127-0-0-1-8892
+[W 2025-11-17 18:47:00.126 ServerApp] wrote error: 'Forbidden'
+    Traceback (most recent call last):
+      File "/root/venv/lib/python3.12/site-packages/tornado/web.py", line 1846, in _execute
+        result = method(*self.path_args, **self.path_kwargs)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      File "/root/venv/lib/python3.12/site-packages/tornado/web.py", line 3363, in wrapper
+        url = self.get_login_url()
+              ^^^^^^^^^^^^^^^^^^^^
+      File "/root/venv/lib/python3.12/site-packages/jupyter_server/base/handlers.py", line 786, in get_login_url
+        raise web.HTTPError(403)
+    tornado.web.HTTPError: HTTP 403: Forbidden
+[W 2025-11-17 18:47:00.128 ServerApp] 403 GET /api/kernels/22698bb9-1f3d-43f0-8e3c-6169d112a7c0?1763380020068 (@10.119.105.197) 3.02ms referer=http://127.0.0.1:8892/notebooks/multiple_choice.ipynb

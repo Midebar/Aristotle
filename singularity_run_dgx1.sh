@@ -1,6 +1,8 @@
 #!/bin/bash
 # Run it with sbatch file_name, check it with scontrol show job <job_id>
 # ssh -p 6443 mikhaeldeo@host-ai.cs.ui.ac.id
+# Then ssh -NfL localhost:<PORT>:10.119.105.199:<PORT> -p 6443 mikhaeldeo@host-ai.cs.ui.ac.id after getting the PORT and NODE_IP from scontrol show job <job_id>
+# To access the jupyter notebook, open the browser and go to localhost:<PORT>
 #SBATCH --job-name=singularity
 #SBATCH --output=singularity-out-%u-%j.txt
 #SBATCH --error=singularity-err-%u-%j.txt
