@@ -1,3 +1,23 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:7a5886c7d6f41f72916354cd8d2f67f110afbd7a0c02d9ac824ec58ee6a0b993
-size 1064
+[
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "",
+      "Translated_Conjecture": ""
+    },
+    "decomposed_process": {},
+    "normalized_context": {
+      "Fact": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "and_or": null,
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "",
+    "negated_label": "false",
+    "sos_list": "",
+    "ground_truth": "A"
+  }
+]

@@ -1,3 +1,134 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4299866634c51d27b0a8acf91051fd6e1a2413cbb011e4de3765f114d6e22e07
-size 5012
+Deskripsi Tugas: Anda diberikan konteks dan konjektur. Tugasnya adalah:
+1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan
+2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal
+3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.
+4) parsing konjektur ke dalam bentuk logika
+5) jangan mencoba menyelesaikan konjektur atau permasalahan, cukup melakukan perintah parsing yang dibutuhkan
+6) berikan penanda ***Bentuk Akhir*** sebagai awalan dan ***Akhir Blok*** sebagai akhiran output dari tugas Anda.
+7) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.
+
+------
+
+Berikut adalah contohnya:
+Konteks:
+Setiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses itu nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Rompuses adalah zumpus. Alex adalah tumpus.
+
+Konjektur:
+Alex bukan pemalu.
+
+###
+***Bentuk Akhir***
+
+Fakta:
+Alex adalah tumpus ::: Tumpus(Alex, True)
+
+Aturan:
+Jompus($x, True) >>> Eksentris($x, True)
+Jompus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Transparan($x, False)
+Wumpus($x, True) >>> Tumpus($x, True)
+Tumpus($x, True) >>> Nakal($x, True)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Dingin($x, True)
+Vumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Oranye($x, True)
+Yumpus($x, True) >>> Numpus($x, True)
+Numpus($x, True) >>> Membosankan($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Pemalu($x, False)
+Impus($x, True) >>> Pemalu($x, True) 
+Dumpus($x, True) >>> Rompus($x, True)
+Rompus($x, True) >>> Cair($x, False)
+Rompus($x, True) >>> Zumpus($x, False)
+
+Konjektur:
+Pemalu(Alex, False)
+
+***Akhir Blok***
+
+------
+
+Berikut adalah contohnya:
+Konteks:
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Konjektur:
+Max asam.
+
+###
+***Bentuk Akhir***
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Pemalu($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Agresif($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Kayu($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Merah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> TembusPandang($x, False)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Asam($x, True)
+Tumpus($x, True) >>> Asam($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Tanah($x, False)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Kecil($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Konjektur:
+Asam(Max, True)
+
+***Akhir Blok***
+
+------
+
+Berikut adalah contohnya:
+Konteks:
+Zumpuses tidak terang. Zumpuses adalah yumpuses. Setiap numpus bersifat garang. Numpuses adalah dumpus. Dumpuses tidak cerah. Dumpuses adalah wumpuses. Wumpuses marah. Setiap wumpus adalah impus. Setiap impus itu bersifat feisty. Impuses adalah tumpuses. Setiap yumpus berbuah. Tumpuses merupakan objek dengan suhu yang bukan moderat. Tumpuses adalah vumpuses. Vumpuses tidak bahagia. Setiap vumpus adalah Jompus. Jompuses tidak baik hati. Jompuses adalah merah. Timothy adalah yumpus.
+
+Konjektur:
+Timothy adalah tidak tembus pandang.
+
+###
+***Bentuk Akhir***
+
+Fakta:
+Timothy adalah yumpus ::: Yumpus(Timothy, True)
+
+Aturan:
+Zumpus($x, True) >>> Terang($x, False)
+Zumpus($x, True) >>> Yumpus($x, True)
+Numpus($x, True) >>> Garang($x, True)
+Numpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Cerah($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Marah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> Feisty($x, True)
+Impus($x, True) >>> Tumpus($x, True)
+Yumpus($x, True) >>> Berbuah($x, True)
+Tumpus($x, True) >>> Moderat($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Bahagia($x, False)
+Vumpus($x, True) >>> Jompus($x, True)
+Jompus($x, True) >>> BaikHati($x, False)
+Jompus($x, True) >>> Merah($x, True)
+
+Konjektur:
+TembusPandang(Timothy, False)
+
+***Akhir Blok***
+
+-----
+
+Di bawah ini adalah yang perlu Anda terjemahkan:
+Konteks:
+[[PREMISES]]
+
+Konjektur:
+[[CONJECTURE]]

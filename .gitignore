@@ -1,3 +1,5 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:4c2a466a645460bf939b88fe2e390ab9c2c679590ba2ec8d2e38eb4327212568
-size 44
+__pycache__/
+venv/
+.env
+.vscode/
+LLM_MODELS*

@@ -1,3 +1,25 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:d59896f76385941647633d75fc8bd66dfa246ca4bd4cc8a2a947a0eac4f7d90e
-size 3874
+[
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Vumpus($x, True)",
+      "Translated_Conjecture": "Transparan(Wren, True)\n-----\nTerima kasih atas kerjasama Anda. Mari kita lanjutkan dengan mengeksekusi tugas tersebut. \n\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n-----"
+    },
+    "normalized_context": {
+      "Fact": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "and_or": "1. - \\(\\forall x \\left(Jompus(x, False) \\lor Pemalu(x, False)\\right)\\)\n2. - \\(\\forall x \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\\)\n3. - \\(\\forall x \\left(Yumpus(x, False) \\lor Agresif(x, True)\\right)\\)\n4. - \\(\\forall x \\left(Yumpus(x, False) \\lor Dumpus(x, True)\\right)\\)\n5. - \\(\\forall x \\left(Dumpus(x, False) \\lor Kayu(x, False)\\right)\\)\n6. - \\(\\forall x \\left(Dumpus(x, False) \\lor Wumpus(x, True)\\right)\\)\n7. - \\(\\forall x \\left(Wumpus(x, False) \\lor Merah(x, True)\\right)\\)\n8. - \\(\\forall x \\left(Wumpus(x, False) \\lor Impus(x, True)\\right)\\)\n9. - \\(\\forall x \\left(Impus(x, False) \\lor TembusPandang(x, True)\\right)\\)\n10. - \\(\\forall x \\left(Impus(x, False) \\lor Tumpus(x, True)\\right)\\)\n11. - \\(\\forall x \\left(Numpus(x, False) \\lor Asam(x, True)\\right)\\)\n12. - \\(\\forall x \\left(Tumpus(x, False) \\lor Asam(x, False)\\right)\\)\n13. - \\(\\forall x \\left(Tumpus(x, False) \\lor Vumpus(x, True)\\right)\\)\n14. - \\(\\forall x \\left(Vumpus(x, False) \\lor Tanah(x, True)\\right)\\)\n15. - \\(\\forall x \\left(Vumpus(x, False) \\lor Zumpus(x, True)\\right)\\)\n16. - \\(\\forall x \\left(Zumpus(x, False) \\lor Kecil(x, True)\\right)\\)\n17. - \\(\\forall x \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\)",
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "Transparan(Wren, True)",
+    "negated_label": "True",
+    "reasoning_step": "",
+    "ground_truth": "A",
+    "final_answer": "No complement found in the context.",
+    "final_choice": "No final answer found in the text.",
+    "search_round": 0
+  }
+]

@@ -1,3 +1,310 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:6f57640feb0ceca53fdc800cadaa10292d92d729346767d1347c986e4bb0e1a0
-size 15197
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ProntoQA Viewer - Naive Prompting</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--muted:#6b7280}
+  body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; margin:0;background:var(--bg);color:#0f172a}
+  .wrap{max-width:1100px;margin:18px auto;padding:18px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  h1{margin:0;font-size:20px}
+  .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,0.06)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type="text"], textarea, select{padding:8px;border:1px solid #e6edf3;border-radius:8px;font-size:13px}
+  .btn{padding:8px 10px;border-radius:8px;border:1px solid #d1d5e8;background:#fff;cursor:pointer;font-size:13px}
+  .btn.primary{background:#2563eb;color:#fff;border-color:transparent}
+  .small{font-size:13px;color:var(--muted)}
+  .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #eef2f8}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .col{flex:1}
+  pre{white-space:pre-wrap;word-break:break-word;background:#fbfdff;padding:10px;border-radius:8px;border:1px solid #f0f4ff;font-size:13px}
+  details summary{cursor:pointer;font-weight:600;padding:8px;border-radius:8px}
+  .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700;font-size:12px}
+  .badge.A{background:#ecfdf5;color:#065f46}
+  .badge.B{background:#fffbeb;color:#92400e}
+  .badge.C{background:#fff1f2;color:#9f1239}
+  ol.explanations{padding-left:18px;margin:6px 0}
+  ol.explanations li{margin:6px 0}
+  @media (max-width:900px){ .row{flex-direction:column} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ProntoQA Viewer - Naive Prompting</h1>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <input id="file-input" type="file" accept="application/json" class="btn" />
+      <button id="paste-json" class="btn">Paste JSON</button>
+      <button id="load-sample" class="btn">Load sample</button>
+
+      <input id="search" type="text" placeholder="Search id / question / explanation..." style="min-width:260px" />
+      <select id="pageSize">
+        <option value="5">5 / page</option>
+        <option value="10" selected>10 / page</option>
+        <option value="25">25 / page</option>
+      </select>
+
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="export-all" class="btn primary">Export CSV</button>
+        <button id="download-snapshot" class="btn">Snapshot</button>
+      </div>
+    </div>
+
+    <div class="small" id="status">Loaded: 0 items</div>
+    <div id="list" style="margin-top:12px"></div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+      <button id="prev" class="btn">Prev</button>
+      <div class="small" id="page-info">Page 1 / 1</div>
+      <button id="next" class="btn">Next</button>
+      <div style="flex:1"></div>
+      <div class="small" id="range-info"></div>
+    </div>
+  </div>
+</div>
+
+<!-- paste modal -->
+<div id="paste-modal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+  <div style="background:#fff;padding:16px;border-radius:10px;max-width:900px;width:90%;box-shadow:0 10px 38px rgba(10,20,40,0.3)">
+    <h3 style="margin-top:0">Paste JSON</h3>
+    <textarea id="paste-area" rows="12" style="width:100%;font-family:monospace"></textarea>
+    <div style="margin-top:8px;text-align:right">
+      <button id="paste-cancel" class="btn">Cancel</button>
+      <button id="paste-load" class="btn primary">Load</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* State */
+let DATA = [], PAGE = 1, PAGE_SIZE = 10;
+const listNode = document.getElementById('list');
+const statusNode = document.getElementById('status');
+const pageInfo = document.getElementById('page-info');
+const rangeInfo = document.getElementById('range-info');
+
+/* Helpers */
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function downloadBlob(content, filename, type='text/plain;charset=utf-8'){ const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function copyToClipboard(s){ if(!navigator.clipboard) return alert('Clipboard not available'); navigator.clipboard.writeText(s).catch(e=>alert('Copy failed: '+e.message)); }
+
+/* decode escapes so any "\n" or "\\n" become real newlines */
+function decodeEscapes(s){
+  if(typeof s !== 'string') return s || '';
+  let out = s;
+  out = out.replace(/\\\\r/g, '\r').replace(/\\\\n/g, '\n').replace(/\\\\t/g, '\t');
+  out = out.replace(/\\r/g, '\r').replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+  out = out.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  return out;
+}
+
+/* If explanations array missing, fallback to extracting last "Penjelasan" block from response */
+function extractExplanationsFromResponse(responseText){
+  if(!responseText || typeof responseText !== 'string') return [];
+  const lower = responseText.toLowerCase();
+  const needle = 'penjelasan';
+  const idx = lower.lastIndexOf(needle);
+  if(idx === -1) return [];
+  const tail = responseText.slice(idx);
+  const re = /^(Penjelasan:?\s*\n[\s\S]*?)(?=\n\s*#{1,}|[\r\n]\s*-{2,}|[\r\n]\s*Contoh:|$)/i;
+  const m = tail.match(re);
+  let captured = m ? m[1] : tail;
+  captured = captured.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // remove leading "Penjelasan:" label
+  captured = captured.replace(/^[Pp]enjelasan:?\s*\n/, '');
+  // split into lines, filter empties
+  const decoded = decodeEscapes(captured);
+  return decoded.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+}
+
+/* Render page */
+function render(){
+  listNode.innerHTML = '';
+  PAGE_SIZE = Number(document.getElementById('pageSize').value || 10);
+  const q = document.getElementById('search').value.trim().toLowerCase();
+
+  const filtered = DATA.filter(d=>{
+    if(!q) return true;
+    const hay = [
+      d.id,
+      d.response,
+      Array.isArray(d.explanations) ? d.explanations.join(' ') : (d.Explanations || ''),
+      d.answer,
+      d.final_choice,
+      d.ground_truth
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(PAGE > totalPages) PAGE = totalPages;
+  const start = (PAGE-1)*PAGE_SIZE, end = Math.min(start + PAGE_SIZE, total);
+  const pageItems = filtered.slice(start, end);
+
+  pageInfo.textContent = 'Page ' + PAGE + ' / ' + totalPages;
+  rangeInfo.textContent = `Showing ${start+1} - ${end} of ${total}`;
+  statusNode.textContent = `Loaded: ${DATA.length} items`;
+
+  for(const item of pageItems){
+    const card = document.createElement('div'); card.className = 'card';
+    const row = document.createElement('div'); row.className = 'row';
+    const col = document.createElement('div'); col.className = 'col';
+
+    // header
+    col.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:700">${escapeHtml(item.id || '')}</div>
+        <div class="small">${escapeHtml(item.answer ? ('Answer: ' + item.answer) : '')}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="badge ${item.ground_truth || '-'}">${escapeHtml(item.ground_truth || '-')}</div>
+        <div style="margin-top:6px;font-size:13px">${escapeHtml('Final choice: ' + (item.final_choice||'-'))}</div>
+      </div>
+    </div>`;
+
+    // Response (collapsed)
+    const respDetails = document.createElement('details'); respDetails.style.marginTop = '10px';
+    const respSummary = document.createElement('summary'); respSummary.textContent = 'Response (click to expand)';
+    respDetails.appendChild(respSummary);
+    const respPre = document.createElement('pre'); respPre.textContent = decodeEscapes(item.response || '');
+    respDetails.appendChild(respPre);
+    const respBtns = document.createElement('div'); respBtns.style.marginTop='6px';
+    const copyResp = document.createElement('button'); copyResp.className='btn'; copyResp.textContent='Copy response';
+    copyResp.onclick = ()=>copyToClipboard(decodeEscapes(item.response || ''));
+    respBtns.appendChild(copyResp);
+    respDetails.appendChild(respBtns);
+    col.appendChild(respDetails);
+
+    // Explanations (collapsed) — prefer item.explanations array if available
+    const exDetails = document.createElement('details'); exDetails.style.marginTop='10px';
+    const exSummary = document.createElement('summary'); exSummary.textContent = 'Explanations (click to expand)';
+    exDetails.appendChild(exSummary);
+
+    const explanationsArray = Array.isArray(item.explanations) ? item.explanations : (item.Explanations ? (Array.isArray(item.Explanations) ? item.Explanations : [item.Explanations]) : extractExplanationsFromResponse(item.response || ''));
+    // render numbered list
+    const ol = document.createElement('ol'); ol.className = 'explanations';
+    for(const s of explanationsArray){
+      const li = document.createElement('li');
+      li.textContent = decodeEscapes(String(s));
+      ol.appendChild(li);
+    }
+    exDetails.appendChild(ol);
+    const exBtns = document.createElement('div'); exBtns.style.marginTop='6px';
+    const copyEx = document.createElement('button'); copyEx.className='btn'; copyEx.textContent='Copy Explanations (newline)';
+    copyEx.onclick = ()=>copyToClipboard(explanationsArray.map(x=>decodeEscapes(String(x))).join('\n'));
+    exBtns.appendChild(copyEx);
+    exDetails.appendChild(exBtns);
+    col.appendChild(exDetails);
+
+    // Raw JSON
+    const rawDetails = document.createElement('details'); rawDetails.style.marginTop='10px';
+    const rawSummary = document.createElement('summary'); rawSummary.textContent = 'Raw JSON (click to expand)';
+    rawDetails.appendChild(rawSummary);
+    const rawPre = document.createElement('pre'); rawPre.textContent = JSON.stringify(item, null, 2);
+    rawDetails.appendChild(rawPre);
+    const copyRawBtn = document.createElement('button'); copyRawBtn.className='btn'; copyRawBtn.textContent='Copy raw'; copyRawBtn.style.marginTop='6px';
+    copyRawBtn.onclick = ()=>copyToClipboard(JSON.stringify(item, null, 2));
+    rawDetails.appendChild(copyRawBtn);
+    col.appendChild(rawDetails);
+
+    row.appendChild(col);
+    card.appendChild(row);
+    listNode.appendChild(card);
+  }
+}
+
+/* Load JSON*/
+function loadData(parsed){
+  if(!parsed) return;
+  if(Array.isArray(parsed)) DATA = parsed;
+  else if(typeof parsed === 'object') DATA = [parsed];
+  else { alert('JSON must be array or object'); return; }
+  PAGE = 1;
+  render();
+}
+
+/* CSV export: joins explanations with newline */
+function exportCSV(){
+  if(DATA.length === 0) return alert('No data loaded');
+  const fields = ['id','answer','final_choice','ground_truth','explanations'];
+  const rows = DATA.map(d=>{
+    const exArr = Array.isArray(d.explanations) ? d.explanations : (Array.isArray(d.Explanations) ? d.Explanations : extractExplanationsFromResponse(d.response || ''));
+    return {
+      id: d.id ?? '',
+      answer: d.answer ?? '',
+      final_choice: d.final_choice ?? '',
+      ground_truth: d.ground_truth ?? '',
+      explanations: exArr.map(x=>decodeEscapes(String(x))).join('\\n')
+    };
+  });
+  const esc = s => { if(s === null || s === undefined) return ''; const str = String(s).replace(/"/g,'""'); return `"${str}"`; };
+  const lines = [fields.map(esc).join(',')];
+  for(const r of rows) lines.push(fields.map(f=>esc(r[f])).join(','));
+  downloadBlob(lines.join('\\n'), 'prontoqa_explanations_array.csv', 'text/csv;charset=utf-8');
+}
+
+/* File / paste / drag & drop handlers */
+document.getElementById('file-input').addEventListener('change', (ev)=>{
+  const f = ev.target.files && ev.target.files[0]; if(!f) return;
+  const reader = new FileReader(); reader.onload = (e) => {
+    try{ const p = JSON.parse(e.target.result); loadData(p); } catch(err){ alert('Parse error: '+err.message); }
+  };
+  reader.readAsText(f,'utf-8');
+});
+document.getElementById('paste-json').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='flex'; document.getElementById('paste-area').value=''; });
+document.getElementById('paste-cancel').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='none'; });
+document.getElementById('paste-load').addEventListener('click', ()=>{
+  const txt = document.getElementById('paste-area').value;
+  try{ const p = JSON.parse(txt); loadData(p); document.getElementById('paste-modal').style.display='none'; }
+  catch(e){ alert('Invalid JSON: ' + e.message); }
+});
+document.getElementById('load-sample').addEventListener('click', ()=> loadData(getSample()) );
+document.getElementById('export-all').addEventListener('click', exportCSV);
+document.getElementById('download-snapshot').addEventListener('click', ()=>{
+  const html = `<html><head><meta charset="utf-8"><title>snapshot</title></head><body><pre>${escapeHtml(JSON.stringify(DATA,null,2))}</pre></body></html>`;
+  downloadBlob(html,'snapshot.html','text/html;charset=utf-8');
+});
+document.getElementById('prev').addEventListener('click', ()=>{ if(PAGE>1) PAGE--; render(); });
+document.getElementById('next').addEventListener('click', ()=>{ PAGE++; render(); });
+document.getElementById('search').addEventListener('input', ()=>{ PAGE=1; render(); });
+
+document.addEventListener('dragover', (e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+document.addEventListener('drop', (e)=>{ e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return; const r = new FileReader(); r.onload=(ev)=>{ try{ const p = JSON.parse(ev.target.result); loadData(p);}catch(ex){alert('Parse error: '+ex.message)} }; r.readAsText(f); });
+
+/* Sample data (your new structure) */
+function getSample(){
+  return [{
+    "id": "ProntoQA_1",
+    "answer": "False",
+    "final_choice": "B",
+    "explanations": [
+      "Max adalah yumpus.",
+      "Setiap yumpus adalah dumpus.",
+      "Max adalah dumpus.",
+      "Dumpuses adalah wumpus.",
+      "Max adalah wumpus.",
+      "Setiap wumpus adalah impus.",
+      "Max adalah impus.",
+      "Setiap impus tidak tembus pandang.",
+      "Max tidak tembus pandang.",
+      "Impuses adalah tumpus.",
+      "Max juga tumpus",
+      "Tumpuses tidak asam.",
+      "Max tidak asam."
+    ],
+    "ground_truth": "B",
+    "response": "[SYSTEM] ... \\n\\nPertanyaan:\\nMax asam.\\n\\nPenjelasan:\\nMax adalah yumpus.\\nSetiap yumpus adalah dumpus.\\nMax adalah dumpus.\\nDumpuses adalah wumpus.\\nMax adalah wumpus.\\nSetiap wumpus adalah impus.\\nMax adalah impus.\\nSetiap impus tidak tembus pandang.\\nMax tidak tembus pandang.\\nImpuses adalah tumpus.\\nMax juga tumpus\\nTumpuses tidak asam.\\nMax tidak asam.\\n###\\n"
+  }];
+}
+
+/* initialize with sample */
+loadData(getSample());
+</script>
+</body>
+</html>

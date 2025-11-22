@@ -1,3 +1,277 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1cc401882769f047aaa3404634fb6f16fd8e1c3a973195809c8ba2e371b0f345
-size 16989
+Loading translation file:  manual_prompts_translated\ProntoQA\naive_prompting_explanations.txt
+SAMPLE PCT: 0
+Loaded 1 examples from dev split.
+Number of batch:  1
+Running example id:  ProntoQA_328
+
+Naive prompting: Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis, pertanyaan mengenai konteks tersebut, dan juga penjelasan mengenai langkah-langkah untuk mencapai nilai kebenaran/jawaban dari pertanyaan tersebut. Tugas Anda adalah menjawab pertanyaan tersebut dengan memilih salah satu nilai kebenaran True atau False berdasarkan konteks yang diberikan dengan memberikan penjelasan langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.
+
+------
+
+Contoh:
+
+Konteks:
+Wumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.
+
+Pertanyaan:
+Alex oranye
+
+Penjelasan:
+Alex adalah wumpus.
+Wumpuses adalah yumpuses.
+Alex adalah yumpus
+Setiap yumpus berwarnya oranye.
+Alex berwarna oranye.
+
+###
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Setiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah temperamen. Wumpus adalah numpus. Zumpus adalah tidak bersifat agresif. Numpuses adalah bukan suku yang temperate. Setiap numpus adalah dumpus. Dumpuses adalah baik. Setiap dumpus adalah rompus. Setiap rompus bukan benda yang tidak tembus cahaya. Setiap rompus adalah vumpuses. Vumpuses bukanlah yang mudah dikelola. Vumpuses adalah jompus. Jompuses bukanlah pedas. Jompus adalah wumpus. Rex adalah vumpus.
+
+Pertanyaan:
+Rex tembus cahaya.
+
+Penjelasan:
+Rex adalah vumpus.
+Vumpuses adalah jompus.
+Jompus adalah wumpus.
+Rex adalah wumpus.
+Wumpus adalah numpus.
+Rex adalah numpus.
+Setiap numpus adalah dumpus.
+Rex adalah dumpus.
+Setiap dumpus adalah rompus.
+Rex adalah rompus.
+Setiap rompus bukan benda yang tidak tembus cahaya.
+Rex tembus cahaya.
+
+###
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Pertanyaan:
+Max asam.
+
+Penjelasan:
+Max adalah yumpus.
+Setiap yumpus adalah dumpus.
+Max adalah dumpus.
+Dumpuses adalah wumpuses.
+Max adalah wumpus.
+Setiap wumpus adalah impus.
+Max adalah impus.
+Setiap impus tidak tembus pandang.
+Max tidak tembus pandang.
+Impuses adalah tumpuses.
+Max juga tumpus
+Tumpuses tidak asam.
+Max tidak asam.
+
+###
+**Jawaban**: False 
+###
+
+------
+
+Di bawah ini yang perlu Anda cari nilai kebenarannya:
+
+Konteks: 
+Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.
+
+Pertanyaan:
+Wren adalah transparan.
+
+
+
+Naive prompting response: [SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.
+
+[USER] Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis, pertanyaan mengenai konteks tersebut, dan juga penjelasan mengenai langkah-langkah untuk mencapai nilai kebenaran/jawaban dari pertanyaan tersebut. Tugas Anda adalah menjawab pertanyaan tersebut dengan memilih salah satu nilai kebenaran True atau False berdasarkan konteks yang diberikan dengan memberikan penjelasan langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.
+
+------
+
+Contoh:
+
+Konteks:
+Wumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.
+
+Pertanyaan:
+Alex oranye
+
+Penjelasan:
+Alex adalah wumpus.
+Wumpuses adalah yumpuses.
+Alex adalah yumpus
+Setiap yumpus berwarnya oranye.
+Alex berwarna oranye.
+
+###
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Setiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah temperamen. Wumpus adalah numpus. Zumpus adalah tidak bersifat agresif. Numpuses adalah bukan suku yang temperate. Setiap numpus adalah dumpus. Dumpuses adalah baik. Setiap dumpus adalah rompus. Setiap rompus bukan benda yang tidak tembus cahaya. Setiap rompus adalah vumpuses. Vumpuses bukanlah yang mudah dikelola. Vumpuses adalah jompus. Jompuses bukanlah pedas. Jompus adalah wumpus. Rex adalah vumpus.
+
+Pertanyaan:
+Rex tembus cahaya.
+
+Penjelasan:
+Rex adalah vumpus.
+Vumpuses adalah jompus.
+Jompus adalah wumpus.
+Rex adalah wumpus.
+Wumpus adalah numpus.
+Rex adalah numpus.
+Setiap numpus adalah dumpus.
+Rex adalah dumpus.
+Setiap dumpus adalah rompus.
+Rex adalah rompus.
+Setiap rompus bukan benda yang tidak tembus cahaya.
+Rex tembus cahaya.
+
+###
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Konteks:
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.
+
+Pertanyaan:
+Max asam.
+
+Penjelasan:
+Max adalah yumpus.
+Setiap yumpus adalah dumpus.
+Max adalah dumpus.
+Dumpuses adalah wumpuses.
+Max adalah wumpus.
+Setiap wumpus adalah impus.
+Max adalah impus.
+Setiap impus tidak tembus pandang.
+Max tidak tembus pandang.
+Impuses adalah tumpuses.
+Max juga tumpus
+Tumpuses tidak asam.
+Max tidak asam.
+
+###
+**Jawaban**: False 
+###
+
+------
+
+Di bawah ini yang perlu Anda cari nilai kebenarannya:
+
+Konteks: 
+Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.
+
+Pertanyaan:
+Wren adalah transparan.
+Penjelasan:
+Wren adalah wumpus.
+Wumpuses adalah numpus.
+Wren adalah numpus.
+Setiap numpus adalah logam.
+Wren adalah logam.
+Numpuses adalah yumpus.
+Wren adalah yumpus.
+Setiap yumpus adalah cerah.
+Wren adalah cerah.
+Jompuses bukan pahit.
+Wren adalah jompus.
+Jompus adalah zumpus.
+Wren adalah zumpus.
+Setiap zumpus adalah transparan.
+Wren adalah transparan.
+Zumpuses adalah rompus.
+Wren adalah rompus.
+Setiap rompus terbuat dari tanah.
+Wren terbuat dari tanah.
+Rompuses adalah impus.
+Wren adalah impus.
+Setiap impus adalah baik.
+Wren adalah baik.
+Setiap impus adalah dumpus.
+Wren adalah dumpus.
+Dumpuses bukan panas.
+Wren bukan panas.
+Dumpuses adalah vumpus.
+Wren adalah vumpus.
+Setiap tumpus bukan transparan.
+Wren adalah tumpus.
+Wren bukan transparan.
+
+###
+**Jawaban**: False 
+###
+
+# Jawaban
+False
+
+# Penjelasan
+Wren adalah wumpus.
+Wumpuses adalah numpus.
+Wren adalah numpus.
+Setiap numpus adalah logam.
+Wren adalah logam.
+Numpuses adalah yumpus.
+Wren adalah yumpus.
+Setiap yumpus adalah cerah.
+Wren adalah cerah.
+Jompuses bukan pahit.
+Wren adalah jompus.
+Jompus adalah zumpus.
+Wren adalah zumpus.
+Setiap zumpus adalah transparan.
+Wren adalah transparan.
+Zumpuses adalah rompus.
+Wren adalah rompus.
+Setiap rompus terbuat dari tanah.
+Wren terbuat dari tanah.
+Rompuses adalah impus.
+Wren adalah impus.
+Setiap impus adalah baik.
+Wren adalah baik.
+Setiap impus adalah dumpus.
+Wren adalah dumpus.
+Dumpuses bukan panas.
+Wren bukan panas.
+Dumpuses adalah vumpus.
+Wren adalah vumpus.
+Setiap tumpus bukan transparan.
+Wren adalah tumpus.
+Wren bukan
+
+
+
+CHOSEN BLOCK:
+
+<re.Match object; span=(1285, 1304), match='**Jawaban**: False '>
+
+END OF CHOSEN BLOCK
+
+
+Group 0: **Jawaban**: False
+Group 1: False
+Saving output for record: {'id': 'ProntoQA_328', 'prompt': 'Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis, pertanyaan mengenai konteks tersebut, dan juga penjelasan mengenai langkah-langkah untuk mencapai nilai kebenaran/jawaban dari pertanyaan tersebut. Tugas Anda adalah menjawab pertanyaan tersebut dengan memilih salah satu nilai kebenaran True atau False berdasarkan konteks yang diberikan dengan memberikan penjelasan langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.\n\n------\n\nContoh:\n\nKonteks:\nWumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.\n\nPertanyaan:\nAlex oranye\n\nPenjelasan:\nAlex adalah wumpus.\nWumpuses adalah yumpuses.\nAlex adalah yumpus\nSetiap yumpus berwarnya oranye.\nAlex berwarna oranye.\n\n###\n**Jawaban**: True \n###\n\n------\n\nContoh:\n\nKonteks:\nSetiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah temperamen. Wumpus adalah numpus. Zumpus adalah tidak bersifat agresif. Numpuses adalah bukan suku yang temperate. Setiap numpus adalah dumpus. Dumpuses adalah baik. Setiap dumpus adalah rompus. Setiap rompus bukan benda yang tidak tembus cahaya. Setiap rompus adalah vumpuses. Vumpuses bukanlah yang mudah dikelola. Vumpuses adalah jompus. Jompuses bukanlah pedas. Jompus adalah wumpus. Rex adalah vumpus.\n\nPertanyaan:\nRex tembus cahaya.\n\nPenjelasan:\nRex adalah vumpus.\nVumpuses adalah jompus.\nJompus adalah wumpus.\nRex adalah wumpus.\nWumpus adalah numpus.\nRex adalah numpus.\nSetiap numpus adalah dumpus.\nRex adalah dumpus.\nSetiap dumpus adalah rompus.\nRex adalah rompus.\nSetiap rompus bukan benda yang tidak tembus cahaya.\nRex tembus cahaya.\n\n###\n**Jawaban**: True \n###\n\n------\n\nContoh:\n\nKonteks:\nJompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nPertanyaan:\nMax asam.\n\nPenjelasan:\nMax adalah yumpus.\nSetiap yumpus adalah dumpus.\nMax adalah dumpus.\nDumpuses adalah wumpuses.\nMax adalah wumpus.\nSetiap wumpus adalah impus.\nMax adalah impus.\nSetiap impus tidak tembus pandang.\nMax tidak tembus pandang.\nImpuses adalah tumpuses.\nMax juga tumpus\nTumpuses tidak asam.\nMax tidak asam.\n\n###\n**Jawaban**: False \n###\n\n------\n\nDi bawah ini yang perlu Anda cari nilai kebenarannya:\n\nKonteks: \nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nPertanyaan:\nWren adalah transparan.\n', 'response': '[SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.\n\n[USER] Deskripsi Tugas: Anda diberikan sebuah konteks yang berisi sekumpulan premis, pertanyaan mengenai konteks tersebut, dan juga penjelasan mengenai langkah-langkah untuk mencapai nilai kebenaran/jawaban dari pertanyaan tersebut. Tugas Anda adalah menjawab pertanyaan tersebut dengan memilih salah satu nilai kebenaran True atau False berdasarkan konteks yang diberikan dengan memberikan penjelasan langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.\n\n------\n\nContoh:\n\nKonteks:\nWumpuses adalah besar.  Wumpuses adalah yumpuses. Setiap yumpus berwarna oranye. Alex adalah wumpus.\n\nPertanyaan:\nAlex oranye\n\nPenjelasan:\nAlex adalah wumpus.\nWumpuses adalah yumpuses.\nAlex adalah yumpus\nSetiap yumpus berwarnya oranye.\nAlex berwarna oranye.\n\n###\n**Jawaban**: True \n###\n\n------\n\nContoh:\n\nKonteks:\nSetiap impus bukanlah panas. Setiap impus adalah wumpus. Wumpuses adalah temperamen. Wumpus adalah numpus. Zumpus adalah tidak bersifat agresif. Numpuses adalah bukan suku yang temperate. Setiap numpus adalah dumpus. Dumpuses adalah baik. Setiap dumpus adalah rompus. Setiap rompus bukan benda yang tidak tembus cahaya. Setiap rompus adalah vumpuses. Vumpuses bukanlah yang mudah dikelola. Vumpuses adalah jompus. Jompuses bukanlah pedas. Jompus adalah wumpus. Rex adalah vumpus.\n\nPertanyaan:\nRex tembus cahaya.\n\nPenjelasan:\nRex adalah vumpus.\nVumpuses adalah jompus.\nJompus adalah wumpus.\nRex adalah wumpus.\nWumpus adalah numpus.\nRex adalah numpus.\nSetiap numpus adalah dumpus.\nRex adalah dumpus.\nSetiap dumpus adalah rompus.\nRex adalah rompus.\nSetiap rompus bukan benda yang tidak tembus cahaya.\nRex tembus cahaya.\n\n###\n**Jawaban**: True \n###\n\n------\n\nContoh:\n\nKonteks:\nJompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nPertanyaan:\nMax asam.\n\nPenjelasan:\nMax adalah yumpus.\nSetiap yumpus adalah dumpus.\nMax adalah dumpus.\nDumpuses adalah wumpuses.\nMax adalah wumpus.\nSetiap wumpus adalah impus.\nMax adalah impus.\nSetiap impus tidak tembus pandang.\nMax tidak tembus pandang.\nImpuses adalah tumpuses.\nMax juga tumpus\nTumpuses tidak asam.\nMax tidak asam.\n\n###\n**Jawaban**: False \n###\n\n------\n\nDi bawah ini yang perlu Anda cari nilai kebenarannya:\n\nKonteks: \nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nPertanyaan:\nWren adalah transparan.\nPenjelasan:\nWren adalah wumpus.\nWumpuses adalah numpus.\nWren adalah numpus.\nSetiap numpus adalah logam.\nWren adalah logam.\nNumpuses adalah yumpus.\nWren adalah yumpus.\nSetiap yumpus adalah cerah.\nWren adalah cerah.\nJompuses bukan pahit.\nWren adalah jompus.\nJompus adalah zumpus.\nWren adalah zumpus.\nSetiap zumpus adalah transparan.\nWren adalah transparan.\nZumpuses adalah rompus.\nWren adalah rompus.\nSetiap rompus terbuat dari tanah.\nWren terbuat dari tanah.\nRompuses adalah impus.\nWren adalah impus.\nSetiap impus adalah baik.\nWren adalah baik.\nSetiap impus adalah dumpus.\nWren adalah dumpus.\nDumpuses bukan panas.\nWren bukan panas.\nDumpuses adalah vumpus.\nWren adalah vumpus.\nSetiap tumpus bukan transparan.\nWren adalah tumpus.\nWren bukan transparan.\n\n###\n**Jawaban**: False \n###\n\n# Jawaban\nFalse\n\n# Penjelasan\nWren adalah wumpus.\nWumpuses adalah numpus.\nWren adalah numpus.\nSetiap numpus adalah logam.\nWren adalah logam.\nNumpuses adalah yumpus.\nWren adalah yumpus.\nSetiap yumpus adalah cerah.\nWren adalah cerah.\nJompuses bukan pahit.\nWren adalah jompus.\nJompus adalah zumpus.\nWren adalah zumpus.\nSetiap zumpus adalah transparan.\nWren adalah transparan.\nZumpuses adalah rompus.\nWren adalah rompus.\nSetiap rompus terbuat dari tanah.\nWren terbuat dari tanah.\nRompuses adalah impus.\nWren adalah impus.\nSetiap impus adalah baik.\nWren adalah baik.\nSetiap impus adalah dumpus.\nWren adalah dumpus.\nDumpuses bukan panas.\nWren bukan panas.\nDumpuses adalah vumpus.\nWren adalah vumpus.\nSetiap tumpus bukan transparan.\nWren adalah tumpus.\nWren bukan', 'answer': 'False', 'final_choice': 'B', 'ground_truth': 'A'}
+Saving result with thread lock in path:  results_translated_naive_prompting/prompts_explanation\ProntoQA\aisingapore_Llama-SEA-LION-v3-8B-IT_naive_prompting.json

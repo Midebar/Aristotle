@@ -1,3 +1,162 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:1bdb5785151335108508da4e5f58c34fd52ba0901df08622fc1ffc0b08229ada
-size 27748
+[
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "",
+      "Translated_Rules": "",
+      "Translated_Conjecture": ""
+    },
+    "translation_process": {
+      "responses_a": [
+        "client wait timeout after 60.0s",
+        "timeout"
+      ]
+    },
+    "ground_truth": "A"
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [
+      "Wumpus($x, True) >>> Besar($x, True)",
+      "Wumpus($x, True) >>> Numpus($x, True)",
+      "Numpus($x, True) >>> Logam($x, True)",
+      "Numpus($x, True) >>> Yumpus($x, True)",
+      "Yumpus($x, True) >>> Cerah($x, True)",
+      "Yumpus($x, True) >>> Jompus($x, True)",
+      "Jompus($x, True) >>> Pahit($x, False)",
+      "Jompus($x, True) >>> Zumpus($x, True)",
+      "Zumpus($x, True) >>> Transparan($x, True)",
+      "Zumpus($x, True) >>> Rompus($x, True)",
+      "Rompus($x, True) >>> Tanah($x, True)",
+      "Rompus($x, True) >>> Impus($x, True)",
+      "Impus($x, True) >>> Baik($x, True)",
+      "Impus($x, True) >>> Dumpus($x, True)",
+      "Dumpus($x, True) >>> Panas($x, False)",
+      "Dumpus($x, True) >>> Vumpus($x, True)",
+      "Vumpus($x, True) >>> Transparan($x, False)"
+    ],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Transparan($x, False)",
+      "Translated_Conjecture": "Transparan(Wren, True)"
+    },
+    "translation_process": {
+      "responses_a": [
+        "[SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.\n\n[USER] Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:\n1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan\n2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal\n3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.\n4) parsing konjektur ke dalam bentuk logika\n5) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.\n6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.\n\n------\nBerikut adalah contohnya:\nKonteks:\nSetiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Setiap impuses bukanlah benda berwarna merah. Alex adalah tumpus.\nKonjektur:\nAlex bersifat tidak pemalu.\n###\n***Bentuk Akhir***\n\nFakta:\nAlex adalah tumpus ::: Tumpus(Alex, True)\n\nAturan:\nJompus($x, True) >>> Eksentris($x, True)\nJompus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Transparan($x, False)\nWumpus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Nakal($x, True)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Dingin($x, True)\nVumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Oranye($x, True)\nYumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Membosankan($x, True)\nNumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Pemalu($x, False)\nImpus($x, True) >>> Pemalu($x, True) \nDumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Cair($x, False)\nImpus($x, True) >>> Merah($x, False)\n\nKonjektur:\nPemalu(Alex, False)\n\n------\nBerikut adalah contohnya:\nKonteks:\nJompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses bukan terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nKonjektur:\nMax asam.\n###\n***Bentuk Akhir***\n\nFakta:\nMax adalah yumpus ::: Yumpus(Max, True)\n\nAturan:\nJompus($x, True) >>> Pemalu($x, False)\nJompus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Agresif($x, True)\nYumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Kayu($x, False)\nDumpus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Merah($x, True)\nWumpus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> TembusPandang($x, True)\nImpus($x, True) >>> Tumpus($x, True)\nNumpus($x, True) >>> Asam($x, True)\nTumpus($x, True) >>> Asam($x, False)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Tanah($x, False)\nVumpus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Kecil($x, True)\nZumpus($x, True) >>> Rompus($x, True)\n\nKonjektur:\nAsam(Max, True)\n\n-----\nDi bawah ini adalah yang perlu Anda terjemahkan:\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n###\n***Bentuk Akhir***\n\nFakta:\nWren adalah wumpus ::: Wumpus(Wren, True)\n\nAturan:\nWumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Transparan($x, False)\n\nKonjektur:\nTransparan(Wren, True)",
+        "stop"
+      ]
+    },
+    "ground_truth": "A"
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "",
+      "Translated_Rules": "",
+      "Translated_Conjecture": ""
+    },
+    "translation_process": {
+      "responses_a": [
+        "worker died during generation (timed out on client side)",
+        "timeout"
+      ]
+    },
+    "ground_truth": "A"
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [
+      "Wumpus($x, True) >>> Besar($x, True)",
+      "Wumpus($x, True) >>> Numpus($x, True)",
+      "Numpus($x, True) >>> Logam($x, True)",
+      "Numpus($x, True) >>> Yumpus($x, True)",
+      "Yumpus($x, True) >>> Cerah($x, True)",
+      "Yumpus($x, True) >>> Jompus($x, True)",
+      "Jompus($x, True) >>> Pahit($x, False)",
+      "Jompus($x, True) >>> Zumpus($x, True"
+    ],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True",
+      "Translated_Conjecture": ""
+    },
+    "translation_process": {
+      "responses_a": [
+        "[SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.\n\n[USER] Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:\n1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan\n2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal\n3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.\n4) parsing konjektur ke dalam bentuk logika\n5) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.\n6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.\n\n------\nBerikut adalah contohnya:\nKonteks:\nSetiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Setiap impuses bukanlah benda berwarna merah. Alex adalah tumpus.\nKonjektur:\nAlex bersifat tidak pemalu.\n###\n***Bentuk Akhir***\n\nFakta:\nAlex adalah tumpus ::: Tumpus(Alex, True)\n\nAturan:\nJompus($x, True) >>> Eksentris($x, True)\nJompus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Transparan($x, False)\nWumpus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Nakal($x, True)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Dingin($x, True)\nVumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Oranye($x, True)\nYumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Membosankan($x, True)\nNumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Pemalu($x, False)\nImpus($x, True) >>> Pemalu($x, True) \nDumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Cair($x, False)\nImpus($x, True) >>> Merah($x, False)\n\nKonjektur:\nPemalu(Alex, False)\n\n------\nBerikut adalah contohnya:\nKonteks:\nJompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses bukan terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nKonjektur:\nMax asam.\n###\n***Bentuk Akhir***\n\nFakta:\nMax adalah yumpus ::: Yumpus(Max, True)\n\nAturan:\nJompus($x, True) >>> Pemalu($x, False)\nJompus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Agresif($x, True)\nYumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Kayu($x, False)\nDumpus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Merah($x, True)\nWumpus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> TembusPandang($x, True)\nImpus($x, True) >>> Tumpus($x, True)\nNumpus($x, True) >>> Asam($x, True)\nTumpus($x, True) >>> Asam($x, False)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Tanah($x, False)\nVumpus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Kecil($x, True)\nZumpus($x, True) >>> Rompus($x, True)\n\nKonjektur:\nAsam(Max, True)\n\n-----\nDi bawah ini adalah yang perlu Anda terjemahkan:\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n###\n***Bentuk Akhir***\n\nFakta:\nWren adalah wumpus ::: Wumpus(Wren, True)\n\nAturan:\nWumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True",
+        "stop"
+      ]
+    },
+    "ground_truth": "A"
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [
+      "Wumpus($x, True) >>> Besar($x, True)",
+      "Wumpus($x, True) >>> Numpus($x, True)",
+      "Numpus($x, True) >>> Logam($x, True)",
+      "Numpus($x, True) >>> Yumpus($x, True)",
+      "Yumpus($x, True) >>> Cerah($x, True)",
+      "Yumpus($x, True) >>> Jompus($x, True)",
+      "Jompus($"
+    ],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($",
+      "Translated_Conjecture": ""
+    },
+    "translation_process": {
+      "responses_a": [
+        "[SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.\n\n[USER] Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:\n1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan\n2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal\n3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.\n4) parsing konjektur ke dalam bentuk logika\n5) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.\n6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.\n\n------\nBerikut adalah contohnya:\nKonteks:\nSetiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Setiap impuses bukanlah benda berwarna merah. Alex adalah tumpus.\nKonjektur:\nAlex bersifat tidak pemalu.\n###\n***Bentuk Akhir***\n\nFakta:\nAlex adalah tumpus ::: Tumpus(Alex, True)\n\nAturan:\nJompus($x, True) >>> Eksentris($x, True)\nJompus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Transparan($x, False)\nWumpus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Nakal($x, True)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Dingin($x, True)\nVumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Oranye($x, True)\nYumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Membosankan($x, True)\nNumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Pemalu($x, False)\nImpus($x, True) >>> Pemalu($x, True) \nDumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Cair($x, False)\nImpus($x, True) >>> Merah($x, False)\n\nKonjektur:\nPemalu(Alex, False)\n\n------\nBerikut adalah contohnya:\nKonteks:\nJompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses bukan terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nKonjektur:\nMax asam.\n###\n***Bentuk Akhir***\n\nFakta:\nMax adalah yumpus ::: Yumpus(Max, True)\n\nAturan:\nJompus($x, True) >>> Pemalu($x, False)\nJompus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Agresif($x, True)\nYumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Kayu($x, False)\nDumpus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Merah($x, True)\nWumpus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> TembusPandang($x, True)\nImpus($x, True) >>> Tumpus($x, True)\nNumpus($x, True) >>> Asam($x, True)\nTumpus($x, True) >>> Asam($x, False)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Tanah($x, False)\nVumpus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Kecil($x, True)\nZumpus($x, True) >>> Rompus($x, True)\n\nKonjektur:\nAsam(Max, True)\n\n-----\nDi bawah ini adalah yang perlu Anda terjemahkan:\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n###\n***Bentuk Akhir***\n\nFakta:\nWren adalah wumpus ::: Wumpus(Wren, True)\n\nAturan:\nWumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($",
+        "stop"
+      ]
+    },
+    "ground_truth": "A"
+  },
+  {
+    "id": "ProntoQA_328",
+    "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+    "question": " Wren adalah transparan.",
+    "and_or": [
+      "Wumpus($x, True) >>> Besar($x, True)",
+      "Wumpus($x, True) >>> Numpus($x, True)",
+      "Numpus($x, True) >>> Logam($x, True)",
+      "Numpus($x, True) >>> Yumpus($x, True"
+    ],
+    "either_or": [],
+    "biconditional": [],
+    "translated_context": {
+      "Translated_Facts": "Wren adalah wumpus ::: Wumpus(Wren, True)",
+      "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True",
+      "Translated_Conjecture": ""
+    },
+    "translation_process": {
+      "responses_a": [
+        "[SYSTEM] Anda adalah asisten yang sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.\n\n[USER] Deskripsi Tugas: Anda diberikan sebuah deskripsi permasalahan dan pertanyaan. Tugasnya adalah:\n1) parsing konteks menjadi aturan logika berdasarkan predikat yang ditentukan\n2) jika konteks berbentuk plural, maka konteks tersebut juga harus diterjemahkan ke bentuk tunggal\n3) menulis fakta yang disebutkan dalam masalah, dan pastikan mereka diterjemahkan dalam bentuk logika juga.\n4) parsing konjektur ke dalam bentuk logika\n5) berikan penanda ***Bentuk Akhir*** sebagai output akhir dari tugas Anda.\n6) silakan berikan output akhir dalam format berikut. Pastikan Anda menerjemahkan dalam urutan berikut: fakta, aturan, kemudian konjektur.\n\n------\nBerikut adalah contohnya:\nKonteks:\nSetiap jompus memiliki sifat eksentris. Setiap jompus adalah wumpus. Setiap wumpus memiliki sifat tidak transparan. Wumpuses adalah tumpuses. Tumpuses bersifat nakal. Tumpuses adalah vumpuses. Setiap vumpus memiliki sifat dingin. Setiap vumpus adalah yumpus. Yumpuses berwarna oranye. Yumpuses adalah Numpuses. Numpuses memiliki sifat membosankan. Setiap numpus adalah Dumpus. Setiap dumpus memiliki sifat bukan pemalu. Impuses memiliki sifat pemalu. Dumpuses adalah rompuses. Setiap rompus tidaklah berwujud cair. Setiap impuses bukanlah benda berwarna merah. Alex adalah tumpus.\nKonjektur:\nAlex bersifat tidak pemalu.\n###\n***Bentuk Akhir***\n\nFakta:\nAlex adalah tumpus ::: Tumpus(Alex, True)\n\nAturan:\nJompus($x, True) >>> Eksentris($x, True)\nJompus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Transparan($x, False)\nWumpus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Nakal($x, True)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Dingin($x, True)\nVumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Oranye($x, True)\nYumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Membosankan($x, True)\nNumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Pemalu($x, False)\nImpus($x, True) >>> Pemalu($x, True) \nDumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Cair($x, False)\nImpus($x, True) >>> Merah($x, False)\n\nKonjektur:\nPemalu(Alex, False)\n\n------\nBerikut adalah contohnya:\nKonteks:\nJompuses tidak pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus merupakan benda tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses objek berasa tidak asam. Tumpuses adalah vumpuses. Vumpuses bukan terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses. Max adalah yumpus.\n\nKonjektur:\nMax asam.\n###\n***Bentuk Akhir***\n\nFakta:\nMax adalah yumpus ::: Yumpus(Max, True)\n\nAturan:\nJompus($x, True) >>> Pemalu($x, False)\nJompus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Agresif($x, True)\nYumpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Kayu($x, False)\nDumpus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Merah($x, True)\nWumpus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> TembusPandang($x, True)\nImpus($x, True) >>> Tumpus($x, True)\nNumpus($x, True) >>> Asam($x, True)\nTumpus($x, True) >>> Asam($x, False)\nTumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Tanah($x, False)\nVumpus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Kecil($x, True)\nZumpus($x, True) >>> Rompus($x, True)\n\nKonjektur:\nAsam(Max, True)\n\n-----\nDi bawah ini adalah yang perlu Anda terjemahkan:\nKonteks:\nWumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.\n\nKonjektur:\nWren adalah transparan. \n###\n***Bentuk Akhir***\n\nFakta:\nWren adalah wumpus ::: Wumpus(Wren, True)\n\nAturan:\nWumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True",
+        "stop"
+      ]
+    },
+    "ground_truth": "A"
+  }
+]

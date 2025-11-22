@@ -1,3 +1,494 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:93730a84761d8cd01a2e0bf5853c9e04015a03a5dffb2dc284afd399daa27115
-size 28787
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ProntoQA Search Resolve Viewer</title>
+<style>
+  :root{--bg:#f6f7fb;--card:#fff;--muted:#6b7280}
+  body{font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; margin:0;background:var(--bg);color:#0f172a}
+  .wrap{max-width:1200px;margin:18px auto;padding:18px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  h1{margin:0;font-size:20px}
+  .meta{color:var(--muted);font-size:13px}
+  .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 22px rgba(15,23,42,0.06)}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type="text"], textarea, select{padding:8px;border:1px solid #e6edf3;border-radius:8px;font-size:13px}
+  .btn{padding:8px 10px;border-radius:8px;border:1px solid #d1d5e8;background:#fff;cursor:pointer;font-size:13px}
+  .btn.primary{background:#2563eb;color:#fff;border-color:transparent}
+  .small{font-size:13px;color:var(--muted)}
+  .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #eef2f8}
+  .row{display:flex;gap:12px;align-items:flex-start}
+  .col{flex:1}
+  pre{white-space:pre-wrap;word-break:break-word;background:#fbfdff;padding:10px;border-radius:8px;border:1px solid #f0f4ff;font-size:13px}
+  details summary{cursor:pointer;font-weight:600}
+  .badge{display:inline-block;padding:6px 8px;border-radius:999px;font-weight:700;font-size:12px}
+  .badge.A{background:#ecfdf5;color:#065f46}
+  .badge.B{background:#fffbeb;color:#92400e}
+  .badge.C{background:#fff1f2;color:#9f1239}
+  .meta-field{font-weight:600;color:#111;margin-bottom:6px}
+  .meta-small{font-size:12px;color:var(--muted)}
+  .kpi{display:flex;gap:8px;align-items:center}
+  .kpi > div{background:#f8fafc;padding:6px 8px;border-radius:8px;border:1px solid #eef2f8;font-weight:700}
+  @media (max-width:900px){ .row{flex-direction:column} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>ProntoQA Search Resolve Viewer</h1>
+    <div class="meta">ProntoQA Search Resolve Viewer.</div>
+  </header>
+
+  <div class="panel">
+    <div class="controls">
+      <input id="file-input" type="file" accept="application/json" class="btn" />
+      <button id="paste-json" class="btn">Paste JSON</button>
+      <button id="load-sample" class="btn">Use Sample</button>
+
+      <input id="search" type="text" placeholder="Search id / question / rules..." style="min-width:260px" />
+      <select id="pageSize">
+        <option value="5">5 / page</option>
+        <option value="10" selected>10 / page</option>
+        <option value="25">25 / page</option>
+        <option value="50">50 / page</option>
+      </select>
+
+      <label class="small">Filter label:
+        <select id="filterLabel"><option value="">All</option></select>
+      </label>
+
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="select-page" class="btn">Select page</button>
+        <button id="clear-selection" class="btn">Clear</button>
+        <button id="export-all" class="btn primary">Export CSV (all)</button>
+        <button id="export-selected" class="btn">Export CSV (selected)</button>
+        <button id="download-snapshot" class="btn">Snapshot HTML</button>
+      </div>
+    </div>
+
+    <div class="small" id="status">Loaded: 0 items — Selected: 0</div>
+
+    <div id="list" style="margin-top:12px"></div>
+
+    <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+      <button id="prev" class="btn">Previous</button>
+      <div class="small" id="page-info">Page 1 / 1</div>
+      <button id="next" class="btn">Next</button>
+      <div style="flex:1"></div>
+      <div class="small" id="range-info"></div>
+    </div>
+  </div>
+
+  <footer style="margin-top:16px;color:var(--muted)"><small>Drag & drop JSON or paste it. File may be a single object or an array.</small></footer>
+</div>
+
+<!-- Paste modal -->
+<div id="paste-modal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
+  <div style="background:#fff;padding:16px;border-radius:10px;max-width:900px;width:90%;box-shadow:0 10px 38px rgba(10,20,40,0.3)">
+    <h3 style="margin-top:0">Paste JSON (array or object)</h3>
+    <textarea id="paste-area" rows="12" style="width:100%;font-family:monospace"></textarea>
+    <div style="margin-top:8px;text-align:right">
+      <button id="paste-cancel" class="btn">Cancel</button>
+      <button id="paste-load" class="btn primary">Load</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   State & utilities
+   ------------------------- */
+let DATA = [], FILTERED = [], PAGE = 1, PAGE_SIZE = 10, SELECTED = new Set(), CURRENT_PAGE_IDS = [];
+const listNode = document.getElementById('list');
+const statusNode = document.getElementById('status');
+const pageInfo = document.getElementById('page-info');
+const rangeInfo = document.getElementById('range-info');
+const filterLabel = document.getElementById('filterLabel');
+
+function safeText(s){ return s === null || s === undefined ? '' : String(s); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function downloadBlob(content, filename, type='text/plain;charset=utf-8'){ const blob=new Blob([content],{type}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+function copyToClipboard(s){ if(!navigator.clipboard){ alert('Clipboard unavailable'); return; } navigator.clipboard.writeText(s).catch(e=>alert('Copy failed: '+e.message)); }
+function toCSV(rows, fields){ const esc=(s)=>{ if(s===null||s===undefined) return ''; const str=String(s).replace(/"/g,'""'); return `"${str}"`; }; const lines=[fields.map(f=>esc(f)).join(',')]; for(const r of rows) lines.push(fields.map(f=>esc(r[f] ?? '')).join(',')); return lines.join('\\n'); }
+
+/* Unescape helper: transforms "\\n" or "\\\\n" etc. into real newline and converts double-backslashes to single for latex tokens */
+function unescapeString(s){
+  if(typeof s !== 'string') return s;
+  return s
+    .replace(/\\\\r/g,'\\r').replace(/\\\\n/g,'\\n').replace(/\\\\t/g,'\\t')
+    .replace(/\\r/g,'\r').replace(/\\n/g,'\n').replace(/\\t/g,'\t')
+    .replace(/\\\\/g,'\\');
+}
+
+/* Parse reasoning_step into DOM: tries to find lines like "1. ['a','b','c']" and renders bullet lists */
+function buildReasoningNode(reasoningRaw){
+  const wrapper = document.createElement('div');
+  wrapper.style.fontSize = '13px';
+  if(!reasoningRaw) { wrapper.innerHTML = '<div class="meta-small">-</div>'; return wrapper; }
+  const text = unescapeString(reasoningRaw);
+  // split into lines by newline
+  const lines = text.split(/\\r?\\n/).map(l => l.trim()).filter(Boolean);
+  const ol = document.createElement('ol');
+  for(const line of lines){
+    // try to extract leading 'N.' part
+    const m = line.match(/^\\s*(\\d+)\\.\\s*(\\[.*\\]|.*)$/);
+    let content = line;
+    if(m){
+      content = m[2];
+    }
+    const li = document.createElement('li');
+    // if content looks like a JS/Python list of quoted strings: extract quoted pieces
+    const items = [];
+    const singleQuoted = content.match(/'([^']*)'/g);
+    if(singleQuoted && singleQuoted.length){
+      for(const q of singleQuoted){
+        const inner = q.replace(/^'|'$/g,'');
+        items.push(unescapeString(inner));
+      }
+    } else {
+      // try double-quoted
+      const doubleQuoted = content.match(/"([^"]*)"/g);
+      if(doubleQuoted && doubleQuoted.length){
+        for(const q of doubleQuoted){
+          const inner = q.replace(/^"|"$/g,'');
+          items.push(unescapeString(inner));
+        }
+      }
+    }
+    if(items.length){
+      const innerUl = document.createElement('ul');
+      innerUl.style.marginTop = '6px';
+      for(const it of items){
+        const itLi = document.createElement('li');
+        itLi.textContent = it;
+        innerUl.appendChild(itLi);
+      }
+      li.appendChild(innerUl);
+    } else {
+      // fallback: raw content (unescaped)
+      li.textContent = unescapeString(content);
+    }
+    ol.appendChild(li);
+  }
+  wrapper.appendChild(ol);
+  return wrapper;
+}
+
+/* Pretty-print normalized_context: unescape and show keys */
+function renderNormalizedContext(nc){
+  if(!nc) return '<div class="meta-small">-</div>';
+  if(typeof nc === 'string') return '<pre>' + escapeHtml(unescapeString(nc)) + '</pre>';
+  // object: show Fact, and_or, either_or, biconditional if present
+  const parts = [];
+  if(nc.Fact) parts.push('<div style="font-weight:600">Fact</div><pre>' + escapeHtml(unescapeString(nc.Fact)) + '</pre>');
+  if(nc.and_or) parts.push('<div style="font-weight:600">and_or</div><pre>' + (typeof nc.and_or === 'string' ? escapeHtml(unescapeString(nc.and_or)) : escapeHtml(JSON.stringify(nc.and_or, null, 2))) + '</pre>');
+  if(nc.either_or) parts.push('<div style="font-weight:600">either_or</div><pre>' + escapeHtml(unescapeString(String(nc.either_or))) + '</pre>');
+  if(nc.biconditional) parts.push('<div style="font-weight:600">biconditional</div><pre>' + escapeHtml(unescapeString(String(nc.biconditional))) + '</pre>');
+  return parts.join('\\n');
+}
+
+/* Render full translated_context object (all keys) */
+function renderTranslatedContext(trans){
+  const wrapper = document.createElement('div');
+  if(!trans || typeof trans !== 'object'){ wrapper.innerHTML = '<pre>' + escapeHtml(unescapeString(trans || '')) + '</pre>'; return wrapper; }
+  for(const key of Object.keys(trans)){
+    const block = document.createElement('div');
+    const h = document.createElement('div'); h.className = 'meta-field'; h.textContent = key;
+    block.appendChild(h);
+    const val = trans[key];
+    if(typeof val === 'string'){
+      const pre = document.createElement('pre');
+      pre.textContent = unescapeString(val);
+      block.appendChild(pre);
+    } else {
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(val, null, 2);
+      block.appendChild(pre);
+    }
+    wrapper.appendChild(block);
+  }
+  return wrapper;
+}
+
+/* -------------------------
+   Rendering list of records
+   ------------------------- */
+function renderList(){
+  listNode.innerHTML = '';
+  PAGE_SIZE = Number(document.getElementById('pageSize').value || 10);
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const label = document.getElementById('filterLabel').value;
+
+  FILTERED = DATA.filter(d=>{
+    if(label && (String(d.ground_truth||'') !== label)) return false;
+    if(!q) return true;
+    const hay = [
+      d.id, d.question, d.original_context,
+      (d.translated_context && JSON.stringify(d.translated_context)),
+      (d.normalized_context && JSON.stringify(d.normalized_context)),
+      d.reasoning_step
+    ].filter(Boolean).join(' ').toLowerCase();
+    return hay.indexOf(q) !== -1;
+  });
+
+  const total = FILTERED.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  if(PAGE > totalPages) PAGE = totalPages;
+
+  const start = (PAGE-1)*PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, total);
+  const pageItems = FILTERED.slice(start, end);
+  CURRENT_PAGE_IDS = pageItems.map((it,i)=>it.id ?? ('idx_'+(start+i)));
+  pageInfo.textContent = 'Page ' + PAGE + ' / ' + totalPages;
+  rangeInfo.textContent = `Showing ${start+1} - ${end} of ${total}`;
+  statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`;
+
+  for(const item of pageItems){
+    const id = item.id ?? ('idx_'+Math.random().toString(36).slice(2,8));
+    const card = document.createElement('div'); card.className = 'card';
+    const row = document.createElement('div'); row.className = 'row';
+
+    // checkbox
+    const cbWrap = document.createElement('div');
+    const cb = document.createElement('input'); cb.type='checkbox'; cb.className='checkbox';
+    cb.checked = SELECTED.has(id);
+    cb.addEventListener('change', ()=>{ if(cb.checked) SELECTED.add(id); else SELECTED.delete(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`;});
+    cbWrap.appendChild(cb);
+    row.appendChild(cbWrap);
+
+    const col = document.createElement('div'); col.className = 'col';
+    // title row with badges and KPIs
+    const title = document.createElement('div'); title.style.display='flex'; title.style.alignItems='center'; title.style.justifyContent='space-between';
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:700">${escapeHtml(id)}</div><div class="small">${escapeHtml(safeText(item.question || ''))}</div>`;
+    title.appendChild(left);
+
+    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+    const lbl = item.ground_truth || '-';
+    const badge = document.createElement('span'); badge.className='badge'; badge.textContent = lbl || '-';
+    if(lbl === 'A') badge.className='badge A'; else if(lbl === 'B') badge.className='badge B'; else if(lbl === 'C') badge.className='badge C'; else badge.className='badge -';
+    right.appendChild(badge);
+
+    // show final_answer / final_choice / search_round as mini KPI boxes
+    const kpiWrap = document.createElement('div'); kpiWrap.className='kpi';
+    const fa = document.createElement('div'); fa.title='Final answer'; fa.textContent = item.final_answer ?? '-';
+    const fc = document.createElement('div'); fc.title='Final choice'; fc.textContent = item.final_choice ?? '-';
+    const sr = document.createElement('div'); sr.title='Search rounds'; sr.textContent = item.search_round ?? '-';
+    kpiWrap.appendChild(fa); kpiWrap.appendChild(fc); kpiWrap.appendChild(sr);
+    right.appendChild(kpiWrap);
+
+    title.appendChild(right);
+    col.appendChild(title);
+
+    // grid with 3 columns when wide
+    const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr'; grid.style.gap='10px'; grid.style.marginTop='10px';
+    if(window.innerWidth > 900) grid.style.gridTemplateColumns='1fr 1fr 1fr';
+
+    // ORIGINAL CONTEXT
+    const origDiv = document.createElement('div');
+    origDiv.innerHTML = `<div style="font-weight:600">Original Context</div>`;
+    const origPre = document.createElement('pre'); origPre.textContent = unescapeString(item.original_context || '');
+    origDiv.appendChild(origPre);
+    grid.appendChild(origDiv);
+
+    // TRANSLATED CONTEXT (all keys)
+    const transDiv = document.createElement('div');
+    transDiv.innerHTML = `<div style="font-weight:600">Translated Context</div>`;
+    const transNode = renderTranslatedContext(item.translated_context);
+    transDiv.appendChild(transNode);
+    const copyTransBtn = document.createElement('button'); copyTransBtn.className='btn'; copyTransBtn.textContent='Copy translated (pretty)'; copyTransBtn.style.marginTop='6px';
+    copyTransBtn.onclick = ()=>{
+      // combine all keys into a pretty string
+      if(item.translated_context && typeof item.translated_context === 'object'){
+        const parts=[];
+        for(const k of Object.keys(item.translated_context)){
+          const v=item.translated_context[k];
+          parts.push(k + ':\\n' + (typeof v === 'string' ? unescapeString(v) : JSON.stringify(v, null, 2)));
+        }
+        copyToClipboard(parts.join('\\n\\n'));
+      } else copyToClipboard(unescapeString(String(item.translated_context || '')));
+    };
+    transDiv.appendChild(copyTransBtn);
+    grid.appendChild(transDiv);
+
+    // NORMALIZED / CNF
+    const normDiv = document.createElement('div');
+    normDiv.innerHTML = `<div style="font-weight:600">Normalized / CNF</div>`;
+    const normInner = document.createElement('div');
+    normInner.innerHTML = renderNormalizedContext(item.normalized_context);
+    normDiv.appendChild(normInner);
+    const copyNorm = document.createElement('button'); copyNorm.className='btn'; copyNorm.textContent='Copy CNF'; copyNorm.style.marginTop='6px';
+    copyNorm.onclick = ()=>{ copyToClipboard(typeof item.normalized_context === 'string' ? unescapeString(item.normalized_context) : JSON.stringify(item.normalized_context, null, 2)); };
+    normDiv.appendChild(copyNorm);
+    grid.appendChild(normDiv);
+
+    // REASONING STEPS
+    const rsDiv = document.createElement('div'); rsDiv.innerHTML = `<div style="font-weight:600">Reasoning step</div>`;
+    const rsNode = buildReasoningNode(item.reasoning_step);
+    rsDiv.appendChild(rsNode);
+    const copyRs = document.createElement('button'); copyRs.className='btn'; copyRs.textContent='Copy reasoning (raw)'; copyRs.style.marginTop='6px';
+    copyRs.onclick = ()=>copyToClipboard(unescapeString(String(item.reasoning_step || '')));
+    rsDiv.appendChild(copyRs);
+    grid.appendChild(rsDiv);
+
+    // Meta block (negated_label, sos_list, final fields)
+    const metaDiv = document.createElement('div'); metaDiv.style.gridColumn='1 / -1';
+    const metaHtml = document.createElement('div'); metaHtml.style.display='flex'; metaHtml.style.gap='12px'; metaHtml.style.alignItems='center';
+    const neg = document.createElement('div'); neg.innerHTML = '<div class="meta-small">Negated label</div><div style="font-weight:700">' + escapeHtml(String(item.negated_label)) + '</div>';
+    const sos = document.createElement('div'); sos.innerHTML = '<div class="meta-small">SOS list</div><div style="font-weight:700">' + escapeHtml(String(item.sos_list || '-')) + '</div>';
+    const finalAnswer = document.createElement('div'); finalAnswer.innerHTML = '<div class="meta-small">Final answer</div><div style="font-weight:700">' + escapeHtml(String(item.final_answer || '-')) + '</div>';
+    const finalChoice = document.createElement('div'); finalChoice.innerHTML = '<div class="meta-small">Final choice</div><div style="font-weight:700">' + escapeHtml(String(item.final_choice || '-')) + '</div>';
+
+    metaHtml.appendChild(neg); metaHtml.appendChild(sos); metaHtml.appendChild(finalAnswer); metaHtml.appendChild(finalChoice);
+    metaDiv.appendChild(metaHtml);
+    grid.appendChild(metaDiv);
+
+    // raw JSON
+    const rawDiv = document.createElement('div'); rawDiv.style.gridColumn='1 / -1';
+    const rawDet = document.createElement('details');
+    const rawSum = document.createElement('summary'); rawSum.textContent = 'Raw JSON (click)';
+    rawDet.appendChild(rawSum);
+    const rawPre = document.createElement('pre'); rawPre.textContent = JSON.stringify(item, null, 2);
+    rawDet.appendChild(rawPre);
+    const copyRaw = document.createElement('button'); copyRaw.className='btn'; copyRaw.textContent='Copy raw'; copyRaw.style.marginTop='8px';
+    copyRaw.onclick = ()=>copyToClipboard(rawPre.textContent);
+    rawDet.appendChild(copyRaw);
+    rawDiv.appendChild(rawDet);
+    grid.appendChild(rawDiv);
+
+    col.appendChild(grid);
+    row.appendChild(col);
+    card.appendChild(row);
+    listNode.appendChild(card);
+
+    // clicking title toggles checkbox
+    title.querySelector('div').addEventListener('click', ()=>{ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));});
+  }
+
+  refreshLabelFilterOptions();
+}
+
+/* -------------------------
+   Controls + handlers
+   ------------------------- */
+document.getElementById('pageSize').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('search').addEventListener('input', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('filterLabel').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('prev').addEventListener('click', ()=>{ if(PAGE > 1) PAGE--; renderList(); });
+document.getElementById('next').addEventListener('click', ()=>{ const total = FILTERED.length; const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE)); if(PAGE < totalPages) PAGE++; renderList(); });
+document.getElementById('select-page').addEventListener('click', ()=>{ for(const id of CURRENT_PAGE_IDS) SELECTED.add(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
+document.getElementById('clear-selection').addEventListener('click', ()=>{ SELECTED = new Set(); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; renderList(); });
+
+document.getElementById('export-all').addEventListener('click', ()=>{
+  if(DATA.length === 0) return alert('No data loaded');
+  const fields = ['id','question','negated_label','final_answer','final_choice','search_round','ground_truth','reasoning_step'];
+  const rows = DATA.map(d => ({
+    id: d.id ?? '',
+    question: d.question ?? '',
+    negated_label: d.negated_label ?? '',
+    final_answer: d.final_answer ?? '',
+    final_choice: d.final_choice ?? '',
+    search_round: d.search_round ?? '',
+    ground_truth: d.ground_truth ?? '',
+    reasoning_step: typeof d.reasoning_step === 'string' ? unescapeString(d.reasoning_step) : JSON.stringify(d.reasoning_step ?? '')
+  }));
+  const csv = toCSV(rows, fields);
+  downloadBlob(csv, 'prontoqa_all_reasoning.csv', 'text/csv;charset=utf-8');
+});
+
+document.getElementById('export-selected').addEventListener('click', ()=>{
+  if(SELECTED.size === 0) return alert('No rows selected');
+  const rows = DATA.filter(d => SELECTED.has(d.id));
+  if(rows.length === 0) return alert('Selected IDs not found');
+  const fields = ['id','question','negated_label','final_answer','final_choice','search_round','ground_truth','reasoning_step'];
+  const csvRows = rows.map(d => ({
+    id: d.id ?? '',
+    question: d.question ?? '',
+    negated_label: d.negated_label ?? '',
+    final_answer: d.final_answer ?? '',
+    final_choice: d.final_choice ?? '',
+    search_round: d.search_round ?? '',
+    ground_truth: d.ground_truth ?? '',
+    reasoning_step: typeof d.reasoning_step === 'string' ? unescapeString(d.reasoning_step) : JSON.stringify(d.reasoning_step ?? '')
+  }));
+  const csv = toCSV(csvRows, fields);
+  downloadBlob(csv, 'prontoqa_selected_reasoning.csv', 'text/csv;charset=utf-8');
+});
+
+document.getElementById('download-snapshot').addEventListener('click', ()=>{
+  const htmlRows = FILTERED.map(d=>`<section style="border:1px solid #ddd;padding:10px;border-radius:8px;margin-bottom:8px"><h3>${escapeHtml(d.id || '')}</h3><p><strong>Question:</strong> ${escapeHtml(d.question || '')}</p><pre>${escapeHtml(JSON.stringify(d, null, 2))}</pre></section>`).join('\\n');
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><title>ProntoQA snapshot</title></head><body><h1>Snapshot</h1>${htmlRows}</body></html>`;
+  downloadBlob(doc, 'prontoqa_snapshot_reasoning.html', 'text/html;charset=utf-8');
+});
+
+/* -------------------------
+   File / paste / drag-drop
+   ------------------------- */
+document.getElementById('file-input').addEventListener('change', (ev)=>{ const f = ev.target.files && ev.target.files[0]; if(!f) return; const r = new FileReader(); r.onload = (e)=>{ try{ const p = JSON.parse(e.target.result); loadDataArray(p); }catch(err){ alert('Parse error: '+err.message); } }; r.readAsText(f,'utf-8'); });
+
+document.getElementById('paste-json').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='flex'; document.getElementById('paste-area').value=''; });
+document.getElementById('paste-cancel').addEventListener('click', ()=>{ document.getElementById('paste-modal').style.display='none'; });
+document.getElementById('paste-load').addEventListener('click', ()=>{ const txt=document.getElementById('paste-area').value; try{ const p=JSON.parse(txt); loadDataArray(p); document.getElementById('paste-modal').style.display='none'; }catch(e){ alert('Invalid JSON: '+e.message); } });
+
+document.getElementById('load-sample').addEventListener('click', ()=> loadDataArray(getSampleData()) );
+
+document.addEventListener('dragover',(e)=>{ e.preventDefault(); e.dataTransfer.dropEffect='copy'; });
+document.addEventListener('drop',(e)=>{ e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return; const r=new FileReader(); r.onload=(ev)=>{ try{ const p=JSON.parse(ev.target.result); loadDataArray(p);}catch(ex){alert('Parse error: '+ex.message)} }; r.readAsText(f); });
+
+function loadDataArray(parsed){
+  if(Array.isArray(parsed)) DATA = parsed;
+  else if(parsed && typeof parsed === 'object') DATA = [parsed];
+  else { alert('JSON must be an array or object'); return; }
+  for(let i=0;i<DATA.length;i++){ if(DATA[i].id === undefined || DATA[i].id === null) DATA[i].id = 'idx_'+i; }
+  PAGE = 1; SELECTED = new Set(); renderList();
+}
+
+/* -------------------------
+   Sample data (from your provided point)
+   ------------------------- */
+function getSampleData(){
+  return [
+{
+  "id": "ProntoQA_328",
+  "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Numpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
+  "question": "Wren adalah transparan.",
+  "translated_context": {
+    "Translated_Facts": "Wumpus(Wren, True)",
+    "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\\nWumpus($x, True) >>> Numpus($x, True)\\nNumpus($x, True) >>> Logam($x, True)\\nNumpus($x, True) >>> Yumpus($x, True)\\nYumpus($x, True) >>> Cerah($x, True)\\nYumpus($x, True) >>> Jompus($x, True)\\nJompus($x, True) >>> Pahit($x, False)\\nJompus($x, True) >>> Zumpus($x, True)\\nZumpus($x, True) >>> Transparan($x, True)\\nZumpus($x, True) >>> Rompus($x, True)\\nRompus($x, True) >>> Tanah($x, True)\\nRompus($x, True) >>> Impus($x, True)\\nImpus($x, True) >>> Baik($x, True)\\nImpus($x, True) >>> Dumpus($x, True)\\nDumpus($x, True) >>> Panas($x, False)\\nDumpus($x, True) >>> Vumpus($x, True)\\nTumpus($x, True) >>> Transparan($x, False)",
+    "Translated_Conjecture": "Transparan(Wren, True)"
+  },
+  "normalized_context": {
+    "Fact": "Wumpus(Wren, True)",
+    "and_or": "1. - \\left(Wumpus(x, False) \\lor Besar(x, True)\\right)\\n2. - \\left(Wumpus(x, False) \\lor Numpus(x, True)\\right)\\n3. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)\\n4. - \\left(Numpus(x, False) \\lor Yumpus(x, True)\\right)\\n5. - \\left(Yumpus(x, False) \\lor Cerah(x, True)\\right)\\n6. - \\left(Yumpus(x, False) \\lor Jompus(x, True)\\right)\\n7. - \\left(Jompus(x, False) \\lor Pahit(x, False)\\right)\\n8. - \\left(Jompus(x, False) \\lor Zumpus(x, True)\\right)\\n9. - \\left(Zumpus(x, False) \\lor Transparan(x, True)\\right)\\n10. - \\left(Zumpus(x, False) \\lor Rompus(x, True)\\right)\\n11. - \\left(Rompus(x, False) \\lor Tanah(x, True)\\right)\\n12. - \\left(Rompus(x, False) \\lor Impus(x, True)\\right)\\n13. - \\left(Impus(x, False) \\lor Baik(x, True)\\right)\\n14. - \\left(Impus(x, False) \\lor Dumpus(x, True)\\right)\\n15. - \\left(Dumpus(x, False) \\lor Panas(x, False)\\right)\\n16. - \\left(Dumpus(x, False) \\lor Vumpus(x, True)\\right)\\n17. - \\left(Tumpus(x, False) \\lor Transparan(x, False)\\right)",
+    "either_or": null,
+    "biconditional": null
+  },
+  "normalized_conjecture": "Transparan(Wren, True)",
+  "negated_label": "True",
+  "reasoning_step": "1. ['Transparan(Wren, False)', '9.  (Zumpus(x, False) \\\\lor Transparan(x, True))', '\\\\( Zumpus(Wren, False) \\\\)']\\n2. ['\\\\( Zumpus(Wren, False) \\\\)', '8.  (Jompus(x, False) \\\\lor Zumpus(x, True))', '\\\\( Jompus(Wren, False) \\\\)']\\n3. ['\\\\( Jompus(Wren, False) \\\\)', '6.  (Yumpus(x, False) \\\\lor Jompus(x, True))', '\\\\( Yumpus(Wren, False) \\\\)']\\n4. ['\\\\( Yumpus(Wren, False) \\\\)', '4.  (Numpus(x, False) \\\\lor Yumpus(x, True))', '\\\\( Numpus(Wren, False) \\\\)']\\n5. ['\\\\( Numpus(Wren, False) \\\\)', '2.  (Wumpus(x, False) \\\\lor Numpus(x, True))', '\\\\( Wumpus(x, False) \\\\)']\\n6. ['\\\\( Wumpus(x, False) \\\\)', 'Wumpus(Wren, True)', 'Kontradiksi']",
+  "ground_truth": "A",
+  "final_answer": "True",
+  "final_choice": "A",
+  "search_round": 6
+}
+  ];
+}
+
+/* -------------------------
+   Init: load sample
+   ------------------------- */
+loadDataArray(getSampleData());
+
+/* update label dropdown */
+function refreshLabelFilterOptions(){
+  const labels = Array.from(new Set(DATA.map(d => d.ground_truth).filter(Boolean)));
+  const current = filterLabel.value;
+  filterLabel.innerHTML = '<option value="">All</option>';
+  for(const l of labels){
+    const opt = document.createElement('option'); opt.value = l; opt.textContent = l; if(l === current) opt.selected = true; filterLabel.appendChild(opt);
+  }
+}
+</script>
+</body>
+</html>

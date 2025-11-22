@@ -1,3 +1,264 @@
-version https://git-lfs.github.com/spec/v1
-oid sha256:0d0a5f20bbdfdd5cacf851143c43086088e966074e7341e4cf35686946a8fe03
-size 10666
+---
+
+Tugas: Diberikan dua clause, tugas Anda adalah:
+
+1. **Cek literal dalam clause yang saling komplemen:**
+   - Tentukan apakah suatu literal dalam clause 1 merupakan komplemen dengan literal dalam clause 2.
+
+**Literal yang saling komplemen:** Dua literal saling komplemen jika mereka mempunyai predikat dan argumen yang sama tetapi berbeda nilai boolean di dalamnya (True vs. False).
+
+**Contoh:**
+1. \( P(x, False) \) saling komplemen dengan \( P(x, True) \).
+
+2. \( P(x, True) \) saling komplemen dengan \( P(x, False) \).
+
+**Jika literal yang saling komplemen ditemukan:** terapkan resolusi menggunakan aturan di bawah ini.
+
+2. **Resolusi:**
+
+### **Aturan Resolusi:**
+- Literal yang saling komplemen ditemukan: \( (P(x, True) \lor B), \, (P(x, False) \lor C) \Rightarrow (B \lor C) \) atau \( (P(x, False) \lor B), \, (P(x, True) \lor C) \Rightarrow (B \lor C) \)
+
+3. **Pemeriksaan Setelah Resolusi:**
+- **Jika kontradiksi ditemukan:**
+  - Simpulkan dengan "Label Cukup: [True]" dan "Clause Baru: {Kontradiksi}".
+- Jika tidak ditemukan kontradiksi:
+  - Simpulkan dengan "Label Cukup: [False]".
+
+Hasil keluaran: Simpulkan label cukup dan clause baru dalam format:
+
+***Bentuk Akhir***
+Clause Baru: {new_clause}
+Label Cukup: [True/False]
+***Akhir Blok***
+
+---
+
+Contoh:
+
+Clause 1: Tanah(Stella, True)
+Clause 2: Numpus(x, False) \lor Tanah(x, False)
+
+Mari kita lakukan proses resolusi untuk kedua clause yang diberikan:
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**
+
+**Clause yang Diberikan:**
+- **Clause 1:** \( Tanah(Stella, True) \)
+- **Clause 2:** \( Numpus(x, False) \lor Tanah(x, False) \)
+
+**Identifikasi Literal yang Saling Komplemen :**
+- \( Tanah(Stella, True) \) pada Clause 1 berpotensi saling komplemen dengan \( Tanah(x, False) \) pada Clause 2. Instansiasi dari \( x \) ke \( Stella \) diperlukan untuk memastikan bahwa kedua literal saling komplemen.
+
+**Instansiasikan Clause 2 dengan \( x = Stella \):**
+- Clause 2 Asli: \( Numpus(x, False) \lor Tanah(x, False) \)
+- Clause 2 setelah Diinstansiasi: \( Numpus(Stella, False) \lor Tanah(Stella, False) \)
+
+**Identifikasi Literal yang Saling Komplemen Setelah Instansiasi:**
+- \( Tanah(Stella, True) \) dalam Clause 1 adalah komplemen dari \( Tanah(Stella, False) \) dalam Clause 2 setelah diinstansiasi (predikat sama, argumen sama, nilai boolean berlawanan).
+
+### **Langkah 2: Terapkan Resolusi pada Kedua Clause**
+
+- **Proses Resolusi:**
+  - **Aturan Resolusi:** terdapat literal yang saling komplemen ditemukan pada Clause 1 dan Clause 2 setelah diinstansiasi yang terhubung oleh "OR" dengan literal lainnya, maka formula resolusi di bawah ini dapat dilakukan.
+    \[
+    \( (P(x, True) \lor B), \, (P(x, False) \lor C) \Rightarrow (B \lor C) \)
+    \]
+  - **Instansiasi Literal:** Instansiasikan literal dari Clause 1 dan Clause 2 kedalam formula yang sudah diberikan
+    \[
+    (Tanah(Stella, True)), \, (Tanah(Stella, False) \lor Numpus(Stella, False)) \quad \Rightarrow \quad Numpus(Stella, False)
+    \]
+  - **Clause Hasil:** \( Numpus(Stella, False) \)
+
+### **Langkah 3: Pemeriksaan Setelah Resolusi**
+
+- **Cek Kontradiksi:**
+  - Clause hasil \( Numpus(Stella, False) \) tidak menghasilkan kontradiksi. Proses resolusi lebih lanjut diperlukan untuk menentukan kesimpulan akhir, sehingga Label Cukup bernilai False.
+
+***Bentuk Akhir***
+Clause Baru: { \( Numpus(Stella, False) \)}
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Contoh:
+
+Clause 1: Vumpus(Wren, True)
+Clause 2: Vumpus(Wren, False)
+
+Mari kita uraikan proses resolusi untuk clause yang diberikan:
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**
+
+**Clause yang Diberikan:**
+- **Clause 1:** \( Vumpus(Wren, True) \)
+- **Clause 2:** \( Vumpus(Wren, False) \)
+
+**Identifikasi Literal yang Saling Komplemen :**
+- \( Vumpus(Wren, True) \) dalam Clause 1 adalah komplemen dengan \( Vumpus(Wren, False) \) dalam Clause 2 (predikat dan argumen sama, tetapi nilai boolean berlawanan).
+
+### **Langkah 2: Terapkan Resolusi pada Kedua Clause**
+
+- **Proses Resolusi:**
+  - **Aturan Digunakan:** **Kontradiksi Ditemukan** karena kedua istilah saling komplemen dan tidak ada istilah lain yang hadir.
+    - \( Vumpus(Wren, True) \) saling komplemen dengan \( Vumpus(Wren, False) \), menyebabkan kontradiksi langsung.
+
+  - **Clause Hasil:** Kontradiksi.
+
+### **Langkah 3: Pemeriksaan Setelah Resolusi**
+
+- **Cek Kontradiksi:**
+  - Resolusi menghasilkan kontradiksi, sehingga cukup tercapai.
+
+***Bentuk Akhir***
+Clause Baru: {Kontradiksi}
+Label Cukup: [True]
+***Akhir Blok***
+
+---
+
+Contoh:
+
+Clause 1: \( Jompus(Alex, False) \lor TembusPandang(x, True) \)
+Clause 2: \(Dumpus(x, False) \lor Jompus(x, True)\)
+
+Mari kita uraikan proses resolusi untuk clause yang diberikan:
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**
+
+**Clause yang Diberikan:**
+- **Clause 1:** \( Jompus(Alex, False) \lor TembusPandang(x, True) \)
+- **Clause 2:** \( Dumpus(x, False) \lor Jompus(x, True) \)
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**
+- \( Jompus(Alex, False) \) pada Clause 1 berpotensi saling komplemen dengan \( Jompus(x, True) \) pada Clause 2. Instansiasi dari \( x \) ke \( Alex \) diperlukan untuk memastikan bahwa kedua literal saling komplemen.
+
+**Instansiasikan Clause 2 dengan \( x = Alex \):**
+- Clause 2 Asli: \( Dumpus(x, False) \lor Jompus(x, True) \)
+- Clause 2 setelah Diinstansiasi: \( Dumpus(Alex, False) \lor Jompus(Alex, True) \)
+
+**Identifikasi Literal yang Saling Komplemen Setelah Instansiasi:**
+- \( Jompus(Alex, False) \) dalam Clause 1 adalah komplemen dari \( Jompus(Alex, True) \) dalam Clause 2 setelah diinstansiasi (predikat sama, argumen sama, nilai boolean berlawanan).
+
+### **Langkah 2: Terapkan Resolusi pada Kedua Clause**
+
+- **Proses Resolusi:**
+  - **Aturan Resolusi:** terdapat literal yang saling komplemen ditemukan pada Clause 1 dan Clause 2 setelah diinstansiasi yang terhubung oleh "OR" dengan literal lainnya, maka formula resolusi di bawah ini dapat dilakukan.
+    \[
+    \( (P(x, False) \lor B), \, (P(x, True) \lor C) \Rightarrow (B \lor C) \)
+    \]
+  - **Instansiasi Literal:** Instansiasikan literal dari Clause 1 dan Clause 2 kedalam formula yang sudah diberikan
+    \[
+    (Jompus(Alex, False) \lor TembusPandang(x, True)), \, (Jompus(Alex, True) \lor Dumpus(Alex, False)) \quad \Rightarrow \quad (TembusPandang(x, True) \ lor Dumpus(Alex, False))
+    \]
+  - **Clause Hasil:** \( TembusPandang(x, True) \ lor Dumpus(Alex, False) \)
+
+### **Langkah 3: Pemeriksaan Setelah Resolusi**
+
+- **Cek Kontradiksi:**
+  - Clause hasil \( TembusPandang(Alex, True) \ lor Dumpus(Alex, False) \) tidak menghasilkan kontradiksi. Proses resolusi lebih lanjut diperlukan untuk menentukan kesimpulan akhir, sehingga Label Cukup bernilai False.
+
+***Bentuk Akhir***
+Clause Baru: {\( TembusPandang(Alex, True) \ lor Dumpus(Alex, False) \)}
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Contoh:
+
+Clause 1: Kecil(Alex, False)
+Clause 2: \(Vumpus(x, False) \lor Numpus(x, True)\)
+
+Mari kita uraikan proses resolusi untuk clause yang diberikan:
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**
+
+**Clause yang Diberikan:**
+- **Clause 1:** \( Kecil(Alex, False) \)
+- **Clause 2:** \( Vumpus(x, False) \lor Numpus(x, True) \)
+
+**Identifikasi Literal yang Saling Komplemen :**
+- Tidak ada istilah yang sama diantara 2 clause tersebut, sehingga tidak ada istilah yang saling komplemen ditemukan (predikat berbeda)
+
+### **Langkah 2: Terapkan Resolusi pada Kedua Clause**
+
+- **Proses Resolusi:**
+  - **Tidak Ada Istilah Saling Komplemen Ditemukan:** Tidak ada istilah dalam Clause 1 yang saling komplemen dengan istilah dalam Clause 2 karena predikat yang berbeda. Resolusi tidak dapat dilakukan karena tidak ada dasar untuk menggabungkan antara 2 istilah yang berbeda
+
+### **Langkah 3: Pemeriksaan Setelah Resolusi**
+
+- **Cek Kontradiksi:**
+  - Tidak ada istilah yang saling komplemen dan tidak ada resolusi yang dapat diterapkan, maka tidak ada kontradiksi. Proses resolusi lebih lanjut diperlukan untuk mengevaluasi nilai kebenaran clause, jadi label cukup harus False dan tidak perlu menambahkan nilai clause baru.
+
+***Bentuk Akhir***
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Contoh:
+
+Clause 1:
+\( Impus(Wren, False) \)
+Clause 2: 
+(Tumpus(x, False) \lor Impus(x, True))
+
+Mari kita uraikan proses resolusi untuk clause yang diberikan:  
+
+### **Langkah 1: Cek Literal yang Saling Komplemen**  
+**Clause yang Diberikan:**  
+- **Clause 1:** \( Impus(Wren, False) \)
+- **Clause 2:** \( Tumpus(x, False) \lor Impus(x, True) \)
+
+**Identifikasi Literal yang Saling Komplemen:**  
+- \( Impus(Wren, False) \) dalam Clause 1 berpotensi saling komplemen dengan \( Impus(x, True) \) dalam Clause 2. Instansiasi dari \( x \) ke \( Wren \) diperlukan untuk memastikan bahwa kedua literal saling komplemen.  
+
+**Instansiasikan Clause 2 dengan \( x = Wren \):**  
+- Clause 2 Asli: \( Tumpus(x, False) \lor Impus(x, True) \)  
+- Clause 2 setelah Diinstansiasi: \( Tumpus(Wren, False) \lor Impus(Wren, True) \)  
+
+**Identifikasi Literal yang Saling Komplemen Setelah Instansiasi:**  
+- \( Impus(Wren, False) \) dalam Clause 1 adalah komplemen dari \( Impus(Wren, True) \) dalam Clause 2 setelah diinstansiasi (predikat sama, argumen sama, nilai boolean berlawanan).  
+
+### **Langkah 2: Terapkan Resolusi pada Kedua Clause**
+- **Proses Resolusi:**
+  - **Aturan Resolusi:** terdapat literal yang saling komplemen ditemukan pada Clause 1 dan Clause 2 setelah diinstansiasi yang terhubung oleh "OR" dengan literal lainnya, maka formula resolusi di bawah ini dapat dilakukan.
+    \[
+    \( (P(x, False) \lor B), \, (P(x, True) \lor C) \Rightarrow (B \lor C) \)
+    \]
+  - **Instansiasi Literal:** Instansiasikan literal dari Clause 1 dan Clause 2 kedalam formula yang sudah diberikan
+    \[
+    (Impus(Wren, False)), \, (Impus(Wren, True) \lor Tumpus(Wren, False)) \quad \Rightarrow \quad (Tumpus(Wren, False))
+    \]  
+  - **Clause Hasil:** \( Tumpus(Wren, False) \)
+
+### **Langkah 3: Pemeriksaan Setelah Resolusi**
+- **Cek Kontradiksi:**
+  - Clause hasil \( Tumpus(Wren, False) \) tidak menghasilkan kontradiksi. Proses resolusi lebih lanjut diperlukan untuk menentukan kesimpulan akhir, sehingga Label Cukup bernilai False.  
+
+***Bentuk Akhir***
+Clause Baru: { \( Tumpus(Wren, False) \)}
+Label Cukup: [False]
+***Akhir Blok***
+
+---
+
+Silakan simpulkan informasi tersebut dengan format berikut. Ubah placeholder sesuai dengan kesimpulan:
+
+***Bentuk Akhir***
+Clause Baru: {placeholder_for_new_clause}
+Label Cukup: [placeholder_for_sufficiency_label]
+***Akhir Blok***
+
+---
+
+**Dibawah ini tugas yang perlu Anda lakukan:**
+
+Clause 1:
+[[SOS]]
+Clause 2: 
+[[SELECTED-CLAUSE]]
+
+Mari kita uraikan proses resolusi untuk clause yang diberikan:
