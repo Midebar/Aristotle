@@ -30,7 +30,7 @@ _LOADED_BACKEND = {
     "instance": None
 }
 
-def get_backend_instance(backend_type: str, model_name: str, load_in_4bit: bool):
+def get_backend_instance(backend_type: str, model_name: str, load_in_4bit: bool, quantization: Optional[str] = None):
     global _LOADED_BACKEND
     
     if (_LOADED_BACKEND["type"] == backend_type and 
@@ -52,7 +52,7 @@ def get_backend_instance(backend_type: str, model_name: str, load_in_4bit: bool)
         instance = HFBackend(local_model_path=local_path, hf_model_id=model_name, quantize_4bit=load_in_4bit)
 
     elif backend_type == "vllm":
-        instance = VLLMBackend(local_model_path=local_path, hf_model_id=model_name)
+        instance = VLLMBackend(local_model_path=local_path, quantization=quantization)
         
     elif backend_type == "llamacpp":
         if not local_path:
@@ -92,11 +92,12 @@ def call_chat(
     temperature: float = 0.0,
     load_in_4bit: bool = False,
     max_time: int = 120,
+    quantization: Optional[str] = None
 ) -> str:
     backend = backend or os.getenv("LLM_BACKEND", "hf")
     backend = backend.lower()
 
-    if backend in ("hf", "local", "local-hf", "exllama", "vllm", "llamacpp"):
+    if backend in ("hf", "local", "local-hf"):
         
         backend_instance = get_backend_instance(
             backend_type=backend,
@@ -106,6 +107,40 @@ def call_chat(
 
         prompt = format_messages_to_prompt(messages)
         
+        return backend_instance.generate(
+            prompt, 
+            max_new_tokens=max_tokens, 
+            temperature=temperature,
+            max_time=max_time
+        )
+    
+    elif backend == "vllm":
+        
+        backend_instance = get_backend_instance(
+            backend_type=backend,
+            model_name=model,
+            quantization=quantization,
+            load_in_4bit=load_in_4bit
+        )
+
+        prompt = format_messages_to_prompt(messages)
+        
+        return backend_instance.generate(
+            prompt, 
+            max_new_tokens=max_tokens, 
+            temperature=temperature,
+            max_time=max_time
+        )
+    elif backend in ("exllama", "llamacpp"):
+
+        backend_instance = get_backend_instance(
+            backend_type=backend,
+            model_name=model,
+            load_in_4bit=load_in_4bit
+        )
+
+        prompt = format_messages_to_prompt(messages)
+
         return backend_instance.generate(
             prompt, 
             max_new_tokens=max_tokens, 
@@ -133,7 +168,8 @@ def completions_with_backoff(**kwargs) -> Dict[str, Any]:
         max_tokens=max_tokens,
         temperature=temperature,
         load_in_4bit=(os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")),
-        max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120"))
+        max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120")),
+        quantization=os.getenv("QUANTIZATION", None)
     )
     return {"choices": [{"text": text}]}
 
@@ -151,7 +187,8 @@ def chat_completions_with_backoff(**kwargs) -> Dict[str, Any]:
         max_tokens=max_tokens,
         temperature=temperature,
         load_in_4bit=(os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")),
-        max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120"))
+        max_time=int(os.getenv("LLM_WORKER_MAX_TIME", "120")),
+        quantization=os.getenv("QUANTIZATION", None)
     )
     return {"choices": [{"message": {"content": text}, "finish_reason": "stop"}]}
 
@@ -202,6 +239,7 @@ class ModelWrapper:
         self.stop_words = stop_words
         self.backend = os.getenv("LLM_BACKEND")
         self.load_in_4bit = os.getenv("LLM_LOAD_IN_4BIT", "0") in ("1", "true", "True")
+        self.quantization = os.getenv("QUANTIZATION", None)
 
     @retry(stop_max_attempt_number=3, wait_fixed=2000)
     def chat_generate(self, input_string: str, temperature: float = 0.0, task: Optional[str] = None):

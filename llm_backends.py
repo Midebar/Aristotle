@@ -1,8 +1,6 @@
 import torch
 import os
-import warnings
-import psutil
-from typing import Optional, List, Dict, Any
+import logging
 
 # --- 1. Hugging Face Backend ---
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
@@ -85,10 +83,7 @@ class ExLlamaBackend:
         settings = ExLlamaV2Sampler.Settings()
         settings.temperature = temperature
         if temperature == 0: settings.top_k = 1
-        
-        # Fix: Ensure we don't cut off early by disallowing EOS if requested, 
-        # but for normal chat we usually allow it.
-        
+
         return self.generator.generate_simple(prompt, settings, num_tokens=max_new_tokens)
 
 # --- 3. Llama.cpp Backend ---
@@ -103,7 +98,7 @@ class LlamaCPPBackend:
         """
         local_model_path: Must point to a specific .gguf FILE, not just a directory.
         """
-        if not LLAMACPP_AVAILABLE: raise ImportError("llama-cpp-python not installed. Run `pip install llama-cpp-python`")
+        if not LLAMACPP_AVAILABLE: raise ImportError("llama-cpp-python not installed. Run 'pip install llama-cpp-python'")
         
         # n_gpu_layers=-1 means offload ALL layers to GPU
         self.llm = Llama(
@@ -117,7 +112,7 @@ class LlamaCPPBackend:
         output = self.llm(
             prompt,
             max_tokens=max_new_tokens,
-            stop=[], # Optional stop words
+            stop=[],
             echo=True, # Return prompt + completion to match others
             temperature=temperature
         )
@@ -131,20 +126,29 @@ except ImportError:
     VLLM_AVAILABLE = False
 
 class VLLMBackend:
-    def __init__(self, local_model_path: str):
+    def __init__(self, local_model_path: str, gpu_memory_utilization: float = 0.8, quantization: str = "fp8"):
         """
         local_model_path: HuggingFace repo ID (e.g. 'Sahabat-AI/...') or local path.
-        On server >16GB VRAM, use dtype='bfloat16' for maximum speed and accuracy.
         """
         if not VLLM_AVAILABLE: raise ImportError("vllm not installed (Linux only).")
+
+        os.environ["VLLM_LOGGING_LEVEL"] = "ERROR"
+        os.environ["VLLM_CONFIGURE_LOGGING"] = "0"
+        logging.getLogger("vllm").setLevel(logging.ERROR)
+
+        print(f"   [vLLM] Loading: {local_model_path}")
+        print(f"   [vLLM] VRAM: {gpu_memory_utilization*100}%, Quantization: {quantization}")
         
         print(f"Initializing vLLM with model: {local_model_path}")
         # enforce_eager=True can help with stability on some setups, but default is usually faster
         self.llm = LLM(
             model=local_model_path,
-            dtype="bfloat16", 
+            dtype="auto",
+            quantization=quantization, # Pass "fp8", "awq", "gptq", or None
             trust_remote_code=True,
-            gpu_memory_utilization=0.90 # Use 90% of that 48GB L40
+            gpu_memory_utilization=gpu_memory_utilization,
+            enforce_eager=True,
+            disable_log_stats=True
         )
 
     def generate(self, prompt: str, max_new_tokens: int = 512, temperature: float = 0.0, **kwargs) -> str:
@@ -158,5 +162,5 @@ class VLLMBackend:
         generated_text = outputs[0].outputs[0].text
         
         # vLLM returns ONLY the new tokens. 
-        # To match HF/ExLlama behavior (which usually return full text), prepend prompt.
+        # To match others behavior, prepend prompt.
         return prompt + generated_text

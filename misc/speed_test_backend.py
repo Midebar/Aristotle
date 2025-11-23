@@ -22,6 +22,7 @@ class BenchmarkConfig:
     model_path: str
     max_new_tokens: int = 300
     quantize_4bit: bool = False
+    quantization: str = None  # For vLLM: None, 'fp8', 'gptq', 'awq'
 
 PROMPT = """<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
@@ -76,7 +77,7 @@ def run_benchmark(args: BenchmarkConfig):
         elif args.backend == 'llamacpp':
             backend = LlamaCPPBackend(local_model_path=args.model_path)
         elif args.backend == 'vllm':
-            backend = VLLMBackend(local_model_path=args.model_path)
+            backend = VLLMBackend(local_model_path=args.model_path, quantization=args.quantization)
     except Exception as e:
         print(f"Failed to initialize backend: {e}")
         return
