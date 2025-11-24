@@ -70,17 +70,17 @@ class Naive_Prompting:
         m = re.search(marker, content, flags=re.IGNORECASE)
         area = content[m.end():] if m else content
 
-        ans_label_re = re.compile(r'(?:\*\*Jawaban\*\*|Jawaban)\s*[:\-]?\s*', flags=re.IGNORECASE)
-        exp_label_re = re.compile(r'(?:\*\*Penjelasan\*\*|Penjelasan)\s*[:\-]?\s*', flags=re.IGNORECASE)
+        ans_label_re = re.compile(r'(?:\*{0,3}Jawaban\*{0,3}|Jawaban)\s*[:\-]?\s*', flags=re.IGNORECASE)
+        exp_label_re = re.compile(r'(?:\*{0,3}Penjelasan\*{0,3}|Penjelasan)\s*[:\-]?\s*', flags=re.IGNORECASE)
 
         # Boundary pattern to detect next label or section end (###)
         boundary_re = re.compile(
-            r'\r?\n(?:\*\*Jawaban\*\*|Jawaban|\*\*Penjelasan\*\*|Penjelasan|###)\b',
+            r'\r?\n(?:\*{0,3}Jawaban\*{0,3}|Jawaban|\*{0,3}Penjelasan\*{0,3}|Penjelasan|###)\b',
             flags=re.IGNORECASE
         )
 
         def extract_after_label(label_re):
-            """Find first label match; return the substring after it up to next boundary or end, or None."""
+            """Find first label match, return the substring after it up to next boundary or end, or None."""
             lab_match = label_re.search(area)
             if not lab_match:
                 return None

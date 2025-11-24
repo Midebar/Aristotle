@@ -128,11 +128,10 @@ class Reasoning_Graph_Baseline:
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
         search_area = content[marker_match.end():] if marker_match else content
 
-        # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
         final_block_pattern = (
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*' # opening final-block header
+            r'\*{0,3}(?:Bentuk Akhir)\*{0,3}\s*'
             r'(.*?)'
-            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|' # stop before akhir blok if exists
+            r'(?=(\*{0,3}(?:Akhir Blok)\*{0,3})|'
             r'$)' # or end of string
         )
 

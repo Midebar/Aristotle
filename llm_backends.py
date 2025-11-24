@@ -103,7 +103,7 @@ class LlamaCPPBackend:
         # n_gpu_layers=-1 means offload ALL layers to GPU
         self.llm = Llama(
             model_path=local_model_path, 
-            n_ctx=4096, 
+            n_ctx=0,
             n_gpu_layers=-1, 
             verbose=False
         )

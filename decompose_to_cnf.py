@@ -277,59 +277,60 @@ class Reasoning_Graph_Baseline:
         marker_pattern = r'Di bawah ini adalah yang perlu Anda konversikan menggunakan normalisasi.'
         marker_match = re.search(marker_pattern, content, flags=re.IGNORECASE)
 
-        search_area = content[marker_match.end():]
+        block_header = re.compile(r'\*{0,3}Bentuk Akhir\*{0,3}', re.IGNORECASE)
+        m_block = block_header.search(content, pos=marker_match.end())
 
-        # the first "***Akhir Blok***" OR the next "***Bentuk Akhir***" OR end of string.
-        final_block_pattern = (
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*\s*' # opening final-block header
-            r'(.*?)' # capture content (non-greedy)
-            r'(?=(\*\*\*(?:Akhir Blok)\*\*\*)|' # stop before akhir blok if exists
-            r'\*\*\*(?:Bentuk Akhir)\*\*\*|' # or before another final-form header
-            r'$)' # or end of string
+        area = content[m_block.end():]
+
+        cnf_label_re = re.compile(
+            r'(?:Aturan dalam CNF|Aturan CNF|Aturan|Rules)\s*[:\-]?\s*', 
+            flags=re.IGNORECASE
+        )
+        skolem_label_re = re.compile(
+            r'(?:Aturan dalam Skolem|Skolemisasi|Skolem|Bentuk Akhir Setelah Skolemisasi|Skolemization)\s*[:\-]?\s*', 
+            flags=re.IGNORECASE
         )
 
-        final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
+        # Construct the pattern string explicitly to avoid parentheses nesting errors.
+        boundary_pattern = (
+            r'(?:'                                                     # Start outer group
+                r'\r?\n\s*'                                            # Newline + whitespace
+                r'(?:'                                                 # Start inner grouping for headers
+                    r'(?:Aturan dalam CNF|Aturan CNF|Aturan \(CNF\)|Aturan|Rules)|'  # CNF headers
+                    r'(?:Skolemisasi|Skolem|Bentuk Akhir)|'            # Skolem headers
+                    r'(?:\*{0,3}\s*Akhir Blok\s*\*{0,3}|Final Form|###)' # End markers
+                r')'                                                   # End inner grouping
+            r')'                                                       # End outer group
+            r'|$'                                                      # OR End of String
+        )
 
-        if not final_block_match:
-            return [], None
+        boundary_re = re.compile(boundary_pattern, flags=re.IGNORECASE)
 
-        block = final_block_match.group(1)
+        def extract_after_label(label_re):
+            """Finds label, returns text until next boundary."""
+            lab_match = label_re.search(area)
+            if not lab_match:
+                return None
+            start = lab_match.end()
+            bound = boundary_re.search(area, pos=start)
+            end = bound.start() if bound else len(area)
+            return area[start:end].strip()
 
-        print(f"\n\nCHOSEN BLOCK: \n\n{block}\n\n")
-        print("END OF CHOSEN BLOCK\n\n")
+        cnf_raw = extract_after_label(cnf_label_re)
+        skolem_raw = extract_after_label(skolem_label_re)
 
-        def _extract_section_raw(block: str, header: str, stop_headers: list) -> str:
-            # build stop pattern that recognizes the stop headers as section starts
-            stop_part = '|'.join([re.escape(h) + r'\s*[:\-\)]?' for h in stop_headers])
-            # header itself, possibly with optional punctuation/colon after it
-            pat = rf'{re.escape(header)}\s*[:\-\)]?\s*(.*?)(?=(?:{stop_part})|\Z)'
-            m = re.search(pat, block, flags=re.DOTALL | re.IGNORECASE)
-            return m.group(1).strip() if m else ""
+        def to_lines(raw):
+            if not raw: 
+                return []
+            return [ln.strip() for ln in raw.splitlines() if ln.strip()]
 
-        def _nonempty_raw_lines(s: str):
-            return [ln.strip() for ln in s.splitlines() if ln.strip()]
+        cnf_lines = to_lines(cnf_raw)
+        skolem_lines = to_lines(skolem_raw) if skolem_raw else None
 
-        cnf_headers = ['Aturan dalam CNF', 'Aturan CNF', 'Aturan', 'Rules', 'Aturan (CNF)']
-        skolem_headers = ['Skolemisasi', 'Skolem', 'Bentuk Akhir Setelah Skolemisasi', 'Skolemization']
-        stop_headers = ['Final Form', 'Akhir Blok']
+        print(f"CNF Raw: {cnf_lines}")
+        print(f"Skolem Raw: {skolem_lines}")
 
-        cnf_raw = ""
-        for h in cnf_headers:
-            cnf_raw = _extract_section_raw(block, h, skolem_headers + stop_headers)
-            if cnf_raw:
-                break
-
-        skolem_raw = ""
-        for h in skolem_headers:
-            skolem_raw = _extract_section_raw(block, h, cnf_headers + stop_headers)
-            if skolem_raw:
-                break
-
-        cnf_lines = _nonempty_raw_lines(cnf_raw) if cnf_raw else []
-        skolem_lines = _nonempty_raw_lines(skolem_raw) if skolem_raw else []
-
-        skolem_return = skolem_lines if skolem_lines else None
-        return cnf_lines, skolem_return
+        return cnf_lines, skolem_lines
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
