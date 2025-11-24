@@ -31,7 +31,7 @@ def main(args):
     
     save_path = f'{model_name}_trans_decompose_negated_data.json'
     save_path = os.path.join(args.save_path, args.dataset_name, save_path)
-    with open(save_path, 'w') as f:
+    with open(save_path, 'w', encoding="utf8") as f:
         json.dump(data, f, indent=4)
 
 def parse_args():
