@@ -18,6 +18,7 @@
   .panel{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 8px 22px rgba(20,30,60,0.06);margin-top:12px}
   .meta{color:var(--muted);font-size:13px}
   .card{background:#fff;border-radius:10px;padding:12px;margin-bottom:12px;border:1px solid #eef2f8}
+  .card.missing{border:2px dashed #fca5a5;background:#fff1f2}
   .row{display:flex;gap:12px;align-items:flex-start}
   .col{flex:1}
   pre{white-space:pre-wrap;word-break:break-word;background:#fbfdff;padding:8px;border-radius:8px;border:1px solid #f0f4ff;font-size:13px}
@@ -26,12 +27,17 @@
   .badge.A{background:#e6ffed;color:#047857}
   .badge.B{background:#fff7ed;color:#92400e}
   .badge.C{background:#fff1f2;color:#9f1239}
+  .badge.MISSING{background:#fecaca;color:#991b1b}
   .controls-right{margin-left:auto;display:flex;gap:8px}
   .small{font-size:13px;color:var(--muted)}
   .topbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
   .paginate{display:flex;gap:8px;align-items:center}
   .checkbox{transform:scale(1.1)}
   footer{margin-top:18px;color:var(--muted);font-size:13px}
+  
+  .checkbox-label { display:flex; align-items:center; gap:4px; cursor:pointer; user-select:none; margin-right:8px; padding:4px 8px; border-radius:6px; transition:background 0.2s }
+  .checkbox-label:hover{background:#edf2f9}
+  
   @media (max-width:800px){ .row{flex-direction:column} }
 </style>
 </head>
@@ -50,19 +56,28 @@
 
       <div style="width:14px"></div>
 
-      <input id="search" type="text" placeholder="Search id / question / context..." style="min-width:260px" />
+      <input id="search" type="text" placeholder="Search id / question / context..." style="min-width:200px" />
 
       <select id="pageSize">
         <option value="5">5 / page</option>
         <option value="10" selected>10 / page</option>
         <option value="25">25 / page</option>
         <option value="50">50 / page</option>
+        <option value="1000">1000 / page</option>
       </select>
 
-      <label class="small">Show label:
+      <label class="small">Label:
         <select id="filterLabel">
           <option value="">All</option>
         </select>
+      </label>
+
+      <label class="small checkbox-label" title="Hide items that didn't have an ID in the original JSON">
+        <input type="checkbox" id="hide-missing-id" /> Hide null IDs
+      </label>
+
+      <label class="small checkbox-label" style="color:#b91c1c" title="Find and display missing numbers in the ID sequence (e.g. if 1 and 3 exist, show 2)">
+        <input type="checkbox" id="show-gaps" /> Show sequence gaps
       </label>
 
       <div class="controls-right">
@@ -91,7 +106,6 @@
   <footer>Tip: You can drag & drop a JSON file into your browser or click "Load JSON". If your file contains a single object, wrap it as a list <code>[ ... ]</code>.</footer>
 </div>
 
-<!-- Paste JSON modal -->
 <div id="paste-modal" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.4);align-items:center;justify-content:center">
   <div style="background:#fff;padding:16px;border-radius:10px;max-width:900px;width:90%;box-shadow:0 10px 38px rgba(10,20,40,0.3)">
     <h3 style="margin-top:0">Paste JSON (array of objects)</h3>
@@ -112,7 +126,7 @@ let FILTERED = [];             // after search & label-filter
 let PAGE = 1;
 let PAGE_SIZE = 10;
 let SELECTED = new Set();      // selected ids
-let CURRENT_PAGE_IDS = [];     // ids currently visible (for select-page)
+let CURRENT_PAGE_IDS = [];     // ids currently visible
 const listNode = document.getElementById('list');
 const statusNode = document.getElementById('status');
 const pageInfo = document.getElementById('page-info');
@@ -123,17 +137,14 @@ function safeText(s){ return s === null || s === undefined ? '' : String(s); }
 function escapeHtml(s){ const t = document.createElement('div'); t.textContent = s; return t.innerHTML; }
 function downloadBlob(content, filename, type='text/plain;charset=utf-8'){ const blob = new Blob([content], {type}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 function copyToClipboard(str){ if(!navigator.clipboard){ alert('Clipboard not available'); return; } navigator.clipboard.writeText(str).then(()=>{/*ok*/}).catch(e=>alert('Copy failed: '+e.message)); }
-function toCSV(rows, fields){ const esc=(s)=>{ if(s===null||s===undefined) return ''; const str=String(s).replace(/"/g,'""'); return `"${str}"`; }; const lines=[fields.map(f=>esc(f)).join(',')]; for(const r of rows) lines.push(fields.map(f=>esc(r[f] ?? '')).join(',')); return lines.join('\\n'); }
+function toCSV(rows, fields){ const esc=(s)=>{ if(s===null||s===undefined) return ''; const str=String(s).replace(/"/g,'""'); return `"${str}"`; }; const lines=[fields.map(f=>esc(f)).join(',')]; for(const r of rows) lines.push(fields.map(f=>esc(r[f] ?? '')).join(',')); return lines.join('\n'); }
 
 /* -------------------------
-   Unescape helper (turns "\\n" into real newline, "\\\\left" -> "\left", etc.)
+   Unescape helper
    ------------------------- */
 function unescapeString(s){
   if(typeof s !== 'string') return s;
   return s
-    .replace(/\\\\r/g, '\\r')
-    .replace(/\\\\n/g, '\\n')
-    .replace(/\\\\t/g, '\\t')
     .replace(/\\r/g, '\r')
     .replace(/\\n/g, '\n')
     .replace(/\\t/g, '\t')
@@ -141,8 +152,7 @@ function unescapeString(s){
 }
 
 /* -------------------------
-   NEW: render all translated_context keys pretty
-   - returns an object { htmlNode, prettyText } where prettyText is the combined unescaped text
+   Render Translated Context
    ------------------------- */
 function renderTranslatedContextBlock(translated){
   const wrapper = document.createElement('div');
@@ -151,31 +161,73 @@ function renderTranslatedContextBlock(translated){
     const pre = document.createElement('pre'); pre.textContent = unescapeString(translated || '');
     wrapper.appendChild(pre);
     combinedParts.push(unescapeString(translated || ''));
-    return { node: wrapper, text: combinedParts.join('\\n\\n') };
+    return { node: wrapper, text: combinedParts.join('\n\n') };
   }
-  // for each key show header + unescaped content
   for(const key of Object.keys(translated)){
     const kDiv = document.createElement('div');
     const h = document.createElement('div'); h.style.fontWeight = '600'; h.style.marginTop = '6px'; h.textContent = key;
     kDiv.appendChild(h);
     const val = translated[key];
-    // if it's a string -> unescape
     if(typeof val === 'string'){
       const pre = document.createElement('pre');
       pre.textContent = unescapeString(val);
       kDiv.appendChild(pre);
-      combinedParts.push(`${key}:\\n${unescapeString(val)}`);
+      combinedParts.push(`${key}:\n${unescapeString(val)}`);
     } else {
-      // otherwise pretty-print JSON (but unescape string leafs)
       const clone = Array.isArray(val) ? val.map(v => typeof v === 'string' ? unescapeString(v) : v) : (typeof val === 'object' ? Object.fromEntries(Object.entries(val).map(([k,v]) => [k, typeof v === 'string' ? unescapeString(v) : v])) : val);
       const pre = document.createElement('pre');
       pre.textContent = JSON.stringify(clone, null, 2);
       kDiv.appendChild(pre);
-      combinedParts.push(`${key}:\\n${JSON.stringify(clone, null, 2)}`);
+      combinedParts.push(`${key}:\n${JSON.stringify(clone, null, 2)}`);
     }
     wrapper.appendChild(kDiv);
   }
-  return { node: wrapper, text: combinedParts.join('\\n\\n') };
+  return { node: wrapper, text: combinedParts.join('\n\n') };
+}
+
+/* -------------------------
+   NEW: Gap Detection Logic
+   ------------------------- */
+function generateGaps(currentItems) {
+  const groups = {};
+  const reg = /^(.*?)(\d+)$/; // Captures Prefix + Number
+  
+  // 1. Group IDs by prefix
+  for(const item of currentItems) {
+    if(!item.id || item._generatedId) continue;
+    const match = String(item.id).match(reg);
+    if(match) {
+      const prefix = match[1];
+      const num = parseInt(match[2], 10);
+      if(!groups[prefix]) groups[prefix] = new Set();
+      groups[prefix].add(num);
+    }
+  }
+
+  const gaps = [];
+  
+  // 2. Find missing numbers in each group
+  for(const prefix in groups) {
+    const numbers = Array.from(groups[prefix]).sort((a,b)=>a-b);
+    if(numbers.length < 2) continue; // Need at least 2 to have a gap
+    
+    const min = numbers[0];
+    const max = numbers[numbers.length-1];
+    
+    // Check range min to max
+    for(let i = min; i <= max; i++) {
+      if(!groups[prefix].has(i)) {
+        // Found a gap
+        gaps.push({
+          id: prefix + i,
+          _isGap: true,
+          question: 'Missing from sequence',
+          ground_truth: 'MISSING'
+        });
+      }
+    }
+  }
+  return gaps;
 }
 
 /* -------------------------
@@ -186,9 +238,13 @@ function renderList(){
   PAGE_SIZE = Number(document.getElementById('pageSize').value || 10);
   const q = document.getElementById('search').value.trim().toLowerCase();
   const label = document.getElementById('filterLabel').value;
+  
+  const hideMissingIds = document.getElementById('hide-missing-id').checked;
+  const showGaps = document.getElementById('show-gaps').checked;
 
-  // filter
-  FILTERED = DATA.filter(d=>{
+  // 1. Filter existing data
+  let displayData = DATA.filter(d=>{
+    if(hideMissingIds && d._generatedId === true) return false;
     if(label && (String(d.ground_truth||'') !== label)) return false;
     if(!q) return true;
     const hay = [
@@ -201,6 +257,18 @@ function renderList(){
     return hay.indexOf(q) !== -1;
   });
 
+  // 2. Generate and inject gaps if enabled
+  if(showGaps) {
+    const gaps = generateGaps(displayData);
+    displayData = [...displayData, ...gaps];
+    
+    // Sort combined list: Alphanumeric sort to keep order (Prefix1, Prefix2, Prefix10)
+    const collator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
+    displayData.sort((a, b) => collator.compare(a.id, b.id));
+  }
+
+  FILTERED = displayData; // Update global state for pagination
+
   const total = FILTERED.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   if(PAGE > totalPages) PAGE = totalPages;
@@ -212,42 +280,59 @@ function renderList(){
   CURRENT_PAGE_IDS = pageItems.map((it,i)=>it.id ?? ('idx_'+(start+i)));
   pageInfo.textContent = 'Page ' + PAGE + ' / ' + totalPages;
   rangeInfo.textContent = `Showing ${start+1} - ${end} of ${total}`;
-
-  // update status
   statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`;
 
   // render cards
   for(const item of pageItems){
-    const id = item.id ?? ('idx_'+Math.random().toString(36).slice(2,8));
-    const card = document.createElement('div'); card.className = 'card';
+    // Check if this is a "Gap" item
+    const isGap = item._isGap === true;
+    
+    const card = document.createElement('div'); 
+    card.className = isGap ? 'card missing' : 'card'; // Special style for missing
+
     const row = document.createElement('div'); row.className = 'row';
 
-    // checkbox
+    // checkbox (disabled for gaps)
     const checkboxWrap = document.createElement('div');
-    const cb = document.createElement('input'); cb.type='checkbox'; cb.className='checkbox';
-    cb.checked = SELECTED.has(id);
-    cb.addEventListener('change', ()=>{ if(cb.checked) SELECTED.add(id); else SELECTED.delete(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
-    checkboxWrap.appendChild(cb);
+    if(!isGap) {
+      const cb = document.createElement('input'); cb.type='checkbox'; cb.className='checkbox';
+      cb.checked = SELECTED.has(item.id);
+      cb.addEventListener('change', ()=>{ if(cb.checked) SELECTED.add(item.id); else SELECTED.delete(item.id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
+      checkboxWrap.appendChild(cb);
+    }
     row.appendChild(checkboxWrap);
 
     // content
     const col = document.createElement('div'); col.className = 'col';
     const title = document.createElement('div'); title.style.display='flex'; title.style.alignItems='center'; title.style.justifyContent='space-between';
+    
+    const idStyle = item._generatedId ? 'font-weight:700; color:#999; font-style:italic' : 'font-weight:700';
+    const idText = item._generatedId ? `(Missing ID) ${escapeHtml(item.id)}` : escapeHtml(item.id);
+
     const left = document.createElement('div');
-    left.innerHTML = `<div style="font-weight:700">${escapeHtml(id)}</div><div class="small">${escapeHtml(safeText(item.question || item.translated_context && item.translated_context.Translated_Conjecture || ''))}</div>`;
+    left.innerHTML = `<div style="${idStyle}">${idText}</div><div class="small">${escapeHtml(safeText(item.question || item.translated_context && item.translated_context.Translated_Conjecture || ''))}</div>`;
     title.appendChild(left);
 
     const badge = document.createElement('div');
     const lbl = (item.ground_truth || '-');
     const b = document.createElement('span'); b.className = 'badge ' + (lbl ? lbl : '-'); b.textContent = lbl || '-';
-    if(lbl === 'A') b.className = 'badge A';
-    else if(lbl === 'B') b.className = 'badge B';
-    else if(lbl === 'C') b.className = 'badge C';
-    else b.className = 'badge -';
     badge.appendChild(b);
     title.appendChild(badge);
 
     col.appendChild(title);
+
+    // Skip detailed grid for gap items
+    if(isGap) {
+      const msg = document.createElement('div');
+      msg.style.padding='10px'; 
+      msg.style.color='#b91c1c';
+      msg.innerHTML = `<strong>Missing Data Point:</strong> The ID <code>${escapeHtml(item.id)}</code> does not exist in the loaded file, but <code>${escapeHtml(item.id.replace(/\d+$/, ''))}...</code> numbers around it do.`;
+      col.appendChild(msg);
+      row.appendChild(col);
+      card.appendChild(row);
+      listNode.appendChild(card);
+      continue; 
+    }
 
     // grid
     const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='1fr'; grid.style.gap='10px'; grid.style.marginTop='10px';
@@ -261,7 +346,7 @@ function renderList(){
     origDiv.appendChild(origPre);
     grid.appendChild(origDiv);
 
-    // NEW: Translated context (render ALL keys)
+    // Translated context
     const translatedSection = document.createElement('div');
     translatedSection.innerHTML = `<div style="font-weight:600">Translated Context (all fields)</div>`;
     const rendered = renderTranslatedContextBlock(item.translated_context);
@@ -307,16 +392,16 @@ function renderList(){
       if(typeof item.decomposition_process === 'string'){
         decPre.textContent = unescapeString(item.decomposition_process);
       } else if(Array.isArray(item.decomposition_process)){
-        decPre.textContent = item.decomposition_process.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\\n\\n');
+        decPre.textContent = item.decomposition_process.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\n\n');
       } else {
         let outLines = [];
         for(const k in item.decomposition_process){
           const v = item.decomposition_process[k];
-          if(typeof v === 'string') outLines.push(k + ':\\n' + unescapeString(v));
-          else if(Array.isArray(v)) outLines.push(k + ':\\n' + v.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\\n'));
-          else outLines.push(k + ':\\n' + JSON.stringify(v, null, 2));
+          if(typeof v === 'string') outLines.push(k + ':\n' + unescapeString(v));
+          else if(Array.isArray(v)) outLines.push(k + ':\n' + v.map(x => unescapeString(typeof x === 'string' ? x : JSON.stringify(x))).join('\n'));
+          else outLines.push(k + ':\n' + JSON.stringify(v, null, 2));
         }
-        decPre.textContent = outLines.join('\\n\\n');
+        decPre.textContent = outLines.join('\n\n');
       }
 
       details.appendChild(decPre);
@@ -347,8 +432,9 @@ function renderList(){
     card.appendChild(row);
     listNode.appendChild(card);
 
-    // attach click on id to toggle selection
-    title.querySelector('div').addEventListener('click', ()=>{ cb.checked = !cb.checked; cb.dispatchEvent(new Event('change'));});
+    if(!isGap) {
+      title.querySelector('div').addEventListener('click', ()=>{ if(!item._generatedId) { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); }});
+    }
   }
 
   // update label options
@@ -361,13 +447,16 @@ function renderList(){
 document.getElementById('pageSize').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
 document.getElementById('search').addEventListener('input', ()=>{ PAGE = 1; renderList(); });
 document.getElementById('filterLabel').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('hide-missing-id').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+document.getElementById('show-gaps').addEventListener('change', ()=>{ PAGE = 1; renderList(); });
+
 document.getElementById('prev').addEventListener('click', ()=>{ if(PAGE > 1) PAGE--; renderList(); });
 document.getElementById('next').addEventListener('click', ()=>{ const total = FILTERED.length; const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE)); if(PAGE < totalPages) PAGE++; renderList(); });
-document.getElementById('select-page').addEventListener('click', ()=>{ for(const id of CURRENT_PAGE_IDS) SELECTED.add(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
+document.getElementById('select-page').addEventListener('click', ()=>{ for(const id of CURRENT_PAGE_IDS) if(!id.includes('MISSING')) SELECTED.add(id); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; });
 document.getElementById('clear-selection').addEventListener('click', ()=>{ SELECTED = new Set(); statusNode.textContent = `Loaded: ${DATA.length} items — Selected: ${SELECTED.size}`; renderList(); });
 document.getElementById('export-all').addEventListener('click', ()=>{ if(DATA.length === 0) return alert('No data loaded'); const fields = ['id','question','normalized_conjecture','ground_truth']; const rows = DATA.map(d => { const o = {}; for(const f of fields) o[f] = d[f] ?? ''; return o; }); const csv = toCSV(rows, fields); downloadBlob(csv, 'prontoqa_all.csv', 'text/csv;charset=utf-8'); });
 document.getElementById('export-selected').addEventListener('click', ()=>{ if(SELECTED.size === 0) return alert('No rows selected'); const rows = DATA.filter(d => SELECTED.has(d.id)); if(rows.length === 0) return alert('Selected IDs not found in data (maybe missing id field?)'); const fields = ['id','question','normalized_conjecture','ground_truth']; const csv = toCSV(rows.map(r => { const o = {}; for(const f of fields) o[f] = r[f] ?? ''; return o; }), fields); downloadBlob(csv, 'prontoqa_selected.csv', 'text/csv;charset=utf-8'); });
-document.getElementById('download-snapshot').addEventListener('click', ()=>{ const htmlRows = FILTERED.map(d=>{ return `<section style="border:1px solid #ddd;padding:10px;border-radius:8px;margin-bottom:8px"><h3>${escapeHtml(d.id || '')}</h3><p><strong>Question:</strong> ${escapeHtml(d.question || '')}</p><pre>${escapeHtml(JSON.stringify(d, null, 2))}</pre></section>`; }).join('\\n'); const doc = `<!doctype html><html><head><meta charset="utf-8"><title>ProntoQA snapshot</title></head><body><h1>Snapshot</h1>${htmlRows}</body></html>`; downloadBlob(doc, 'prontoqa_snapshot.html', 'text/html;charset=utf-8'); });
+document.getElementById('download-snapshot').addEventListener('click', ()=>{ const htmlRows = FILTERED.map(d=>{ return `<section style="border:1px solid #ddd;padding:10px;border-radius:8px;margin-bottom:8px"><h3>${escapeHtml(d.id || '')}</h3><p><strong>Question:</strong> ${escapeHtml(d.question || '')}</p><pre>${escapeHtml(JSON.stringify(d, null, 2))}</pre></section>`; }).join('\n'); const doc = `<!doctype html><html><head><meta charset="utf-8"><title>ProntoQA snapshot</title></head><body><h1>Snapshot</h1>${htmlRows}</body></html>`; downloadBlob(doc, 'prontoqa_snapshot.html', 'text/html;charset=utf-8'); });
 
 /* -------------------------
    File loading / sample / paste
@@ -390,49 +479,34 @@ function loadDataArray(parsed){
   else { alert('JSON should be an array or object'); return; }
   // ensure id exists (create synthetic if missing)
   for(let i=0;i<DATA.length;i++){
-    if(DATA[i].id === undefined || DATA[i].id === null) DATA[i].id = 'idx_'+i;
+    if(!DATA[i].id){
+      DATA[i]._generatedId = true;
+      DATA[i].id = 'idx_'+i;
+    }
   }
   PAGE = 1; SELECTED = new Set(); renderList();
 }
 
 /* -------------------------
-   Sample data
+   Sample data (Simulate gaps here to test)
    ------------------------- */
 function getSampleData(){
   return [
-{
-  "id": "ProntoQA_328",
-  "original_context": "Wumpuses adalah besar. Wumpuses adalah numpuses. Setiap numpus adalah logam. Wumpuses adalah yumpuses. Setiap yumpus adalah cerah. Setiap yumpus adalah jompus. Jompuses bukan pahit. Jompuses adalah zumpuses. Setiap zumpus adalah transparan. Zumpuses adalah rompuses. Setiap rompus terbuat dari tanah. Rompuses adalah impuses. Setiap impus adalah baik. Setiap impus adalah dumpus. Dumpuses bukan panas. Dumpuses adalah vumpuses. Setiap tumpus bukan transparan. Wren adalah wumpus.",
-  "question": "Wren adalah transparan.",
-  "translated_context": {
-    "Translated_Facts": "Wumpus(Wren, True)",
-    "Translated_Rules": "Wumpus($x, True) >>> Besar($x, True)\nWumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Cerah($x, True)\nYumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Pahit($x, False)\nJompus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> Transparan($x, True)\nZumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Tanah($x, True)\nRompus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Baik($x, True)\nImpus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> Panas($x, False)\nDumpus($x, True) >>> Vumpus($x, True)\nTumpus($x, True) >>> Transparan($x, False)\nTumpus($x, True) >>> Logam($x, True)",
-    "Translated_Conjecture": "Transparan(Wren, True)"
-  },
-  "normalized_context": {
-    "Fact": "Wumpus(Wren, True)",
-    "and_or": "1. - \\left(Wumpus(x, False) \\lor Besar(x, True)\\right)\\n2. - \\left(Wumpus(x, False) \\lor Numpus(x, True)\\right)\\n3. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)"
-  },
-  "normalized_conjecture": "Transparan(Wren, True)",
-  "negated_label": "false",
-  "sos_list": "Transparan(Wren, True)",
-  "decomposition_process": { "and_or": ["[SYSTEM] ... (truncated)"] },
-  "ground_truth": "A"
-}
+    { "id": "ProntoQA_1", "question": "Data 1", "ground_truth": "A", "original_context": "Foo" },
+    // ProntoQA_2 is deliberately missing to demonstrate the gap detector
+    { "id": "ProntoQA_3", "question": "Data 3", "ground_truth": "B", "original_context": "Bar" },
+    { "id": "ProntoQA_4", "question": "Data 4", "ground_truth": "A", "original_context": "Baz" }
   ];
 }
 
-/* -------------------------
-   Initialization: load sample by default
-   ------------------------- */
 loadDataArray(getSampleData());
 
-/* update label options when resizing or data changes */
 function refreshLabelFilterOptions(){
   const labels = Array.from(new Set(DATA.map(d => d.ground_truth).filter(Boolean)));
   const current = filterLabel.value;
   filterLabel.innerHTML = '<option value="">All</option>';
   for(const l of labels){
+    if(l === 'MISSING') continue; // Don't add generated label
     const opt = document.createElement('option'); opt.value = l; opt.textContent = l; if(l === current) opt.selected = true;
     filterLabel.appendChild(opt);
   }

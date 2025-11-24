@@ -110,60 +110,62 @@ class Reasoning_Graph_Baseline:
         return either_or, biconditional, others
     
     def extract_facts_rules_conjecture(self, content, context_sentence_count=None):
+        # Clean invisible characters
         content = (content or "").replace('\u200b', '').replace('\ufeff', '')
 
         prompt_marker = re.compile(
             r'Di bawah ini(?:\s+adalah(?:\s+yang\s+perlu\s+Anda\s+terjemahkan)?)?:?',
             re.IGNORECASE
         )
-        
         m_prompt = prompt_marker.search(content)
         search_start_pos = m_prompt.end() if m_prompt else 0
 
         block_header = re.compile(r'\*{0,3}Bentuk Akhir\*{0,3}', re.IGNORECASE)
         m_block = block_header.search(content, pos=search_start_pos)
 
-        area = content[m_block.end():]
+        if m_block:
+            area = content[m_block.end():]
+        else:
+            area = content[search_start_pos:]
 
-        # Define Section Headers
-        fact_re = re.compile(r'(?:Fakta|Facts)\s*[:\-]?\s*', re.IGNORECASE)
-        rule_re = re.compile(r'(?:Aturan|Rules)\s*[:\-]?\s*', re.IGNORECASE)
-        conj_re = re.compile(r'(?:Konjektur|Conjecture)\s*[:\-]?\s*', re.IGNORECASE)
+        # Define Patterns for possible headers
+        # Include the "End Markers" as a header type.
+        patterns = {
+            "facts": re.compile(r'(?:Fakta|Facts)\s*[:\-]?\s*', re.IGNORECASE),
+            "rules": re.compile(r'(?:Aturan|Rules)\s*[:\-]?\s*', re.IGNORECASE),
+            "conj": re.compile(r'(?:Konjektur|Conjecture)\s*[:\-]?\s*', re.IGNORECASE),
+            "stop": re.compile(r'(?:\*{0,3}\s*Akhir Blok\s*\*{0,3}|###|```|-{3,})', re.IGNORECASE)
+        }
 
-        # 5. Define Boundaries (Lookahead)
-        # Stop extracting if a newline followed by:
-        boundary_re = re.compile(
-            r'\r?\n\s*(?:'
-            r'(?:Fakta|Facts)\s*[:\-]?'         r'|' 
-            r'(?:Aturan|Rules)\s*[:\-]?'        r'|' 
-            r'(?:Konjektur|Conjecture)\s*[:\-]? 'r'|'
-            r'(?:\*{0,3}\s*Akhir Blok\s*\*{0,3}|###|```|-{3,})'
-            r')',
-            flags=re.IGNORECASE
-        )
-
-        def extract_section(label_re):
-            """Finds label in 'area', extracts text until the nearest boundary."""
-            match = label_re.search(area)
-            if not match:
+        def extract_section(target_key):
+            start_match = patterns[target_key].search(area)
+            if not start_match:
                 return ""
             
-            start_pos = match.end()
+            content_start_idx = start_match.end()
             
-            # Search for the nearest boundary starting from the end of the header
-            bound = boundary_re.search(area, pos=start_pos)
+            # Find the next header
+            next_indices = []
+            for key, pat in patterns.items():
+                m = pat.search(area, pos=content_start_idx)
+                if m:
+                    next_indices.append(m.start())
             
-            # If boundary found
-            end_pos = bound.start() if bound else len(area)
-            
-            return area[start_pos:end_pos].strip()
+            # If found upcoming headers, stop at the nearest one (min index).
+            # If no headers found, go to end of string.
+            if next_indices:
+                cutoff_idx = min(next_indices)
+                raw_text = area[content_start_idx:cutoff_idx]
+            else:
+                raw_text = area[content_start_idx:]
+                
+            return raw_text.strip()
 
-        facts = extract_section(fact_re)
-        rules = extract_section(rule_re)
-        conjecture = extract_section(conj_re)
+        facts = extract_section("facts")
+        rules = extract_section("rules")
+        conjecture = extract_section("conj")
 
         return facts, rules, conjecture
-
 
     def clean_conjecture(self, conjecture):
         if isinstance(conjecture, dict):
