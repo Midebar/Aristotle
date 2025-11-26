@@ -1,6 +1,7 @@
 import json
 import argparse
 import os
+import csv
 import matplotlib.pyplot as plt
 from utils import sanitize_filename
 
@@ -8,7 +9,7 @@ def load_json_file(file_path):
     """Loads a JSON file and returns its content."""
     with open(file_path, 'r', encoding="utf8") as file:
         return json.load(file)
-    
+
 def normalize_answer(answer):
     """Normalize the final choice: if not 'A' or 'B', treat it as 'C'."""
     if answer == 'A' or answer == 'B' or answer == 'D':
@@ -47,6 +48,42 @@ def evaluate_instance(id_, instance1, instance2, ground_truth):
             return True
     
     return False
+
+def save_evaluation_file(rows, output_dir, model_name, fmt='csv'):
+    """Saves the evaluation rows to a specific format."""
+    os.makedirs(output_dir, exist_ok=True)
+    filename = f"{model_name}_results.{fmt}"
+    file_path = os.path.join(output_dir, filename)
+    
+    try:
+        if fmt == 'csv':
+            with open(file_path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.DictWriter(f, fieldnames=['id', 'gt', 'ans1', 'ans2', 'correct'])
+                writer.writeheader()
+                writer.writerows(rows)
+        
+        elif fmt == 'json':
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(rows, f, indent=4)
+                
+        elif fmt == 'txt':
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(f"Evaluation Results for {model_name}\n")
+                f.write("="*50 + "\n")
+                for row in rows:
+                    status = "CORRECT" if row['correct'] else "WRONG"
+                    f.write(f"ID: {row['id']} | GT: {row['gt']} | Ans1: {row['ans1']} | Ans2: {row['ans2']} | -> {status}\n")
+                    
+        else:
+            print(f"Format '{fmt}' not supported. Skipping text file save.")
+            return None
+
+        print(f"Saved {fmt} results to: {file_path}")
+        return file_path
+        
+    except Exception as e:
+        print(f"Failed to save {fmt} file: {e}")
+        return None
 
 def show_table(rows, out_image_path='evaluation_table.png'):
     """rows: list of dicts with keys: id, gt, ans1, ans2, correct"""
@@ -92,20 +129,28 @@ def show_table(rows, out_image_path='evaluation_table.png'):
 
 def evaluate_files(dataset_name, model_name):
     """Evaluates all matching instances from two JSON files."""
-    results_dir = args.save_path or './results/'
-    model_name = sanitize_filename(args.model_name)
+    
+    input_dir = args.save_path or './results/' 
+    output_dir = args.output_path or input_dir
+    
+    model_name_clean = sanitize_filename(model_name)
+    
     if args.evaluation_method == 'naive_prompting':
         print("Evaluating using the naive prompting method.")
-        file1_path = f'{results_dir}/{dataset_name}/{model_name}_naive_prompting.json'
+        file1_path = f'{input_dir}/{dataset_name}/{model_name_clean}_naive_prompting.json'
         file2_path = file1_path
     else:
-        file1_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_True.json'
-        file2_path = f'{results_dir}/{dataset_name}/{model_name}_search_negation_False.json'
+        file1_path = f'{input_dir}/{dataset_name}/{model_name_clean}_search_negation_True.json'
+        file2_path = f'{input_dir}/{dataset_name}/{model_name_clean}_search_negation_False.json'
     
     # 1 is negated, 2 is non-negated
-    file1 = load_json_file(file1_path)
-    file2 = load_json_file(file2_path)
-    
+    try:
+        file1 = load_json_file(file1_path)
+        file2 = load_json_file(file2_path)
+    except FileNotFoundError as e:
+        print(f"Error loading files: {e}")
+        return
+
     file1_map = {}
     file2_map = {}
     counter = 0
@@ -177,11 +222,16 @@ def evaluate_files(dataset_name, model_name):
     print("Error id: ", error_id)
     print("Correct id: ", correct_id)
 
-    # Save the table image so it can be displayed in the notebook
-    out_dir = os.path.join(results_dir, dataset_name)
-    os.makedirs(out_dir, exist_ok=True)
-    out_image_path = os.path.join(out_dir, f"{model_name}_results_table.png")
+    final_out_dir = os.path.join(output_dir, dataset_name)
+    os.makedirs(final_out_dir, exist_ok=True)
+
+    # Save accuracy file (CSV/JSON/TXT)
+    save_evaluation_file(rows, final_out_dir, model_name_clean, args.output_format)
+
+    # Save table image (PNG)
+    out_image_path = os.path.join(final_out_dir, f"{model_name_clean}_results_table.png")
     saved_path = show_table(rows, out_image_path)
+    
     if saved_path:
         print(f"Saved table image to: {saved_path}")
     else:
@@ -190,9 +240,11 @@ def evaluate_files(dataset_name, model_name):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_name', type=str)
-    parser.add_argument('--model_name', type=str)
-    parser.add_argument('--save_path', type=str)
+    parser.add_argument('--dataset_name', type=str, required=True)
+    parser.add_argument('--model_name', type=str, required=True)
+    parser.add_argument('--save_path', type=str, help="Path to input data files") 
+    parser.add_argument('--output_path', type=str, help="Path to save results (defaults to save_path if not set)")
+    parser.add_argument('--output_format', type=str, default='csv', choices=['csv', 'json', 'txt'], help="Output format for accuracy: csv, json, or txt")
     parser.add_argument('--evaluation_method', type=str, default='framework')
     args = parser.parse_args()
     return args
