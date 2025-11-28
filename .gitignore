@@ -3,3 +3,4 @@ venv/
 .env
 .vscode/
 LLM_MODELS*
+workspace

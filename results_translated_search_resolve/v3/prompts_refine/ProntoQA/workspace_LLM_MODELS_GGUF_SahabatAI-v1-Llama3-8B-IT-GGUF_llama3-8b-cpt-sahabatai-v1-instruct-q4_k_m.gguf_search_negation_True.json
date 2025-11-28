@@ -11498,5 +11498,111 @@
     "final_answer": "No complement found in the context.",
     "final_choice": "No final answer found in the text.",
     "search_round": 0
+  },
+  {
+    "id": "ProntoQA_3"
+  },
+  {
+    "id": "ProntoQA_4"
+  },
+  {
+    "id": "ProntoQA_5"
+  },
+  {
+    "id": "ProntoQA_6"
+  },
+  {
+    "id": "ProntoQA_7"
+  },
+  {
+    "id": "ProntoQA_8"
+  },
+  {
+    "id": "ProntoQA_9"
+  },
+  {
+    "id": "ProntoQA_10"
+  },
+  {
+    "id": "ProntoQA_11",
+    "original_context": "Setiap jompus tidak mudah diatur. Wumpuses tidak buah-buahan. Setiap jompus adalah vumpus. Setiap vumpus tidak pemalu. Setiap vumpus adalah rompus. Rompuses tidak pahit. Rompuses adalah dumpuses. Dumpuses tidak tembus pandang. Setiap dumpus adalah yumpus. Setiap yumpus berwarna oranye. Yumpuses adalah zumpuses. Zumpuses buah-buahan. Setiap zumpus adalah numpus. Numpuses logam. Setiap numpus adalah tumpus. Setiap tumpus besar. Setiap tumpus adalah impus. Sam adalah vumpus.",
+    "question": " Sam tidak buah-buahan.",
+    "translated_context": {
+      "Translated_Facts": "Sam adalah vumpus ::: Vumpus(Sam, True)",
+      "Translated_Rules": "Jompus($x, True) >>> MudahDikelola($x, False)\nJompus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Pemalu($x, False)\nVumpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Pahit($x, False)\nRompus($x, True) >>> Dumpus($x, True)\nDumpus($x, True) >>> TembusPandang($x, False)\nDumpus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Oranye($x, True)\nYumpus($x, True) >>> Zumpus($x, True)\nZumpus($x, True) >>> BuahBuahan($x, True)\nZumpus($x, True) >>> Numpus($x, True)\nNumpus($x, True) >>> Logam($x, True)\nNumpus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Besar($x, True)\nTumpus($x, True) >>> Impus($x, True)",
+      "Translated_Conjecture": "BuahBuahan(Sam, False)"
+    },
+    "normalized_context": {
+      "Fact": "Sam adalah vumpus ::: Vumpus(Sam, True)",
+      "and_or": "1. - \\left(Jompus(x, False) \\lor MudahDikelola(x, False)\\right)\n2. - \\left(Jompus(x, False) \\lor Vumpus(x, True)\\right)\n3. - \\left(Vumpus(x, False) \\lor Pemalu(x, False)\\right)\n4. - \\left(Vumpus(x, False) \\lor Rompus(x, True)\\right)\n5. - \\left(Rompus(x, False) \\lor Pahit(x, False)\\right)\n6. - \\left(Rompus(x, False) \\lor Dumpus(x, True)\\right)\n7. - \\left(Dumpus(x, False) \\lor TembusPandang(x, False)\\right)\n8. - \\left(Dumpus(x, False) \\lor Yumpus(x, True)\\right)\n9. - \\left(Yumpus(x, False) \\lor Oranye(x, True)\\right)\n10. - \\left(Yumpus(x, False) \\lor Zumpus(x, True)\\right)\n11. - \\left(Zumpus(x, False) \\lor BuahBuahan(x, True)\\right)\n12. - \\left(Zumpus(x, False) \\lor Numpus(x, True)\\right)\n13. - \\left(Numpus(x, False) \\lor Logam(x, True)\\right)\n14. - \\left(Numpus(x, False) \\lor Tumpus(x, True)\\right)\n15. - \\left(Tumpus(x, False) \\lor Besar(x, True)\\right)\n16. - \\left(Tumpus(x, False) \\lor Impus(x, True)\\right)",
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "BuahBuahan(Sam, False)",
+    "negated_label": "True",
+    "reasoning_step": "",
+    "ground_truth": "B",
+    "final_answer": "No complement found in the context.",
+    "final_choice": "No final answer found in the text.",
+    "search_round": 0
+  },
+  {
+    "id": "ProntoQA_12"
+  },
+  {
+    "id": "ProntoQA_13"
+  },
+  {
+    "id": "ProntoQA_14"
+  },
+  {
+    "id": "ProntoQA_15"
+  },
+  {
+    "id": "ProntoQA_16"
+  },
+  {
+    "id": "ProntoQA_17",
+    "original_context": "Setiap numpus tidak gugup. Setiap numpus adalah wumpus. Wumpuses adalah cairan. Setiap wumpus adalah jompus. Jompuses adalah buah-buahan. Zumpuses tidak buram. Setiap jompus adalah yumpus. Setiap yumpus adalah baik. Yumpuses adalah vumpuses. Vumpuses adalah buram. Setiap vumpus adalah impus. Impuses tidak kecil. Impuses adalah rompuses. Rompuses adalah kusam. Rompuses adalah tumpuses. Setiap tumpus adalah sedang. Setiap tumpus adalah dumpus. Fae adalah numpus.",
+    "question": " Fae tidak buram.",
+    "translated_context": {
+      "Translated_Facts": "Fae adalah numpus ::: Numpus(Fae, True)",
+      "Translated_Rules": "Numpus($x, True) >>> Gugup($x, False)\nNumpus($x, True) >>> Wumpus($x, True)\nWumpus($x, True) >>> Cairan($x, True)\nWumpus($x, True) >>> Jompus($x, True)\nJompus($x, True) >>> Buah($x, True)\nJompus($x, True) >>> Yumpus($x, True)\nYumpus($x, True) >>> Baik($x, True)\nYumpus($x, True) >>> Vumpus($x, True)\nVumpus($x, True) >>> Buram($x, True)\nVumpus($x, True) >>> Impus($x, True)\nImpus($x, True) >>> Kecil($x, False)\nImpus($x, True) >>> Rompus($x, True)\nRompus($x, True) >>> Kusam($x, True)\nRompus($x, True) >>> Tumpus($x, True)\nTumpus($x, True) >>> Sedang($x, True)\nTumpus($x, True) >>> Dumpus($x, True)",
+      "Translated_Conjecture": "Buram(Fae, False)"
+    },
+    "normalized_context": {
+      "Fact": "Fae adalah numpus ::: Numpus(Fae, True)",
+      "and_or": "1. - \\left(Numpus(x, False) \\lor Gugup(x, False)\\right)\n2. - \\left(Numpus(x, False) \\lor Wumpus(x, True)\\right)\n3. - \\left(Wumpus(x, False) \\lor Cairan(x, True)\\right)\n4. - \\left(Wumpus(x, False) \\lor Jompus(x, True)\\right)\n5. - \\left(Jompus(x, False) \\lor Buah(x, True)\\right)\n6. - \\left(Jompus(x, False) \\lor Yumpus(x, True)\\right)\n7. - \\left(Yumpus(x, False) \\lor Baik(x, True)\\right)\n8. - \\left(Yumpus(x, False) \\lor Vumpus(x, True)\\right)\n9. - \\left(Vumpus(x, False) \\lor Buram(x, True)\\right)\n10. - \\left(Vumpus(x, False) \\lor Impus(x, True)\\right)\n11. - \\left(Impus(x, False) \\lor Kecil(x, False)\\right)\n12. - \\left(Impus(x, False) \\lor Rompus(x, True)\\right)\n13. - \\left(Rompus(x, False) \\lor Kusam(x, True)\\right)\n14. - \\left(Rompus(x, False) \\lor Tumpus(x, True)\\right)\n15. - \\left(Tumpus(x, False) \\lor Sedang(x, True)\\right)\n16. - \\left(Tumpus(x, False) \\lor Dumpus(x, True)\\right)",
+      "either_or": null,
+      "biconditional": null
+    },
+    "normalized_conjecture": "Buram(Fae, False)",
+    "negated_label": "True",
+    "reasoning_step": "",
+    "ground_truth": "B",
+    "final_answer": "No complement found in the context.",
+    "final_choice": "No final answer found in the text.",
+    "search_round": 0
+  },
+  {
+    "id": "ProntoQA_18"
+  },
+  {
+    "id": "ProntoQA_19"
+  },
+  {
+    "id": "ProntoQA_20"
+  },
+  {
+    "id": "ProntoQA_21"
+  },
+  {
+    "id": "ProntoQA_22"
+  },
+  {
+    "id": "ProntoQA_23"
+  },
+  {
+    "id": "ProntoQA_24"
   }
 ]

@@ -9,6 +9,7 @@ import concurrent.futures
 import threading
 import traceback
 from utils import sanitize_filename
+from typing import Dict, Any, Optional
 
 class Reasoning_Graph_Baseline:
     def __init__(self, args):
@@ -25,6 +26,7 @@ class Reasoning_Graph_Baseline:
         self.prompts_folder = args.prompts_folder
         self.prompts_file = args.prompts_file
         self.search_round = args.search_round
+        self.start_index = args.start_index
         self.file_lock = threading.Lock()
         self.batch_num = args.batch_num
         self.model_api = ModelWrapper(args.model_name, args.stop_words, args.max_new_tokens)
@@ -42,7 +44,11 @@ class Reasoning_Graph_Baseline:
             in_context_examples = f.read()
         return in_context_examples
     
-    def load_raw_dataset(self, sample_pct):
+    def load_raw_dataset(self, sample_pct, start_index: Optional[int] = None):
+        print(f"SAMPLE PCT: {sample_pct}")
+        print(f"START INDEX: {start_index} type: {type(start_index)}")
+        if start_index is not None:
+            start_index = int(start_index)
         model_name = sanitize_filename(self.model_name)
         results_dir = self.data_path
         if self.negation == 'True':
@@ -52,6 +58,8 @@ class Reasoning_Graph_Baseline:
         print(f"Loading raw dataset from {file_path}")
         with open(file_path) as f:
             raw_dataset = json.load(f)
+            if isinstance(start_index, int) and start_index > 0:
+                raw_dataset = raw_dataset[start_index-1:]
             raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
     
@@ -136,9 +144,14 @@ class Reasoning_Graph_Baseline:
         )
 
         final_block_match = re.search(final_block_pattern, search_area, flags=re.DOTALL | re.IGNORECASE)
+        new_clause = "New Clause not found."
+        sufficiency_label = "Sufficiency Label not found."
 
         if not final_block_match:
-            return [], None
+            return {
+                "new_clause": new_clause,
+                "sufficiency_label": sufficiency_label,
+            }
 
         block = final_block_match.group(1)
 
@@ -147,13 +160,14 @@ class Reasoning_Graph_Baseline:
         print("END OF CHOSEN BLOCK\n\n")
 
         clause_pos = re.search(r'Clause\s*Baru', block_clean, flags=re.IGNORECASE)
-        clause_after = block_clean[clause_pos.end():]
-        m_new = re.search(r'\{(.*?)\}', clause_after, flags=re.DOTALL)
+        if clause_pos is not None:
+            clause_after = block_clean[clause_pos.end():]
+            m_new = re.search(r'\{(.*?)\}', clause_after, flags=re.DOTALL)
 
-        if not m_new:
-            raise ValueError(f"'Clause Baru:' with '{{...}}' not found in expected form.")
+            if not m_new:
+                raise ValueError(f"'Clause Baru:' with '{{...}}' not found in expected form.")
 
-        new_clause = m_new.group(1).strip()
+            new_clause = m_new.group(1).strip()
 
         label_pos = re.search(r'Label\s*Cukup', block_clean, flags=re.IGNORECASE)
         label_after = block_clean[label_pos.end():]
@@ -329,7 +343,7 @@ class Reasoning_Graph_Baseline:
         return context
     
     def reasoning_graph_generation(self):
-        raw_dataset = self.load_raw_dataset(self.sample_pct)
+        raw_dataset = self.load_raw_dataset(self.sample_pct, self.start_index)
         print(f"Loaded {len(raw_dataset)} examples")
         
         in_context_examples_logic_resolver = self.load_in_context_examples_logic_resolver(self.prompts_folder, self.prompts_file)
@@ -535,7 +549,7 @@ class Reasoning_Graph_Baseline:
                         solving_step = f"SOS clause: {sos_list}. Selected Clause: {selected_clause}. New Clause: {new_clause}"
                         print(solving_step)
                     
-                    if not new_clause.strip():
+                    if not new_clause.strip() or new_clause == "New Clause not found.":
                         print("No new clause found. Searching from the cache.")
                         all_empty = "True"
                         for i, clause in enumerate(list_of_compelment):
@@ -672,6 +686,7 @@ def parse_args():
     parser.add_argument('--search_round', type=int, default=10)
     parser.add_argument('--prompts_folder', type=str, default='./manual_prompts_translated')
     parser.add_argument('--prompts_file', default='logic_resolver')
+    parser.add_argument('--start_index', type=int)
     args = parser.parse_args()
     return args
 
