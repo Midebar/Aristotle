@@ -4,3 +4,4 @@ venv/
 .vscode/
 LLM_MODELS*
 workspace
+singularity*
