@@ -1,0 +1,135 @@
+Deskripsi Tugas: Anda diberikan fakta, aturan, dan konjektur. Tugas Anda adalah mencari apakah konjektur tersebut dapat diselesaikan dari fakta dan aturan yang ada dengan memilih salah satu nilai kebenaran True atau False berdasarkan fakta dan aturan yang diberikan dengan memberikan penjelasan langkah-langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.
+
+------
+
+Contoh:
+
+Fakta:
+Alex adalah impus ::: Impus(Alex, True)
+
+Aturan:
+Impus($x, True) >>> Besar($x, True)
+
+Konjektur:
+Besar(Alex, True)
+
+###
+**Penjelasan**:
+Alex adalah impus ::: Impus(Alex, True)
+Impus(Alex, True) >>> Besar($x, True)
+Besar(Alex, True)
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Fakta:
+Alex adalah rompus ::: Rompus(Alex, True)
+
+Aturan:
+Rompus($x, True) >>> MudahDikelola($x, True)
+
+Konjektur:
+MudahDikelola(Alex, False)
+
+###
+**Penjelasan**:
+Alex adalah rompus ::: Rompus(Alex, True)
+Rompus(Alex, True) >>> MudahDikelola($x, True)
+MudahDikelola(Alex, True)
+
+**Jawaban**: False
+###
+
+------
+
+Contoh:
+
+Fakta:
+Fae adalah wumpus ::: Wumpus(Fae, True)
+
+Aturan:
+Wumpus($x, True) >>> Besar($x, True)
+Wumpus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Oranye($x, True)
+
+konjektur:
+Oranye(Fae, True)
+
+###
+**Penjelasan**:
+Fae adalah wumpus ::: Wumpus(Fae, True)
+Wumpus(Fae, True) >>> Yumpus($x, True)
+Yumpus(Fae, True)
+Yumpus(Fae, True) >>> Oranye($x, True)
+Oranye(Fae, True)
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan:
+Jompus($x, True) >>> Pemalu($x, False)
+Jompus($x, True) >>> Yumpus($x, True)
+Yumpus($x, True) >>> Agresif($x, True)
+Yumpus($x, True) >>> Dumpus($x, True)
+Dumpus($x, True) >>> Kayu($x, False)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus($x, True) >>> Merah($x, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus($x, True) >>> TembusPandang($x, False)
+Impus($x, True) >>> Tumpus($x, True)
+Numpus($x, True) >>> Asam($x, True)
+Tumpus($x, True) >>> Asam($x, False)
+Tumpus($x, True) >>> Vumpus($x, True)
+Vumpus($x, True) >>> Tanah($x, False)
+Vumpus($x, True) >>> Zumpus($x, True)
+Zumpus($x, True) >>> Kecil($x, True)
+Zumpus($x, True) >>> Rompus($x, True)
+
+Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses.
+
+Konjektur:
+Asam(Max, True)
+
+###
+**Penjelasan**:
+Max adalah yumpus ::: Yumpus(Max, True)
+Yumpus(Max, True) >>> Dumpus($x, True)
+Dumpus(Max, True)
+Dumpus($x, True) >>> Wumpus($x, True)
+Wumpus(Max, True)
+Wumpus($x, True) >>> Impus($x, True)
+Impus(Max, True)
+Impus($x, True) >>> Tumpus($x, True)
+Tumpus(Max, True)
+Tumpus($x, True) >>> Asam($x, False)
+Asam(Max, False)
+
+**Jawaban**: False 
+###
+
+------
+
+Di bawah ini yang perlu Anda cari nilai kebenarannya:
+
+Fakta:
+[[FACTS]]
+
+Aturan: 
+[[RULES]]
+
+Konjektur:
+[[CONJECTURE]]
+
+###
+**Penjelasan**:
