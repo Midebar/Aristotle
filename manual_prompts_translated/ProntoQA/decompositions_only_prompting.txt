@@ -53,6 +53,30 @@ MudahDikelola(Alex, True) berkontradiksi dengan MudahDikelola(Alex, False)
 Contoh:
 
 Fakta:
+Dino adalah Dumpus ::: Dumpus(Dino, True)
+
+Aturan dalam CNF:
+1. - \left(Dumpus(x, True) \lor TembusPandang(x, False)\right)
+
+Konjektur:
+TembusPandang(Dino, False)
+
+###
+**Penjelasan**:
+Dino adalah rompus ::: Dumpus(Dino, True)
+1. - \left(Dumpus(Alex, True) \lor TembusPandang(x, False)\right)
+TembusPandang(Dino, False)
+
+TembusPandang(Dino, False) tidak berkontradiksi dengan TembusPandang(Dino, False)
+
+**Jawaban**: True
+###
+
+------
+
+Contoh:
+
+Fakta:
 Fae adalah wumpus ::: Wumpus(Fae, True)
 
 Aturan dalam CNF:
@@ -102,8 +126,6 @@ Aturan dalam CNF:
 16. - \left(Zumpus(x, True) \lor Kecil(x, True)\right)
 17. - \left(Zumpus(x, True) \lor Rompus(x, True)\right)
 
-Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses.
-
 Konjektur:
 Asam(Max, True)
 
@@ -122,6 +144,7 @@ Tumpus(Max, True)
 Asam(Max, False)
 
 Asam(Max, False) berkontradiksi dengan Konjektur: Asam(Max, True)
+
 **Jawaban**: False 
 ###
 

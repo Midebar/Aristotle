@@ -1,0 +1,194 @@
+CNF prompting response: [SYSTEM] Anda adalah asisten yang cerdas dan sangat membantu dan diakui sebagai salah satu ilmuwan AI, ahli logika, dan matematikawan terbaik serta selalu menjawab dalam Bahasa Indonesia yang baik dan benar. Sebelum mulai menyelesaikan masalah, pastikan Anda memahami secara cermat dan menyeluruh setiap detail kebutuhan pengguna.
+
+[USER] Deskripsi Tugas: Anda diberikan fakta, aturan, dan konjektur. Tugas Anda adalah mencari apakah konjektur tersebut dapat diselesaikan dari fakta dan aturan yang ada dengan memilih salah satu nilai kebenaran True atau False berdasarkan fakta dan aturan yang diberikan dengan memberikan penjelasan langkah-langkah yang Anda gunakan untuk mencapai nilai kebenaran/jawaban tersebut.
+
+------
+
+Contoh:
+
+Fakta:
+Alex adalah impus ::: Impus(Alex, True)
+
+Aturan dalam CNF:
+1. - \left(Impus(x, False) \lor Besar(x, True)\right)
+
+Konjektur:
+Besar(Alex, True)
+
+###
+**Penjelasan**:
+Alex adalah impus ::: Impus(Alex, True)
+1. - \left(Impus(Alex, False) \lor Besar(x, True)\right)
+Besar(Alex, True)
+
+Besar(Alex, True) tidak berkontradiksi dengan Besar(Alex, True)
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Fakta:
+Alex adalah rompus ::: Rompus(Alex, True)
+
+Aturan dalam CNF:
+1. - \left(Rompus(x, True) \lor MudahDikelola(x, True)\right)
+
+Konjektur:
+MudahDikelola(Alex, False)
+
+###
+**Penjelasan**:
+Alex adalah rompus ::: Rompus(Alex, True)
+1. - \left(Rompus(Alex, True) \lor MudahDikelola(x, True)\right)
+MudahDikelola(Alex, True)
+
+MudahDikelola(Alex, True) berkontradiksi dengan MudahDikelola(Alex, False)
+
+**Jawaban**: False
+###
+
+------
+
+Contoh:
+
+Fakta:
+Dino adalah Dumpus ::: Dumpus(Dino, True)
+
+Aturan dalam CNF:
+1. - \left(Dumpus(x, True) \lor TembusPandang(x, False)\right)
+
+Konjektur:
+TembusPandang(Dino, False)
+
+###
+**Penjelasan**:
+Dino adalah rompus ::: Dumpus(Dino, True)
+1. - \left(Dumpus(Alex, True) \lor TembusPandang(x, False)\right)
+TembusPandang(Dino, False)
+
+TembusPandang(Dino, False) tidak berkontradiksi dengan TembusPandang(Dino, False)
+
+**Jawaban**: True
+###
+
+------
+
+Contoh:
+
+Fakta:
+Fae adalah wumpus ::: Wumpus(Fae, True)
+
+Aturan dalam CNF:
+1. - \left(Wumpus(x, True) \lor Besar(x, True)\right)
+2. - \left(Wumpus(x, True) \lor Yumpus(x, True)\right)
+3. - \left(Yumpus(x, True) \lor Oranye(x, True)\right)
+
+konjektur:
+Oranye(Fae, True)
+
+###
+**Penjelasan**:
+Fae adalah wumpus ::: Wumpus(Fae, True)
+2. - \left(Wumpus(Fae, True) \lor Yumpus(x, True)\right)
+Yumpus(Fae, True)
+3. - \left(Yumpus(Fae, True) \lor Oranye(x, True)\right)
+Oranye(Fae, True)
+
+Oranye(Fae, True) tidak berkontradiksi dengan Oranye(Fae, True)
+
+**Jawaban**: True 
+###
+
+------
+
+Contoh:
+
+Fakta:
+Max adalah yumpus ::: Yumpus(Max, True)
+
+Aturan dalam CNF:
+1. - \left(Jompus(x, True) \lor Pemalu(x, False)\right)
+2. - \left(Jompus(x, True) \lor Yumpus(x, True)\right)
+3. - \left(Yumpus(x, True) \lor Agresif(x, True)\right)
+4. - \left(Yumpus(x, True) \lor Dumpus(x, True)\right)
+5. - \left(Dumpus(x, True) \lor Kayu(x, False)\right)
+6. - \left(Dumpus(x, True) \lor Wumpus(x, True)\right)
+7. - \left(Wumpus(x, True) \lor Merah(x, True)\right)
+8. - \left(Wumpus(x, True) \lor Impus(x, True)\right)
+9. - \left(Impus(x, True) \lor TembusPandang(x, False)\right)
+10. - \left(Impus(x, True) \lor Tumpus(x, True)\right)
+11. - \left(Numpus(x, True) \lor Asam(x, True)\right)
+12. - \left(Tumpus(x, True) \lor Asam(x, False)\right)
+13. - \left(Tumpus(x, True) \lor Vumpus(x, True)\right)
+14. - \left(Vumpus(x, True) \lor Tanah(x, False)\right)
+15. - \left(Vumpus(x, True) \lor Zumpus(x, True)\right)
+16. - \left(Zumpus(x, True) \lor Kecil(x, True)\right)
+17. - \left(Zumpus(x, True) \lor Rompus(x, True)\right)
+
+Konjektur:
+Asam(Max, True)
+
+###
+**Penjelasan**:
+Max adalah yumpus ::: Yumpus(Max, True)
+4. - \left(Yumpus(Max, True) \lor Dumpus(x, True)\right)
+Dumpus(Max, True)
+6. - \left(Dumpus(Max, True) \lor Wumpus(x, True)\right)
+Wumpus(Max, True)
+8. - \left(Wumpus(Max, True) \lor Impus(x, True)\right)
+Impus(Max, True)
+10. - \left(Impus(Max, True) \lor Tumpus(x, True)\right)
+Tumpus(Max, True)
+12. - \left(Tumpus(Max, True) \lor Asam(x, False)\right)
+Asam(Max, False)
+
+Asam(Max, False) berkontradiksi dengan Konjektur: Asam(Max, True)
+
+**Jawaban**: False 
+###
+
+------
+
+Di bawah ini yang perlu Anda cari nilai kebenarannya:
+
+Fakta:
+Wren adalah dumpus ::: Dumpus(Wren, True)
+
+Aturan dalam CNF: 
+1. - \left(Zumpus(x, False) \lor Gugup(x, True)\right)
+2. - \left(Zumpus(x, False) \lor Dumpus(x, True)\right)
+3. - \left(Dumpus(x, False) \lor Besar(x, True)\right)
+4. - \left(Dumpus(x, False) \lor Rompus(x, True)\right)
+5. - \left(Rompus(x, False) \lor BerwarnaCoklat(x, True)\right)
+6. - \left(Vumpus(x, False) \lor Transparan(x, True)\right)
+7. - \left(Rompus(x, False) \lor Numpus(x, True)\right)
+8. - \left(Numpus(x, False) \lor Pahit(x, False)\right)
+9. - \left(Numpus(x, False) \lor Wumpus(x, True)\right)
+10. - \left(Wumpus(x, False) \lor Bunga(x, True)\right)
+11. - \left(Wumpus(x, False) \lor Yumpus(x, True)\right)
+12. - \left(Yumpus(x, False) \lor Tumpus(x, True)\right)
+13. - \left(Tumpus(x, False) \lor Cerah(x, False)\right)
+14. - \left(Tumpus(x, False) \lor Impus(x, True)\right)
+
+Konjektur:
+Transparan(Wren, False)
+
+###
+**Penjelasan**: 
+Wren adalah dumpus ::: Dumpus(Wren, True)
+3. - \left(Dumpus(Wren, False) \lor Besar(x, True)\right)
+Besar(Wren, True)
+4. - \left(Dumpus(Wren, False) \lor Rompus(x, True)\right)
+Rompus(Wren, True)
+5. - \left(Rompus(Wren, False) \lor BerwarnaCoklat(x, True)\right)
+BerwarnaCoklat(Wren, True)
+6. - \left(Vumpus(Wren, False) \lor Transparan(x, True)\right)
+Transparan(Wren, False)
+
+Transparan(Wren, False) berkontradiksi dengan Konjektur: Transparan(Wren, False)
+
+**Jawaban**: False 
+###

@@ -43,8 +43,8 @@ class Ablation_Prompting:
             raw_dataset = raw_dataset[:max(1, int(len(raw_dataset) * sample_pct / 100))]
         return raw_dataset
     
-    def construct_prompt_fol(self, record, fol_prompts):
-        full_prompt = fol_prompts
+    def construct_prompt_cnf(self, record, cnf_prompts):
+        full_prompt = cnf_prompts
         context = record['normalized_context']
         conjecture = record['normalized_conjecture'].strip()
         facts = context['Fact'].strip()
@@ -168,8 +168,8 @@ class Ablation_Prompting:
     def process_record(self, record, naive_prompts):
         try:
             print("Running example id: ", record.get('id', None))
-            prompt = self.construct_prompt_fol(record, naive_prompts)
-            print(f"\nFOL prompting: {prompt}\n")
+            prompt = self.construct_prompt_cnf(record, naive_prompts)
+            print(f"\nCNF prompting: {prompt}\n")
             response = self.model_api.generate(prompt)
 
             if isinstance(response, (list, tuple)):
@@ -179,7 +179,7 @@ class Ablation_Prompting:
                 #print("Response is a single string.")
                 response = response
 
-            print(f"\nFOL prompting response: {response}\n")
+            print(f"\nCNF prompting response: {response}\n")
             extracted = self.extract_answers(response)
             answer = extracted['answer']
             explanations = extracted['explanations']

@@ -19,6 +19,8 @@ Alex adalah impus ::: Impus(Alex, True)
 Impus(Alex, True) >>> Besar($x, True)
 Besar(Alex, True)
 
+Besar(Alex, True) tidak berkontradiksi dengan Besar(Alex, True)
+
 **Jawaban**: True 
 ###
 
@@ -41,7 +43,33 @@ Alex adalah rompus ::: Rompus(Alex, True)
 Rompus(Alex, True) >>> MudahDikelola($x, True)
 MudahDikelola(Alex, True)
 
+MudahDikelola(Alex, True) berkontradiksi dengan MudahDikelola(Alex, False)
+
 **Jawaban**: False
+###
+
+------
+
+Contoh:
+
+Fakta:
+Dino adalah Dumpus ::: Dumpus(Dino, True)
+
+Aturan:
+Dumpus($x, True) >>> TembusPandang($x, False)
+
+Konjektur:
+TembusPandang(Dino, False)
+
+###
+**Penjelasan**:
+Dino adalah rompus ::: Dumpus(Dino, True)
+Dumpus(Dino, True) >>> TembusPandang($x, False)
+TembusPandang(Dino, False)
+
+TembusPandang(Dino, False) tidak berkontradiksi dengan TembusPandang(Dino, False)
+
+**Jawaban**: True
 ###
 
 ------
@@ -66,6 +94,8 @@ Wumpus(Fae, True) >>> Yumpus($x, True)
 Yumpus(Fae, True)
 Yumpus(Fae, True) >>> Oranye($x, True)
 Oranye(Fae, True)
+
+Oranye(Fae, True) tidak berkontradiksi dengan Oranye(Fae, True)
 
 **Jawaban**: True 
 ###
@@ -96,8 +126,6 @@ Vumpus($x, True) >>> Zumpus($x, True)
 Zumpus($x, True) >>> Kecil($x, True)
 Zumpus($x, True) >>> Rompus($x, True)
 
-Jompuses bukan pemalu. Jompuses adalah yumpuses. Setiap yumpus bersifat agresif. Setiap yumpus adalah dumpus. Dumpuses bukan terbuat dari kayu. Dumpuses adalah wumpuses. Wumpuses berwarna merah. Setiap wumpus adalah impus. Setiap impus tidak tembus pandang. Impuses adalah tumpuses. Numpuses asam. Tumpuses tidak asam. Tumpuses adalah vumpuses. Vumpuses tidak terbuat tanah. Setiap vumpus adalah zumpus. Zumpuses berukuran kecil. Zumpuses adalah rompuses.
-
 Konjektur:
 Asam(Max, True)
 
@@ -114,6 +142,8 @@ Impus($x, True) >>> Tumpus($x, True)
 Tumpus(Max, True)
 Tumpus($x, True) >>> Asam($x, False)
 Asam(Max, False)
+
+Asam(Max, False) berkontradiksi dengan Konjektur: Asam(Max, True)
 
 **Jawaban**: False 
 ###
