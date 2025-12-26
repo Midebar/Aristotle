@@ -5,3 +5,5 @@ venv/
 LLM_MODELS*
 workspace
 singularity*
+tmp*
+results_translated_fol_prolog/ProntoQA/workspace_LLM_MODELS_GGUF_*/*
