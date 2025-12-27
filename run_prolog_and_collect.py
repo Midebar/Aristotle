@@ -29,9 +29,9 @@ def apply_policy(pt, pf, conflict):
     if conflict:
         return 'Self-Contradictory', ''
     if pt:
-        return True, 'A'
+        return "True", 'A'
     if pf:
-        return False, 'B'
+        return "False", 'B'
     return 'Unknown', ''
 
 def run_one(pl_file, swipl_path, timeout):

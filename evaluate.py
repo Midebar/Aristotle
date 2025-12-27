@@ -8,8 +8,20 @@ from utils import sanitize_filename
 def load_json_file(file_path):
     """Loads a JSON file and returns its content."""
     with open(file_path, 'r', encoding="utf8") as file:
-        return json.load(file)
-
+        content = file.read().strip()
+        try:
+            # Try loading as a standard single JSON object/list
+            return json.loads(content)
+        except json.JSONDecodeError:
+            # Try loading as JSON Lines (one object per line)
+            file.seek(0)  # Reset file pointer to the beginning
+            data = []
+            for line in file:
+                line = line.strip()
+                if line:
+                    data.append(json.loads(line))
+            return data
+    
 def normalize_answer(answer):
     """Normalize the final choice: if not 'A' or 'B', treat it as 'C'."""
     if answer == 'A' or answer == 'B' or answer == 'D':
