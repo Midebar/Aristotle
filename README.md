@@ -1,5 +1,7 @@
 # Aristotle Framework on Open-Weight SLM with Bahasa Indonesia Dataset (ProntoQA only)
 
+[Github Link](https://github.com/Midebar/Aristotle)
+
 Original Paper: [**"Aristotle: Mastering Logical Reasoning with A Logic-Complete Decompose-Search-Resolve Framework"**](<https://arxiv.org/abs/2412.16953>)
 
 **Introduction**
